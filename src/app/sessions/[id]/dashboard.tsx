@@ -121,6 +121,35 @@ export default function LiveDashboard({
         />
       </div>
 
+      {/* Synthèse par module (catégorie) */}
+      {r && r.parModule.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold">Synthèse par module</h3>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            {r.parModule.map((m) => (
+              <div
+                key={m.module}
+                className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-white p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{m.module}</div>
+                  <div className="mt-1.5 h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: m.avg == null ? "0%" : `${m.avg * 100}%`,
+                        backgroundColor: scoreColor(m.avg),
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="text-lg font-semibold">{pctOf(m.avg)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Synthèse collective par compétence (vue projetable) */}
       <div>
         <h3 className="text-sm font-semibold">Synthèse collective par compétence</h3>

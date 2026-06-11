@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Brain, Eye, Radio, ShieldCheck } from "lucide-react";
+import { Brain, Eye, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
+import { canManageLive } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { stopImpersonation } from "./admin/impersonate-actions";
 import "./globals.css";
@@ -74,7 +75,16 @@ export default async function RootLayout({
 
             {user && (
               <div className="ml-auto flex items-center gap-2.5 text-sm">
-                {(user.role === "super_admin" || user.role === "tenant_admin") && (
+                {(user.role === "tenant_admin" ||
+                  (user.role === "super_admin" && user.impersonating)) && (
+                  <Link
+                    href="/gestion"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"
+                  >
+                    <Users className="h-4 w-4" /> Gestion
+                  </Link>
+                )}
+                {canManageLive(user.role) && (
                   <Link
                     href="/sessions"
                     className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"

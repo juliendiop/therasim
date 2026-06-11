@@ -13,7 +13,7 @@ const SESSION_COOKIE = "ts_session";
 const SESSION_TTL = "30d";
 const TOKEN_TTL_MIN = 15; // durée de vie d'un lien magique
 
-export type Role = "super_admin" | "tenant_admin" | "learner";
+export type Role = "super_admin" | "tenant_admin" | "formateur" | "learner";
 // `tenantId` = tenant ACTIF (= tenant de l'utilisateur, ou tenant impersonné par le super-admin).
 // `imp` = true quand le super-admin accède à la plateforme d'un client.
 export type SessionPayload = {

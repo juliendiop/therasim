@@ -4,9 +4,10 @@
 
 import { prisma } from "./prisma";
 import type { Role } from "./auth";
+import { canManageLive } from "./roles";
 
 export function roleCanManageLive(role: Role): boolean {
-  return role === "super_admin" || role === "tenant_admin";
+  return canManageLive(role);
 }
 
 /** Sélectionne les QCM testant les compétences choisies (jusqu'à 2 par compétence). */
@@ -98,7 +99,14 @@ export type LiveResults = {
   participantsCount: number;
   finishedCount: number;
   overallAvg: number | null; // 0..1
-  parCompetence: { competencyId: string; nom: string; avg: number | null; count: number }[];
+  parCompetence: {
+    competencyId: string;
+    nom: string;
+    module: string;
+    avg: number | null;
+    count: number;
+  }[];
+  parModule: { module: string; avg: number | null }[];
   individuels: {
     participantId: string;
     prenom: string;
@@ -118,7 +126,7 @@ export async function getLiveResults(sessionId: string): Promise<LiveResults | n
     where: { id: session.frameworkId },
   });
 
-  const [participants, answers, comps] = await Promise.all([
+  const [participants, answers, comps, cats] = await Promise.all([
     prisma.liveParticipant.findMany({
       where: { sessionId },
       orderBy: { joinedAt: "asc" },
@@ -127,17 +135,41 @@ export async function getLiveResults(sessionId: string): Promise<LiveResults | n
     framework
       ? prisma.competency.findMany({ where: { gridId: framework.gridId } })
       : Promise.resolve([]),
+    framework
+      ? prisma.category.findMany({ where: { gridId: framework.gridId } })
+      : Promise.resolve([]),
   ]);
 
   const total = (session.drillIds as string[]).length;
   const nomByCode = new Map(comps.map((c) => [c.code, c.nom]));
+  const catNomByCode = new Map(cats.map((c) => [c.code, c.nom]));
+  const moduleByComp = new Map(
+    comps.map((c) => [c.code, catNomByCode.get(c.categoryCode) ?? c.categoryCode]),
+  );
   const competencyCodes = session.competencies as string[];
 
   // Collectif par compétence.
   const parCompetence = competencyCodes.map((code) => {
     const a = answers.filter((x) => x.competencyId === code);
     const avg = a.length ? a.reduce((s, x) => s + x.score, 0) / a.length : null;
-    return { competencyId: code, nom: nomByCode.get(code) ?? code, avg, count: a.length };
+    return {
+      competencyId: code,
+      nom: nomByCode.get(code) ?? code,
+      module: moduleByComp.get(code) ?? "—",
+      avg,
+      count: a.length,
+    };
+  });
+
+  // Collectif par module (catégorie) : moyenne des réponses des compétences du module.
+  const moduleNames = Array.from(new Set(parCompetence.map((c) => c.module)));
+  const parModule = moduleNames.map((module) => {
+    const codes = new Set(
+      competencyCodes.filter((code) => (moduleByComp.get(code) ?? "—") === module),
+    );
+    const a = answers.filter((x) => codes.has(x.competencyId));
+    const avg = a.length ? a.reduce((s, x) => s + x.score, 0) / a.length : null;
+    return { module, avg };
   });
 
   // Individuels.
@@ -170,6 +202,7 @@ export async function getLiveResults(sessionId: string): Promise<LiveResults | n
     finishedCount: participants.filter((p) => p.finishedAt).length,
     overallAvg,
     parCompetence,
+    parModule,
     individuels,
   };
 }

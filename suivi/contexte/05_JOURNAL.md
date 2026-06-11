@@ -367,6 +367,34 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
 
 ---
 
+## Session 2 (suite) — 11 juin 2026 — Rôles & gestion des membres
+
+### Rôles (modèle complété)
+- `Role` = super_admin · **tenant_admin** (admin de plateforme) · **formateur** (nouveau) · learner (apprenant).
+  Participant live = anonyme (sans compte). Helpers centralisés `src/lib/roles.ts`
+  (`canManageLive` inclut formateur ; `canManageMembers` = super_admin/tenant_admin).
+- Liens d'en-tête conditionnels : **Gestion** (tenant_admin / super-admin en impersonation),
+  **Sessions live** (tous ceux qui peuvent animer : + formateur).
+
+### Espace de gestion (admin de plateforme)
+- `/gestion` : l'admin d'une plateforme **déclare ses membres** (ajout email + rôle apprenant/
+  formateur/admin), change leur rôle, les retire. Scopé au **tenant actif** (donc le super-admin
+  via « Accéder » gère les membres du client). Connexion des membres par email (lien magique/mot de passe).
+- Fichiers : `src/app/gestion/`, `src/lib/roles.ts`.
+
+### Module (réponse à la question du porteur)
+- Un **module** = une **catégorie** du référentiel. À la création d'une session, les compétences
+  testées sont **groupées par module** (catégorie). Le tableau de bord affiche désormais une
+  **synthèse par module** (moyenne par catégorie) en plus du détail par compétence.
+
+### Vérif
+- `npm run build` OK.
+
+### Prochaine étape
+- PDF → session (génération IA). Option : supervision des cohortes par le tenant_admin/formateur.
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA
