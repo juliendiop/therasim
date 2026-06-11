@@ -36,7 +36,7 @@ export default async function FrameworkPage({
       {/* En-tête */}
       <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]">
+          <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]">
             {TYPE_LABEL[framework.type] ?? framework.type}
           </span>
           <h1 className="mt-2 text-2xl font-semibold">{framework.nom}</h1>
@@ -50,13 +50,13 @@ export default async function FrameworkPage({
           </form>
           <Link
             href={`/f/${framework.id}/simulation`}
-            className="inline-flex items-center gap-2 rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-indigo-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
           >
             <MessagesSquare className="h-4 w-4" /> Entretien simulé
           </Link>
           <Link
             href={`/f/${framework.id}/entrainement`}
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
           >
             <Dumbbell className="h-4 w-4" /> S&apos;entraîner
           </Link>
@@ -91,7 +91,7 @@ export default async function FrameworkPage({
                 </div>
                 <Link
                   href={`/f/${framework.id}/entrainement?competency=${p.competency_id}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent)] hover:bg-indigo-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
                 >
                   <Dumbbell className="h-3.5 w-3.5" /> S&apos;entraîner
                 </Link>

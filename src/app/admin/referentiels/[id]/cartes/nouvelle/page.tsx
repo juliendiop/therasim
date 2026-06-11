@@ -35,7 +35,7 @@ export default async function NouvelleCarte({
       >
         ← {fw.nom}
       </Link>
-      <h2 className="mt-2 text-lg font-semibold">Nouvelle carte (drill)</h2>
+      <h2 className="mt-2 text-lg font-semibold">Nouvelle carte d&apos;exercice</h2>
 
       <DrillEditor
         frameworkId={id}

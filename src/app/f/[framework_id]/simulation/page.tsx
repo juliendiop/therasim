@@ -66,7 +66,7 @@ export default async function SimulationStart({
                 <div className="mt-0.5 line-clamp-2 text-xs text-[var(--muted)]">{s.contexte}</div>
               )}
             </div>
-            <button className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+            <button className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
               <Play className="h-4 w-4" /> Démarrer
             </button>
           </form>

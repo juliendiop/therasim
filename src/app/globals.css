@@ -1,12 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f8fa;
-  --foreground: #1a1d23;
+  --background: #f5f6f9;
+  --foreground: #14161a;
   --card: #ffffff;
-  --border: #e6e8ec;
+  --border: #e7e9ee;
   --muted: #6b7280;
+
+  /* Couleur de marque. --accent peut être surchargée par tenant (marque blanche).
+     Les nuances en dérivent automatiquement via color-mix : changer --accent suffit. */
   --accent: #4f46e5;
+  --accent-hover: color-mix(in srgb, var(--accent), #000 14%);
+  --accent-soft: color-mix(in srgb, var(--accent) 9%, #fff);
+  --accent-border: color-mix(in srgb, var(--accent) 24%, #fff);
 }
 
 @theme inline {
@@ -16,12 +22,62 @@
 
 html,
 body {
-  background: var(--background);
   color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
+  min-height: 100vh;
   font-family:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
     sans-serif;
+  /* Halo subtil teinté par la couleur de marque (suit le branding). */
+  background:
+    radial-gradient(
+      48rem 36rem at 100% -8%,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      40rem 32rem at -10% 0%,
+      color-mix(in srgb, var(--accent) 6%, transparent),
+      transparent 60%
+    ),
+    var(--background);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* Lien d'accentuation sobre */
+a {
+  color: inherit;
+}
+
+/* Petit utilitaire de carte douce */
+.card-soft {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 1px 3px rgba(16, 24, 40, 0.06);
+}
+
+@keyframes ts-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-in {
+  animation: ts-fade-in 0.25s ease-out both;
 }

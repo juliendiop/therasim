@@ -43,6 +43,7 @@ export async function getNextDrill(
   userId: string,
   frameworkId: string,
   competencyCode?: string,
+  excludeDrillId?: string,
 ): Promise<NextDrillResult> {
   const framework = await prisma.framework.findUnique({ where: { id: frameworkId } });
   if (!framework) return { drillId: null, reason: "référentiel introuvable" };
@@ -70,22 +71,32 @@ export async function getNextDrill(
     };
   };
 
-  // Cas ciblé : un bouton "s'entraîner" sur une compétence précise.
-  if (competencyCode) {
-    const candidats = drillsByCompetency.get(competencyCode) ?? [];
-    const choisi = choisirDrill(etat(competencyCode), candidats);
-    return choisi
-      ? { drillId: choisi.id, competencyId: competencyCode }
-      : { drillId: null, reason: "aucun drill pour cette compétence" };
-  }
+  // Sélection (en excluant éventuellement l'exercice déjà fait).
+  const pick = (exclude?: string): NextDrillResult => {
+    // Cas ciblé : un bouton "s'entraîner" sur une compétence précise.
+    if (competencyCode) {
+      const candidats = (drillsByCompetency.get(competencyCode) ?? []).filter(
+        (d) => d.id !== exclude,
+      );
+      const choisi = choisirDrill(etat(competencyCode), candidats);
+      return choisi
+        ? { drillId: choisi.id, competencyId: competencyCode }
+        : { drillId: null, reason: "aucun exercice pour cette compétence" };
+    }
+    // Cas général : compétences triées par priorité, on prend la 1re qui a un exercice.
+    const etats = competencies.map((c) => etat(c.code));
+    for (const e of classerPriorites(etats)) {
+      const candidats = (drillsByCompetency.get(e.competencyId) ?? []).filter(
+        (d) => d.id !== exclude,
+      );
+      const choisi = choisirDrill(e, candidats);
+      if (choisi) return { drillId: choisi.id, competencyId: e.competencyId };
+    }
+    return { drillId: null, reason: "aucun exercice disponible dans ce référentiel" };
+  };
 
-  // Cas général : compétences triées par priorité, on prend la 1re qui a un drill.
-  const etats = competencies.map((c) => etat(c.code));
-  for (const e of classerPriorites(etats)) {
-    const candidats = drillsByCompetency.get(e.competencyId) ?? [];
-    const choisi = choisirDrill(e, candidats);
-    if (choisi) return { drillId: choisi.id, competencyId: e.competencyId };
-  }
-
-  return { drillId: null, reason: "aucun drill disponible dans ce référentiel" };
+  // 1) en évitant l'exercice courant (variété) ; 2) sinon sans exclusion (jamais de blocage).
+  const avecExclusion = pick(excludeDrillId);
+  if (avecExclusion.drillId || !excludeDrillId) return avecExclusion;
+  return pick(undefined);
 }

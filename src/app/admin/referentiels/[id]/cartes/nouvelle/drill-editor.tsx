@@ -130,12 +130,12 @@ export default function DrillEditor({
       </div>
 
       {/* Génération IA */}
-      <div className="rounded-lg border border-dashed border-indigo-200 bg-indigo-50/50 p-3">
+      <div className="rounded-lg border border-dashed border-[var(--accent-border)] bg-[var(--accent-soft)] p-3">
         <button
           type="button"
           onClick={generate}
           disabled={generating || !aiAvailable}
-          className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
         >
           <Sparkles className="h-4 w-4" />
           {generating ? "Génération…" : "Générer un brouillon par IA"}
@@ -227,7 +227,7 @@ export default function DrillEditor({
         </div>
       )}
 
-      <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+      <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
         Créer la carte
       </button>
     </form>

@@ -13,12 +13,13 @@ export async function GET(
 ) {
   const { framework_id } = await params;
   const competency = req.nextUrl.searchParams.get("competency") || undefined;
+  const exclude = req.nextUrl.searchParams.get("not") || undefined;
   const user = await getSessionUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.nextUrl.origin));
   if (!(await tenantCanAccess(user.tenantId, framework_id)))
     return NextResponse.redirect(new URL("/catalogue", req.nextUrl.origin));
 
-  const result = await getNextDrill(user.id, framework_id, competency);
+  const result = await getNextDrill(user.id, framework_id, competency, exclude);
   const url = result.drillId
     ? new URL(`/drills/${result.drillId}`, req.nextUrl.origin)
     : new URL(`/f/${framework_id}?vide=1`, req.nextUrl.origin);

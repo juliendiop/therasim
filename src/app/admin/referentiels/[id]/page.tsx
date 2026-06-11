@@ -80,7 +80,7 @@ export default async function ReferentielDetail({
               className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm"
             />
           </div>
-          <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+          <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
             Enregistrer
           </button>
           <span className="ml-2 text-xs text-[var(--muted)]">
@@ -103,7 +103,7 @@ export default async function ReferentielDetail({
             <option value="calibre">Calibré (évaluateur calé)</option>
             <option value="publie">Publié (attribuable)</option>
           </select>
-          <button className="w-full rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-indigo-50">
+          <button className="w-full rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]">
             Mettre à jour le statut
           </button>
           <p className="text-[11px] text-[var(--muted)]">
@@ -184,7 +184,7 @@ export default async function ReferentielDetail({
                             <div className="flex shrink-0 items-center gap-2">
                               <Link
                                 href={`/admin/referentiels/${id}/cartes/nouvelle?competency=${c.code}`}
-                                className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] px-2.5 py-1 text-xs font-medium text-[var(--accent)] hover:bg-indigo-50"
+                                className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] px-2.5 py-1 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
                               >
                                 <Plus className="h-3.5 w-3.5" /> Carte
                               </Link>
@@ -306,7 +306,7 @@ export default async function ReferentielDetail({
               />
             </div>
             <div className="sm:col-span-2">
-              <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+              <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
                 Ajouter la compétence
               </button>
             </div>

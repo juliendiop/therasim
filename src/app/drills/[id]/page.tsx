@@ -19,6 +19,7 @@ export default async function DrillPage({
   // Le tenant doit avoir accès au référentiel du drill.
   if (!(await tenantCanAccess(user.tenantId, drill.frameworkId))) notFound();
 
+  // key={id} : force la réinitialisation du lecteur quand on passe à l'exercice suivant.
   // On ne passe au client QUE la vue publique (aucun corrigé).
-  return <DrillPlayer drill={publicDrill(drill)} />;
+  return <DrillPlayer key={id} drill={publicDrill(drill)} />;
 }

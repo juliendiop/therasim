@@ -75,7 +75,7 @@ export default function DrillPlayer({ drill }: { drill: PublicDrill }) {
       </span>
 
       {/* Rappel théorique */}
-      <div className="mt-3 flex gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
+      <div className="mt-3 flex gap-3 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-4">
         <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
         <div>
           <div className="text-sm font-semibold text-[var(--accent)]">Rappel</div>
@@ -105,7 +105,7 @@ export default function DrillPlayer({ drill }: { drill: PublicDrill }) {
                   onClick={() => setSelected(i)}
                   className={`w-full rounded-lg border px-4 py-3 text-left text-sm transition ${
                     selected === i
-                      ? "border-[var(--accent)] bg-indigo-50"
+                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                       : "border-[var(--border)] bg-white hover:border-gray-300"
                   }`}
                 >
@@ -115,7 +115,7 @@ export default function DrillPlayer({ drill }: { drill: PublicDrill }) {
               <button
                 disabled={selected === null || loading}
                 onClick={() => submit({ option_index: selected })}
-                className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
               >
                 <Send className="h-4 w-4" /> {loading ? "..." : "Valider"}
               </button>
@@ -132,7 +132,7 @@ export default function DrillPlayer({ drill }: { drill: PublicDrill }) {
               <button
                 disabled={!answer.trim() || loading}
                 onClick={() => submit({ answer })}
-                className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
               >
                 <Send className="h-4 w-4" /> {loading ? "Évaluation…" : "Envoyer"}
               </button>
@@ -205,10 +205,12 @@ export default function DrillPlayer({ drill }: { drill: PublicDrill }) {
               <RotateCcw className="h-4 w-4" /> Rejouer
             </button>
             <button
-              onClick={() => router.push(`/f/${drill.framework_id}/entrainement`)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              onClick={() =>
+                router.push(`/f/${drill.framework_id}/entrainement?not=${drill.id}`)
+              }
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
             >
-              <Dumbbell className="h-4 w-4" /> Drill suivant
+              <Dumbbell className="h-4 w-4" /> Exercice suivant
             </button>
             <button
               onClick={() => router.push(`/f/${drill.framework_id}`)}

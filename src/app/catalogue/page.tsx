@@ -34,7 +34,7 @@ export default async function CataloguePage() {
               className="group rounded-xl border border-[var(--border)] bg-white p-5 transition hover:border-[var(--accent)] hover:shadow-sm"
             >
               <div className="flex items-center justify-between">
-                <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]">
+                <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]">
                   {TYPE_LABEL[f.type] ?? f.type}
                 </span>
                 <span className="text-xs font-medium text-[var(--muted)]">

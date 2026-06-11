@@ -133,7 +133,7 @@ export default function SimChat({
 
       {/* Bannière objectif (mini-scène N2) */}
       {isMini && focusNoms.length > 0 && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2 text-sm">
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--accent-border)] bg-[var(--accent-soft)] px-3 py-2 text-sm">
           <Target className="h-4 w-4 shrink-0 text-[var(--accent)]" />
           <span>
             <b>Mini-scène guidée</b> — on travaille : {focusNoms.join(" + ")}
@@ -205,7 +205,7 @@ export default function SimChat({
             <button
               onClick={send}
               disabled={busy || !input.trim()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
             >
               <Send className="h-4 w-4" /> {busy ? "…" : "Envoyer"}
             </button>
@@ -292,7 +292,7 @@ function DebriefView({
 
       <button
         onClick={() => router.push(`/f/${frameworkId}`)}
-        className="mt-6 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        className="mt-6 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
       >
         Voir ma carte de progression
       </button>

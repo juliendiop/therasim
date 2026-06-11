@@ -46,7 +46,7 @@ export default async function TenantDetail({
         </div>
         <form action={impersonateTenant}>
           <input type="hidden" name="tenantId" value={id} />
-          <button className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+          <button className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
             <Eye className="h-4 w-4" /> Accéder à la plateforme
           </button>
         </form>
@@ -203,7 +203,7 @@ export default async function TenantDetail({
             </select>
           </div>
           <div className="sm:col-span-2">
-            <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+            <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
               Enregistrer
             </button>
           </div>

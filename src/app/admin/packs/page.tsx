@@ -44,7 +44,7 @@ export default async function PacksPage() {
               className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm"
             />
           </div>
-          <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+          <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
             Créer
           </button>
         </form>

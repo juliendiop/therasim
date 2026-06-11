@@ -35,15 +35,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto mt-10 max-w-sm">
-      <div className="flex items-center justify-center gap-2 text-lg font-semibold">
-        <Brain className="h-6 w-6 text-[var(--accent)]" /> TheraSim
+    <div className="mx-auto mt-12 max-w-sm animate-in">
+      <div className="flex flex-col items-center text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-md">
+          <Brain className="h-6 w-6" />
+        </span>
+        <h1 className="mt-3 text-xl font-semibold tracking-tight">TheraSim</h1>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Entraînement clinique par compétences
+        </p>
       </div>
-      <p className="mt-1 text-center text-sm text-[var(--muted)]">
-        Entraînement clinique par compétences
-      </p>
 
-      <div className="mt-8 rounded-xl border border-[var(--border)] bg-white p-6">
+      <div className="card-soft mt-8 p-6">
         {!sent ? (
           <form onSubmit={submit}>
             <label className="text-sm font-medium">Connexion par lien magique</label>
@@ -60,7 +63,7 @@ export default function LoginPage() {
             />
             <button
               disabled={loading}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
             >
               <Mail className="h-4 w-4" /> {loading ? "Envoi…" : "Recevoir le lien"}
             </button>

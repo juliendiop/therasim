@@ -57,7 +57,7 @@ export default async function ModelesPage() {
           </div>
         ))}
 
-        <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+        <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
           Enregistrer
         </button>
       </form>

@@ -37,7 +37,7 @@ export default async function TenantsPage() {
               <form action={impersonateTenant}>
                 <input type="hidden" name="tenantId" value={t.id} />
                 <button
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-indigo-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
                   title="Accéder à la plateforme de ce client"
                 >
                   <Eye className="h-3.5 w-3.5" /> Accéder
@@ -79,7 +79,7 @@ export default async function TenantsPage() {
               <option value="public">Public (B2C)</option>
             </select>
           </div>
-          <button className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+          <button className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
             Créer
           </button>
         </form>
@@ -98,7 +98,7 @@ function Badge({
   const cls =
     tone === "red"
       ? "bg-red-50 text-red-700"
-      : "bg-indigo-50 text-[var(--accent)]";
+      : "bg-[var(--accent-soft)] text-[var(--accent)]";
   return (
     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}>
       {children}
