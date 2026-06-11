@@ -348,6 +348,25 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
 
 ---
 
+## Session 2 (suite) — 11 juin 2026 — Connexion par mot de passe
+
+### Ce qui a été fait
+- `User.passwordHash` (bcrypt, optionnel). Route `POST /api/auth/login` (email+mot de passe).
+- Page `/login` à **2 onglets** : Mot de passe (par défaut) + Lien magique.
+- Écran **Admin → Mon compte** (`/admin/compte`) : définir/changer son mot de passe.
+- Mot de passe initial du super-admin via `ADMIN_INITIAL_PASSWORD` au seed (haché en base Neon,
+  donc valable local ET prod). **Identifiant** : julien.diop@gmail.com — mot de passe initial
+  `TheraSim2026!` (à changer via Mon compte).
+
+### Vérif
+- `npm run build` OK. Test `POST /api/auth/login` → `{ok:true, redirect:/admin}`.
+
+### À savoir
+- Le lien magique reste disponible (option). Re-seeder réapplique `ADMIN_INITIAL_PASSWORD`
+  (écrase un mot de passe changé entre-temps).
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA

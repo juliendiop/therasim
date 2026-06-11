@@ -234,6 +234,54 @@ model SimMessage {
   @@map("sim_messages")
 }
 
+// --- Sessions live (évaluation animée par un formateur) -------------------
+
+model LiveSession {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  createdBy    String    @map("created_by") @db.Uuid
+  titre        String
+  frameworkId  String    @map("framework_id")
+  competencies Json // codes des compétences testées
+  drillIds     Json // snapshot des exercices (identiques pour tous les participants)
+  mode         String // 'apprentissage' | 'evaluation'
+  durationMin  Int       @map("duration_min")
+  statut       String    @default("brouillon") // 'brouillon' | 'ouverte' | 'fermee'
+  opensAt      DateTime? @map("opens_at")
+  closesAt     DateTime? @map("closes_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("live_sessions")
+}
+
+model LiveParticipant {
+  id         String    @id @default(uuid()) @db.Uuid
+  sessionId  String    @map("session_id") @db.Uuid
+  prenom     String
+  nom        String
+  joinedAt   DateTime  @default(now()) @map("joined_at")
+  finishedAt DateTime? @map("finished_at")
+
+  @@index([sessionId])
+  @@map("live_participants")
+}
+
+model LiveAnswer {
+  id            String   @id @default(uuid()) @db.Uuid
+  sessionId     String   @map("session_id") @db.Uuid
+  participantId String   @map("participant_id") @db.Uuid
+  drillId       String   @map("drill_id")
+  competencyId  String   @map("competency_id")
+  optionIndex   Int      @map("option_index")
+  score         Float
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@index([participantId])
+  @@map("live_answers")
+}
+
 // État de maîtrise agrégé par utilisateur × référentiel × compétence (spec §5.2).
 // La PK inclut framework_id : aucune fusion possible entre référentiels.
 model UserCompetencyState {

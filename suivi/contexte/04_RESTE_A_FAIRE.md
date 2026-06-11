@@ -94,6 +94,28 @@ depuis une **console d'administration centrale**. Hors spec initiale.
 
 ---
 
+## ⭐ Phase Formateur — Sessions live (études de cas animées) — ✅ V1 FAITE (11 juin)
+
+Demande porteur : pendant une formation, faire passer une **étude de cas** en direct à un groupe.
+- **Étude de cas** = enchaînement de questions « cas réel » à choix multiples, **comparées par
+  compétence**. (Pas strictement QCM à terme, mais QCM en v1.)
+- Le formateur crée une session (référentiel + compétences testées + mode + durée), obtient un
+  **lien à partager** (Zoom/email). Participants **anonymes** (prénom/nom, sans compte).
+- **2 modes** : apprentissage (feedback/question) · évaluation (feedback final).
+- **Compte à rebours** synchronisé (le formateur « Démarre » → `closesAt`).
+- **Tableau de bord formateur** live : synthèse collective par compétence (barres projetables)
+  + résultats individuels. Modèle : `LiveSession`/`LiveParticipant`/`LiveAnswer`. Rôles
+  super_admin + tenant_admin (« formateur »).
+- ⚠️ Reste : **étude de cas = un scénario cohérent** (au lieu d'exercices indépendants enchaînés) ;
+  questions **non-QCM** (réponse libre évaluée) ; export PDF/CSV des résultats ; relance/2e passage.
+
+## ⭐ Prochaine étape — PDF → session de formation (demande 11 juin)
+- Importer le **PDF d'un support / programme** de formation et le transformer en **une session**
+  (étude de cas) dans l'app : extraction du contenu → mapping vers compétences/référentiels →
+  **génération des questions par IA** (réutilise `generate.ts`), à relire/valider.
+- Briques : parsing PDF (texte), prompt de structuration (thèmes → compétences → questions),
+  pré-remplissage d'une session. Garde-fou : validation humaine avant ouverture.
+
 ## Phase 2 — N2 : mini-scènes guidées — ✅ FAIT (session 2)
 - ✅ Mini-scène **dynamique** : cible les 2 compétences prioritaires, 4 tours, indices à la
   demande, débrief ciblé → carte. Réutilise le moteur patient du N3 borné.
