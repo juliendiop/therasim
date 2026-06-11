@@ -1,0 +1,249 @@
+// Schéma TheraSim — modèle de données de la spec V2 (drills + carte multi-référentiels).
+// Tout est "conscient du référentiel" (framework_id partout) : Option A de la spec (§2.3).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Configuration applicative (clé/valeur) ------------------------------
+// Sert notamment au choix du modèle LLM par usage : clés 'model.patient',
+// 'model.evaluateur', 'model.generation'. Éditable depuis la console super-admin.
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("app_config")
+}
+
+// --- Multi-tenant & marque blanche ---------------------------------------
+
+// Une plateforme cliente. Le tenant "public" (type=public) = site B2C ouvert.
+// Les tenants de type whitelabel = plateformes clientes brandées (B2B).
+model Tenant {
+  id           String   @id @default(uuid()) @db.Uuid
+  slug         String   @unique // 'public', 'institut-x'… (sert au routage / sous-domaine)
+  nom          String
+  type         String   @default("whitelabel") // 'public' | 'whitelabel'
+  statut       String   @default("actif") // 'actif' | 'suspendu'
+  // Branding (marque blanche)
+  brandName    String?  @map("brand_name")
+  logoUrl      String?  @map("logo_url")
+  colorPrimary String?  @map("color_primary")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("tenants")
+}
+
+// --- Identité (spec §3) ---------------------------------------------------
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  email     String   @unique
+  role      String   @default("learner") // 'super_admin' | 'tenant_admin' | 'learner'
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+// Jeton de connexion par lien magique (usage unique, expirable).
+model AuthToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  token     String    @unique
+  email     String
+  tenantId  String    @map("tenant_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("auth_tokens")
+}
+
+// --- Catalogue, packs & droits d'accès (entitlements) --------------------
+
+// Un pack = regroupement de référentiels, composé par le super-admin.
+model Pack {
+  id          String   @id @default(uuid()) @db.Uuid
+  slug        String   @unique
+  nom         String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("packs")
+}
+
+model PackFramework {
+  packId      String @map("pack_id") @db.Uuid
+  frameworkId String @map("framework_id")
+
+  @@id([packId, frameworkId])
+  @@map("pack_frameworks")
+}
+
+// Pack accordé à un tenant.
+model TenantPack {
+  tenantId String @map("tenant_id") @db.Uuid
+  packId   String @map("pack_id") @db.Uuid
+
+  @@id([tenantId, packId])
+  @@map("tenant_packs")
+}
+
+// Ajustement fin : ajoute ou retire un référentiel pour un tenant donné.
+model TenantFrameworkOverride {
+  tenantId    String @map("tenant_id") @db.Uuid
+  frameworkId String @map("framework_id")
+  mode        String // 'add' | 'remove'
+
+  @@id([tenantId, frameworkId])
+  @@map("tenant_framework_overrides")
+}
+
+// --- Socle référentiels (spec §2.5) --------------------------------------
+
+model Framework {
+  id          String  @id // 'em', 'act', 'anamnese', 'burnout'
+  nom         String
+  type        String // 'approche' | 'transversale' | 'situation'
+  gridId      String  @map("grid_id")
+  description String?
+  statut      String  @default("brouillon") // 'brouillon' | 'calibre' | 'publie'
+
+  @@map("frameworks")
+}
+
+model CompetencyGrid {
+  id  String @id // 'em-v1'
+  nom String
+
+  @@map("competency_grids")
+}
+
+// Catégorie de compétences à l'intérieur d'une grille (ex: "Posture et esprit").
+model Category {
+  id     String @id @default(uuid()) @db.Uuid
+  gridId String @map("grid_id")
+  code   String // 'posture'
+  nom    String
+  ordre  Int    @default(0)
+
+  @@unique([gridId, code])
+  @@map("categories")
+}
+
+// Compétence + ancrages 1/3/5 (utilisés par l'évaluateur mono-compétence).
+model Competency {
+  id           String  @id @default(uuid()) @db.Uuid
+  gridId       String  @map("grid_id")
+  categoryCode String  @map("category_code")
+  code         String // 'reflets', 'questions_ouvertes', 'empathie'
+  nom          String
+  description  String?
+  ancrage1     String? @map("ancrage_1")
+  ancrage3     String? @map("ancrage_3")
+  ancrage5     String? @map("ancrage_5")
+  ordre        Int     @default(0)
+
+  @@unique([gridId, code])
+  @@map("competencies")
+}
+
+// Cas / persona dont les drills sont tirés (hérité du MVP, + framework_id).
+model Scenario {
+  id          String  @id // 'EM-ALC-01'
+  frameworkId String  @map("framework_id")
+  titre       String
+  contexte    String?
+
+  @@map("scenarios")
+}
+
+// --- Mode entraînement (spec §4.2) ---------------------------------------
+
+model Drill {
+  id                   String  @id // 'DRL-QO-01'
+  frameworkId          String  @map("framework_id")
+  competencyId         String  @map("competency_id") // code de la grille du référentiel
+  scenarioContext      String? @map("scenario_context") // réf. Scenario.id, nullable
+  difficulty           Int // 1..3
+  mode                 String // 'reconnaissance' | 'production'
+  rappelTheorique      String  @map("rappel_theorique")
+  stimulus             String
+  options              Json? // [{text, is_best, score, feedback}] si reconnaissance
+  patientReactionSiBon String? @map("patient_reaction_si_bon")
+  modeleReponse        String  @map("modele_reponse")
+
+  @@index([frameworkId, competencyId])
+  @@map("drills")
+}
+
+// Un essai unitaire (drill OU compétence dérivée d'une simulation).
+model Attempt {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  frameworkId  String   @map("framework_id")
+  competencyId String   @map("competency_id")
+  source       String // 'drill' | 'simulation'
+  sourceRef    String?  @map("source_ref") // drill_id ou session_id
+  score        Float // normalisé 0..1 (spec §5.1)
+  raw          Json? // feedback, citation, etc.
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId, frameworkId, competencyId])
+  @@map("attempts")
+}
+
+// --- Simulation complète (N3) ---------------------------------------------
+
+// Une session d'entretien simulé (patient incarné par un LLM, débrief sommatif).
+model SimSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  frameworkId String    @map("framework_id")
+  scenarioId  String    @map("scenario_id")
+  kind        String    @default("simulation") // 'simulation' (N3) | 'miniscene' (N2)
+  maxTurns    Int?      @map("max_turns") // borne de tours pour les mini-scènes (N2)
+  focus       Json? // mini-scène : codes des 2 compétences ciblées
+  statut      String    @default("en_cours") // 'en_cours' | 'terminee'
+  debrief     Json? // { scores:[{competency_id,note,justification,evidence}], narrative, moments:[{quote,comment}] }
+  createdAt   DateTime  @default(now()) @map("created_at")
+  endedAt     DateTime? @map("ended_at")
+
+  @@index([userId, frameworkId])
+  @@map("sim_sessions")
+}
+
+model SimMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @map("session_id") @db.Uuid
+  role      String // 'patient' | 'apprenant'
+  content   String
+  turn      Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@map("sim_messages")
+}
+
+// État de maîtrise agrégé par utilisateur × référentiel × compétence (spec §5.2).
+// La PK inclut framework_id : aucune fusion possible entre référentiels.
+model UserCompetencyState {
+  userId        String    @map("user_id") @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  frameworkId   String    @map("framework_id")
+  competencyId  String    @map("competency_id")
+  mastery       Float? // 0..1, NULL si jamais pratiqué
+  attempts      Int       @default(0)
+  lastPracticed DateTime? @map("last_practiced")
+
+  @@id([userId, frameworkId, competencyId])
+  @@map("user_competency_state")
+}
