@@ -152,6 +152,51 @@ Légende dépendances :
 | 10.4 | Atteindre 4 tours | Saisie bloquée, invite à « Terminer » | ⬜ |
 | 10.5 | Terminer (avec clé) | Débrief **uniquement sur les 2 compétences ciblées** + carte mise à jour | ⬜ [LLM] |
 
+## 11. Connexion mot de passe + invitations — *[DB]*
+
+| # | Test | Attendu | Statut |
+|---|------|---------|--------|
+| 11.1 | `/login` onglet « Mot de passe » : super-admin + `TheraSim2026!` | Connecté, redirigé `/admin` | ⬜ |
+| 11.2 | Mauvais mot de passe | « Email ou mot de passe incorrect » (générique) | ⬜ |
+| 11.3 | Admin → Mon compte : changer le mot de passe | Nouveau mot de passe fonctionne | ⬜ |
+| 11.4 | Gestion → Ajouter & inviter (ton email) | Email d'invitation reçu + lien affiché | ⬜ |
+| 11.5 | Inviter un email tiers (mode test Resend) | Membre créé, lien affiché pour partage manuel | ⬜ |
+| 11.6 | Cliquer le lien d'invitation | Connecte directement dans le bon tenant/rôle | ⬜ |
+
+## 12. Rôles & gestion des membres — *[DB]*
+
+| # | Test | Attendu | Statut |
+|---|------|---------|--------|
+| 12.1 | Super-admin → Accéder à un tenant → menu « Gestion » | Visible | ⬜ |
+| 12.2 | Ajouter un membre rôle Formateur | Apparaît dans la liste, scope = tenant actif | ⬜ |
+| 12.3 | Se connecter comme ce formateur | Voit « Formations » + « Sessions live », pas « Admin » ni « Gestion » | ⬜ |
+| 12.4 | Apprenant tente d'ouvrir `/sessions` ou `/admin` | Redirigé `/catalogue` | ⬜ |
+| 12.5 | Changer le rôle / retirer un membre | Pris en compte ; impossible sur soi-même / un super-admin | ⬜ |
+
+## 13. Sessions live + sas d'attente — *[DB]*
+
+| # | Test | Attendu | Statut |
+|---|------|---------|--------|
+| 13.1 | Créer une session (ad-hoc ou depuis un module) | Statut brouillon | ⬜ |
+| 13.2 | « Ouvrir la session » | Statut ouverte ; lien actif ; **chrono PAS démarré** | ⬜ |
+| 13.3 | Rejoindre via le lien (prénom/nom) | **Salle d'attente** « en attente du démarrage » | ⬜ |
+| 13.4 | « Démarrer le compte à rebours » (durée réglée) | Statut en_cours ; le participant **bascule auto** dans le quiz | ⬜ |
+| 13.5 | Répondre (mode évaluation) | Pas de feedback ; à la fin, correction + score | ⬜ |
+| 13.6 | Répondre (mode apprentissage) | Feedback après chaque question | ⬜ |
+| 13.7 | Tableau de bord formateur | Participants, score moyen, **par catégorie**, individuels, compte à rebours | ⬜ |
+| 13.8 | Temps écoulé / « Fermer maintenant » | Réponses refusées (403) ; participant voit son récap | ⬜ |
+| 13.9 | Multi-référentiel (session globale formation) | Résultats agrégés à travers les référentiels | ⬜ |
+
+## 14. Formations & modules — *[DB]*
+
+| # | Test | Attendu | Statut |
+|---|------|---------|--------|
+| 14.1 | Formations → Nouvelle formation | Créée, ouvre le détail | ⬜ |
+| 14.2 | Ajouter un module (compétences dans **2 référentiels**) | Module listé avec ses référentiels + compétences | ⬜ |
+| 14.3 | « Lancer une session live » sur un module | Session créée (pairs du module) | ⬜ |
+| 14.4 | « Créer la session globale » (formation) | Session agrégeant tous les modules | ⬜ |
+| 14.5 | Supprimer module / formation | Retirés proprement | ⬜ |
+
 ## 6. À automatiser (backlog qualité)
 - Tests unitaires `mastery.ts` / `routing.ts` (Vitest) — couvre la section 1 sans DB.
 - Tests d'intégration API avec une base de test (couvre sections 2/3).

@@ -132,6 +132,36 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   le modèle Mistral pour `patient` / `evaluateur` / `generation` (défaut = `MISTRAL_MODEL`).
 - Clé Mistral installée (palier gratuit), défaut `mistral-small-latest`, testée OK.
 
+## 20. Impersonation super-admin (accès aux plateformes)
+**État : ✅ Fait**
+- Bouton « Accéder » par tenant → session scopée au tenant + bandeau « Quitter ». Le tenant
+  actif est porté par la session (`getSessionUser` → tenantId actif). Fichiers : `src/lib/auth.ts`,
+  `src/app/admin/impersonate-actions.ts`, `layout.tsx`.
+
+## 21. Connexion mot de passe + invitations (session 2 suite)
+**État : ✅ Fait**
+- Mot de passe (bcrypt) en plus du lien magique : `User.passwordHash`, `/api/auth/login`,
+  page login 2 onglets, `/admin/compte`. Mot de passe initial via `ADMIN_INITIAL_PASSWORD`.
+- Invitation membre : token magique 7 j → email (Resend) + lien affiché à l'admin.
+- Fichiers : `src/lib/password.ts`, `src/lib/email.ts` (sendInvitation), `src/app/gestion/`.
+
+## 22. Rôles & gestion des membres (session 2 suite)
+**État : ✅ Fait**
+- Rôles : super_admin · tenant_admin · **formateur** · learner (+ participant live anonyme).
+  Helpers `src/lib/roles.ts`. Espace **`/gestion`** (admin de plateforme déclare formateurs/apprenants).
+
+## 23. Sessions live — études de cas animées (session 2 suite)
+**État : ✅ Fait (multi-référentiel + sas d'attente)**
+- Le formateur crée une session, l'**ouvre** (sas), puis **déclenche le compte à rebours**
+  (durée ajustable). Participants anonymes (prénom/nom), 2 modes, tableau de bord live
+  (par compétence + par catégorie + individuels). Multi-référentiel (`pairs`).
+- Fichiers : `src/lib/live.ts`, `src/app/sessions/`, `src/app/live/`, `src/app/api/live/`.
+
+## 24. Formations & modules (session 2 suite)
+**État : ✅ Fait**
+- `Formation` + `FormationModule` (un module couvre **plusieurs référentiels** + compétences).
+  Session live **par module** ou **pour toute la formation**. Fichiers : `src/app/formations/`.
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,

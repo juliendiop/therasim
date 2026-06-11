@@ -8,9 +8,11 @@
 | Langage | TypeScript 5 (strict) | |
 | UI | Tailwind CSS v4 + composants maison | lucide-react pour les icônes |
 | ORM | Prisma v7 | ⚠️ v7 = adaptateur obligatoire (voir 03_DECISIONS) |
-| Base de données | Neon (PostgreSQL serverless) | adaptateur `@prisma/adapter-neon` |
-| LLM évaluateur | API Mistral (`/v1/chat/completions`) | mode production des drills, temp 0.2, JSON strict |
-| Hébergement | Vercel (cible) | pas encore branché |
+| Base de données | Neon (PostgreSQL) | adaptateur **`@prisma/adapter-pg`** (driver natif, voir 03_DECISIONS) |
+| LLM | API Mistral (`/v1/chat/completions`) | évaluateur, patient (N2/N3), génération de cartes ; modèle par usage (`/admin/modeles`) |
+| Email | Resend | liens magiques + invitations (`src/lib/email.ts`) |
+| Auth | Lien magique + mot de passe (bcrypt) | sessions JWT (jose) en cookie httpOnly |
+| Hébergement | **Vercel** (déployé) | repo github.com/juliendiop/therasim, déploiement auto sur push |
 
 ## Structure des dossiers
 
@@ -42,17 +44,24 @@ TheraSim/
 │   │       ├── me/progress/                     # GET vue d'ensemble
 │   │       ├── me/progress/[framework_id]/     # GET carte détaillée
 │   │       └── health/                          # GET diagnostic
+│   │       ├── auth/                # login (mot de passe), magic-link, callback, logout
+│   │       ├── sim/[id]/            # simulateur N3/N2 (message, end, hint)
+│   │       └── live/[id]/           # sessions live (join, answer, finish, status, results)
+│   ├── app/admin/              # Console super-admin (tenants, packs, référentiels, modèles, compte)
+│   ├── app/gestion/            # Espace admin de plateforme (membres : formateurs/apprenants)
+│   ├── app/formations/         # Constructeur formations + modules (multi-référentiel)
+│   ├── app/sessions/           # Formateur : créer/animer des sessions live
+│   ├── app/live/[id]/          # Participant (public) : sas d'attente + étude de cas
+│   ├── app/sim/[id]/           # Apprenant : entretien simulé / mini-scène
 │   └── lib/
-│       ├── prisma.ts           # Client Prisma (singleton + adaptateur Neon)
-│       ├── user.ts             # Utilisateur courant (dev : utilisateur unique)
-│       ├── mastery.ts          # Normalisation, maîtrise, paliers, couverture (§5.1-5.3)
-│       ├── routing.ts          # Priorité, difficulté cible, choix de drill (§5.4)
-│       ├── next-drill.ts       # Sélection du prochain drill (DB + routing)
-│       ├── attempts.ts         # Enregistre un essai + met à jour la carte (§5.5)
-│       ├── progress.ts         # Construit la carte (overview + détail) (§5.6)
-│       ├── evaluator.ts        # Évaluateur mono-compétence Mistral (§4.3)
-│       ├── drill-view.ts       # Vue publique d'un drill (masque les corrigés)
-│       └── ui.ts               # Tokens visuels (couleurs par palier)
+│       ├── prisma.ts           # Client Prisma (singleton + adaptateur pg)
+│       ├── auth.ts             # Sessions JWT, rôles, lien magique (server-only)
+│       ├── password.ts · email.ts · roles.ts · config.ts   # mdp, emails, rôles, modèle LLM/usage
+│       ├── entitlements.ts     # Accès référentiels par tenant (packs + overrides)
+│       ├── mastery.ts · routing.ts · next-drill.ts · attempts.ts · progress.ts  # moteur (§5)
+│       ├── evaluator.ts · generate.ts · mistral.ts · simulator.ts   # LLM (éval, génération, patient)
+│       ├── live.ts             # Sessions live (multi-réf, cycle de vie, résultats)
+│       └── drill-view.ts · ui.ts
 └── suivi/contexte/             # Ce dossier de suivi
 ```
 
@@ -69,25 +78,35 @@ TheraSim/
 
 ## Modèle de données (entités principales)
 
-Toutes les tables sont **conscientes du référentiel** (`framework_id` partout) — Option A
-de la spec (§2.3) : chaque référentiel a sa propre grille, aucune fusion entre référentiels.
+Tout est **conscient du référentiel** (`framework_id`) ET **multi-tenant** (`tenant_id`).
 
 ```
-User (compte)
-Framework (em, …) ──1:1── CompetencyGrid (em-v1)
-                               ├──< Category (posture, techniques, processus)
-                               └──< Competency (empathie, reflets… + ancrages 1/3/5)
-Scenario (EM-ALC-01…) ── framework_id
-Drill (DRL-…) ── framework_id + competency_id (+ options JSON si reconnaissance)
+PLATEFORME / TENANCY
+  Tenant (public B2C | whitelabel B2B, + branding)
+  User ── tenant_id + role (super_admin|tenant_admin|formateur|learner) + passwordHash?
+  AuthToken (liens magiques / invitations)         AppConfig (modèle LLM par usage)
 
-Attempt ── user_id + framework_id + competency_id + score[0..1]   (1 ligne / essai)
-UserCompetencyState ── PK (user_id, framework_id, competency_id)  (maîtrise agrégée)
+CATALOGUE & DROITS
+  Framework ──1:1── CompetencyGrid ──< Category ──< Competency (+ ancrages 1/3/5)
+  Scenario, Drill (framework_id + competency_id, options JSON si QCM)
+  Pack ──< PackFramework      TenantPack / TenantFrameworkOverride  (accès = packs ± overrides)
+
+PROGRESSION (apprenant)
+  Attempt (user+tenant+framework+competency, score[0..1])  -> UserCompetencyState (maîtrise)
+  SimSession + SimMessage (N2 mini-scène / N3 simulation ; débrief -> Attempt source='simulation')
+
+FORMATIONS & LIVE (formateur)
+  Formation ──< FormationModule (items = [{frameworkId, competencies[]}] : MULTI-référentiel)
+  LiveSession (pairs = [{frameworkId, code}], cycle brouillon→ouverte→en_cours→fermee)
+    ├──< LiveParticipant (anonyme : prénom/nom)
+    └──< LiveAnswer (framework_id + competency_id + score)
 ```
 
-- **Deux producteurs, une source de vérité** : drills (N1) et simulations (N3) écrivent
-  tous des `Attempt`, qui alimentent `UserCompetencyState`. La carte lit cet état.
-- **`competency_id`** est le *code* texte (`reflets`), toujours scopé par `framework_id`.
-  La même compétence (« empathie ») peut coexister dans `em` et `burnout` sans se mélanger.
+- **Deux producteurs, une source de vérité** : N1 (drills) et N2/N3 (simulations) écrivent
+  tous des `Attempt` → `UserCompetencyState`. Les sessions live, elles, sont **séparées**
+  (participants anonymes ≠ comptes ; agrégées par session, pas dans la carte personnelle).
+- **`competency_id`** = code texte (`reflets`), scopé par `framework_id` (identité = framework+code).
+- **Tenant actif** porté par la session JWT (impersonation super-admin = tenant cible).
 
 Le schéma complet fait foi : `prisma/schema.prisma`.
 
