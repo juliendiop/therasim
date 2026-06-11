@@ -326,6 +326,28 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
 
 ---
 
+## Session 2 (suite) — 11 juin 2026 — Réentraînement + contenu + onboarding
+
+### Demandes du porteur
+- **Réviser n'importe quelle compétence** (même déjà testée) : bouton « S'entraîner » sur
+  **chaque** ligne de compétence de la carte (`?competency=<code>`).
+- **Dérouler plus d'exercices sur une compétence** : mode **focus** — quand on s'entraîne sur
+  une compétence précise, « Continuer cette compétence » reste dessus (`?focus=`), reboucle sur
+  ses exercices et reprend quand ils sont épuisés (jamais de blocage).
+- **+10 exercices EM** (production + reconnaissance) → **29 exercices** au total, 2-3 par compétence.
+- « drill » → « exercice » dans toute l'UI (déjà fait).
+
+### Onboarding (tâche parallèle, intégrée)
+- Accueil **B2C** (`catalogue`) : « Bienvenue », promesse, **« Comment ça marche » en 3 étapes**,
+  section « Choisissez un domaine à travailler » (fini le jargon « référentiel »).
+- Page **plateforme** (`/f/[id]`) : encart **« Première fois ici ? »**, section **« Comment
+  s'entraîner ? »** (3 modes Débutant→Confirmé→Autonome), **légende** de la carte.
+
+### Vérif
+- `npm run build` OK. Seed → 29 exercices. Poussé sur Vercel (DB Neon partagée déjà à jour).
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA

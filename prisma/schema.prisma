@@ -42,11 +42,12 @@ model Tenant {
 // --- Identité (spec §3) ---------------------------------------------------
 
 model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  tenantId  String   @map("tenant_id") @db.Uuid
-  email     String   @unique
-  role      String   @default("learner") // 'super_admin' | 'tenant_admin' | 'learner'
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  email        String   @unique
+  role         String   @default("learner") // 'super_admin' | 'tenant_admin' | 'learner'
+  passwordHash String?  @map("password_hash") // mot de passe optionnel (sinon lien magique)
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])
   @@map("users")

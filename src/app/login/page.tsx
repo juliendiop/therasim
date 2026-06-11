@@ -1,16 +1,45 @@
 "use client";
 
 import { useState } from "react";
-import { Brain, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Brain, LogIn, Mail } from "lucide-react";
+
+type Mode = "password" | "magic";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [devLink, setDevLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function submit(e: React.FormEvent) {
+  async function loginPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message ?? data.error ?? "Erreur");
+        return;
+      }
+      router.push(data.redirect ?? "/catalogue");
+    } catch {
+      setError("Connexion impossible.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function sendMagic(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -22,7 +51,7 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Erreur");
+        setError(data.message ?? data.error ?? "Erreur");
         return;
       }
       setSent(true);
@@ -33,6 +62,26 @@ export default function LoginPage() {
       setLoading(false);
     }
   }
+
+  const tab = (m: Mode, label: string) => (
+    <button
+      type="button"
+      onClick={() => {
+        setMode(m);
+        setError(null);
+      }}
+      className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+        mode === m
+          ? "bg-white text-[var(--foreground)] shadow-sm"
+          : "text-[var(--muted)] hover:text-[var(--foreground)]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  const inputCls =
+    "mt-1 w-full rounded-lg border border-[var(--border)] p-2.5 text-sm outline-none focus:border-[var(--accent)]";
 
   return (
     <div className="mx-auto mt-12 max-w-sm animate-in">
@@ -47,29 +96,7 @@ export default function LoginPage() {
       </div>
 
       <div className="card-soft mt-8 p-6">
-        {!sent ? (
-          <form onSubmit={submit}>
-            <label className="text-sm font-medium">Connexion par lien magique</label>
-            <p className="mt-1 text-xs text-[var(--muted)]">
-              Entrez votre email : vous recevrez un lien de connexion (sans mot de passe).
-            </p>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="vous@exemple.fr"
-              className="mt-3 w-full rounded-lg border border-[var(--border)] p-2.5 text-sm outline-none focus:border-[var(--accent)]"
-            />
-            <button
-              disabled={loading}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
-            >
-              <Mail className="h-4 w-4" /> {loading ? "Envoi…" : "Recevoir le lien"}
-            </button>
-            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-          </form>
-        ) : (
+        {sent ? (
           <div className="text-sm">
             <p className="font-medium text-green-700">Lien envoyé ✓</p>
             <p className="mt-1 text-[var(--muted)]">
@@ -88,7 +115,71 @@ export default function LoginPage() {
                 </a>
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => setSent(false)}
+              className="mt-4 text-xs text-[var(--muted)] underline"
+            >
+              ← Revenir
+            </button>
           </div>
+        ) : (
+          <>
+            <div className="mb-4 flex gap-1 rounded-xl bg-gray-100 p-1">
+              {tab("password", "Mot de passe")}
+              {tab("magic", "Lien magique")}
+            </div>
+
+            {mode === "password" ? (
+              <form onSubmit={loginPassword}>
+                <label className="text-xs font-medium">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="vous@exemple.fr"
+                  className={inputCls}
+                />
+                <label className="mt-3 block text-xs font-medium">Mot de passe</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className={inputCls}
+                />
+                <button
+                  disabled={loading}
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                >
+                  <LogIn className="h-4 w-4" /> {loading ? "Connexion…" : "Se connecter"}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={sendMagic}>
+                <p className="text-xs text-[var(--muted)]">
+                  Entrez votre email : vous recevrez un lien de connexion (sans mot de passe).
+                </p>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="vous@exemple.fr"
+                  className={inputCls}
+                />
+                <button
+                  disabled={loading}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                >
+                  <Mail className="h-4 w-4" /> {loading ? "Envoi…" : "Recevoir le lien"}
+                </button>
+              </form>
+            )}
+            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          </>
         )}
       </div>
     </div>

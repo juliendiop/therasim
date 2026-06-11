@@ -8,6 +8,7 @@
  * clinique + calibration de l'évaluateur. Ici on publie EM pour la démo de la tranche.
  */
 import "dotenv/config";
+import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -1172,11 +1173,18 @@ async function main() {
     create: { slug: "public", nom: "TheraSim (site public)", type: "public" },
   });
 
-  // Super-admin (toi) — connectable par lien magique avec cet email.
+  // Super-admin (toi) — lien magique + (si ADMIN_INITIAL_PASSWORD) mot de passe.
+  const adminPw = process.env.ADMIN_INITIAL_PASSWORD;
+  const adminHash = adminPw ? await bcrypt.hash(adminPw, 12) : undefined;
   await prisma.user.upsert({
     where: { email: SUPER_ADMIN_EMAIL },
-    update: { role: "super_admin", tenantId: publicTenant.id },
-    create: { email: SUPER_ADMIN_EMAIL, role: "super_admin", tenantId: publicTenant.id },
+    update: { role: "super_admin", tenantId: publicTenant.id, passwordHash: adminHash },
+    create: {
+      email: SUPER_ADMIN_EMAIL,
+      role: "super_admin",
+      tenantId: publicTenant.id,
+      passwordHash: adminHash,
+    },
   });
 
   // Apprenant de démo (pratique pour tester sans email).
