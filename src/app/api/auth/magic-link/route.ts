@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createMagicToken } from "@/lib/auth";
+import { isEmailConfigured, sendMagicLink } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -32,5 +33,28 @@ export async function POST(req: NextRequest) {
   console.log(`[magic-link] ${email} -> ${link}`);
 
   const isDev = process.env.NODE_ENV !== "production";
+
+  // Envoi par email si Resend est configuré.
+  if (isEmailConfigured()) {
+    try {
+      await sendMagicLink(email, link);
+    } catch (e) {
+      console.error("[magic-link] envoi email échoué", e);
+      if (!isDev) {
+        return NextResponse.json(
+          { error: "envoi_email", message: "L'envoi de l'email a échoué. Réessayez." },
+          { status: 502 },
+        );
+      }
+    }
+  } else if (!isDev) {
+    // En prod sans email configuré : impossible de se connecter.
+    return NextResponse.json(
+      { error: "email_non_configure", message: "L'envoi d'emails n'est pas configuré." },
+      { status: 503 },
+    );
+  }
+
+  // En dev, on renvoie le lien direct (pratique, pas besoin d'email).
   return NextResponse.json({ sent: true, devLink: isDev ? link : undefined });
 }
