@@ -27,7 +27,13 @@ type Feedback = {
   patient_reaction?: string | null;
 };
 
-export default function DrillPlayer({ drill }: { drill: PublicDrill }) {
+export default function DrillPlayer({
+  drill,
+  focusCompetency = null,
+}: {
+  drill: PublicDrill;
+  focusCompetency?: string | null;
+}) {
   const router = useRouter();
   const [selected, setSelected] = useState<number | null>(null);
   const [answer, setAnswer] = useState("");
@@ -205,12 +211,17 @@ export default function DrillPlayer({ drill }: { drill: PublicDrill }) {
               <RotateCcw className="h-4 w-4" /> Rejouer
             </button>
             <button
-              onClick={() =>
-                router.push(`/f/${drill.framework_id}/entrainement?not=${drill.id}`)
-              }
+              onClick={() => {
+                const base = `/f/${drill.framework_id}/entrainement`;
+                const qs = focusCompetency
+                  ? `?competency=${focusCompetency}&not=${drill.id}`
+                  : `?not=${drill.id}`;
+                router.push(base + qs);
+              }}
               className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
             >
-              <Dumbbell className="h-4 w-4" /> Exercice suivant
+              <Dumbbell className="h-4 w-4" />{" "}
+              {focusCompetency ? "Continuer cette compétence" : "Exercice suivant"}
             </button>
             <button
               onClick={() => router.push(`/f/${drill.framework_id}`)}

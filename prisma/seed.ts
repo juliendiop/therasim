@@ -509,6 +509,186 @@ const drills: DrillSeed[] = [
       },
     ],
   },
+  // --- Exercices supplémentaires (variété) ---
+  {
+    id: "DRL-EMP-02",
+    competencyId: "empathie",
+    scenario: "EM-ALC-01",
+    difficulty: 2,
+    mode: "production",
+    rappel:
+      "L'empathie reflète le vécu de la personne sans le juger ni vouloir le réparer trop vite.",
+    stimulus: "Franchement, personne ne comprend à quel point c'est dur de tenir.",
+    reactionSiBon: "Ça fait du bien que quelqu'un l'entende, pour une fois.",
+    modele: "Vous vous sentez seul face à un combat que les autres mesurent mal.",
+  },
+  {
+    id: "DRL-NJ-02",
+    competencyId: "non_jugement",
+    scenario: "EM-ALC-01",
+    difficulty: 2,
+    mode: "production",
+    rappel: "Le non-jugement accueille les choix de la personne et affirme son autonomie.",
+    stimulus: "Je sais ce que vous pensez : que je devrais arrêter complètement.",
+    reactionSiBon: "D'accord… c'est reposant de ne pas se sentir jugé.",
+    modele:
+      "Je ne suis pas là pour décider à votre place ; ce qui compte, c'est ce que vous, vous voulez.",
+  },
+  {
+    id: "DRL-COL-02",
+    competencyId: "collaboration",
+    scenario: "EM-TAB-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel:
+      "Collaborer, c'est demander la permission avant de partager une information ou un conseil.",
+    stimulus: "Vous avez des trucs qui marchent contre l'envie de fumer ?",
+    modele:
+      "Je peux vous partager deux ou trois pistes si vous voulez — vous me direz ce qui vous parle.",
+    options: [
+      {
+        text: "Oui : patchs, gommes, appli de suivi. Commencez par les patchs.",
+        is_best: false,
+        score: 0.3,
+        feedback: "Conseil livré d'emblée, sans demander la permission ni partir du patient.",
+      },
+      {
+        text: "Je peux vous donner quelques pistes, si vous le souhaitez — lesquelles vous tenteraient ?",
+        is_best: true,
+        score: 1,
+        feedback: "Demande la permission et invite le patient à choisir : collaboration.",
+      },
+      {
+        text: "Ça dépend de vous, pas de moi.",
+        is_best: false,
+        score: 0.4,
+        feedback: "Renvoie l'autonomie mais esquive la demande d'aide explicite.",
+      },
+    ],
+  },
+  {
+    id: "DRL-VAL-02",
+    competencyId: "valorisations",
+    scenario: "EM-ALC-01",
+    difficulty: 2,
+    mode: "production",
+    rappel: "Une valorisation souligne une force ou un effort précis et sincère.",
+    stimulus: "Cette semaine, j'ai réussi à ne pas boire deux soirs de suite.",
+    reactionSiBon: "C'est vrai que c'est pas rien, dit comme ça.",
+    modele:
+      "Deux soirs sans boire, c'est une vraie démonstration de votre capacité à tenir quand vous le décidez.",
+  },
+  {
+    id: "DRL-RES-02",
+    competencyId: "resumes",
+    scenario: "EM-ALC-01",
+    difficulty: 2,
+    mode: "production",
+    rappel: "Un résumé relie ce qui a été dit et fait ressortir le discours-changement.",
+    stimulus:
+      "Bon… je décompresse avec l'alcool, mais ma fatigue et l'inquiétude de mes enfants commencent à me peser.",
+    reactionSiBon: "Oui… dit comme ça, ça fait réfléchir.",
+    modele:
+      "Si je résume : l'alcool vous soulage, et en même temps la fatigue et le regard de vos enfants pèsent de plus en plus. Qu'est-ce que vous aimeriez en faire ?",
+  },
+  {
+    id: "DRL-RAR-02",
+    competencyId: "rouler_avec_resistance",
+    scenario: "EM-ALC-01",
+    difficulty: 2,
+    mode: "production",
+    rappel: "Rouler avec la résistance : on accueille l'opposition au lieu d'argumenter contre.",
+    stimulus: "De toute façon, vous allez me dire d'arrêter, comme tout le monde.",
+    reactionSiBon: "Ah… ça change. D'accord, je veux bien en parler alors.",
+    modele:
+      "Pas du tout — c'est vous qui voyez. Mon rôle, c'est de vous aider à y réfléchir, pas de vous dicter quoi faire.",
+  },
+  {
+    id: "DRL-ENG-02",
+    competencyId: "renforcer_engagement",
+    scenario: "EM-TAB-01",
+    difficulty: 2,
+    mode: "production",
+    rappel:
+      "On aide la personne à formuler un premier pas concret et réaliste, qu'elle choisit.",
+    stimulus: "Je crois que je suis prêt à essayer de réduire, mais je sais pas par où commencer.",
+    reactionSiBon: "Ok, ça je peux le faire. Je commence demain.",
+    modele:
+      "Quel serait un tout premier pas, simple et réaliste, que vous pourriez tenter cette semaine ?",
+  },
+  {
+    id: "DRL-REFLET-03",
+    competencyId: "reflets",
+    scenario: "EM-TAB-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel: "Le reflet complexe nomme l'émotion ou le sens sous les mots.",
+    stimulus: "Arrêter, j'y pense, mais à chaque fois je me dégonfle.",
+    modele:
+      "Quelque chose en vous voudrait arrêter, et en même temps la peur de ne pas y arriver vous retient.",
+    options: [
+      {
+        text: "Donc vous n'êtes pas vraiment motivé.",
+        is_best: false,
+        score: 0,
+        feedback: "Jugement qui nie l'ambivalence et démotive.",
+      },
+      {
+        text: "Une partie de vous veut arrêter, et une autre a peur d'échouer.",
+        is_best: true,
+        score: 1,
+        feedback: "Reflet double face : nomme l'ambivalence avec justesse.",
+      },
+      {
+        text: "Il faut juste vous lancer une bonne fois.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Conseil pressant qui ignore le vécu.",
+      },
+    ],
+  },
+  {
+    id: "DRL-QO-03",
+    competencyId: "questions_ouvertes",
+    scenario: "EM-ALC-01",
+    difficulty: 2,
+    mode: "production",
+    rappel: "Une bonne question ouverte explore la motivation propre de la personne.",
+    stimulus: "Mon médecin dit que mon foie va mal. Bon.",
+    reactionSiBon: "Hm… honnêtement, ça m'inquiète un peu pour mes enfants.",
+    modele: "Qu'est-ce que cette nouvelle change pour vous, quand vous y pensez ?",
+  },
+  {
+    id: "DRL-DC-03",
+    competencyId: "evoquer_discours_changement",
+    scenario: "EM-ALC-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel:
+      "On fait verbaliser au patient ses propres raisons et l'importance du changement.",
+    stimulus: "Disons que ça serait peut-être mieux si je levais le pied.",
+    modele: "Qu'est-ce qui serait mieux, pour vous, si vous leviez le pied ?",
+    options: [
+      {
+        text: "Oui, votre santé s'améliorerait nettement.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Vous argumentez à sa place : risque de contre-argumentation.",
+      },
+      {
+        text: "Mieux en quoi, pour vous, concrètement ?",
+        is_best: true,
+        score: 1,
+        feedback: "Fait élaborer le patient sur ses propres raisons.",
+      },
+      {
+        text: "Donc vous reconnaissez le problème.",
+        is_best: false,
+        score: 0.2,
+        feedback: "Étiquette qui peut braquer.",
+      },
+    ],
+  },
 ];
 
 // --- Référentiels supplémentaires (démo) ---------------------------------

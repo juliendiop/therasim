@@ -302,6 +302,30 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
 
 ---
 
+## Session 2 (suite) — 11 juin 2026 — Branding marque blanche + fixes exercices
+
+### Branding (marque blanche)
+- Système de thème : `globals.css` avec `--accent` + nuances dérivées via `color-mix`
+  (`--accent-hover/soft/border`). Sweep des classes `indigo-*` → variables (0 restant).
+- `layout.tsx` injecte la **couleur** (`--accent` sur `<body>`) + **logo** + **nom** du tenant
+  actif (validation hex). Tenant public = branding TheraSim. En-tête sticky/blur + pied de page
+  (« propulsé par TheraSim » pour les marques blanches). Login soignée.
+
+### Fixes exercices (signalés par le porteur)
+- **« Exercice suivant » qui ne faisait rien** : 2 causes corrigées —
+  (1) le lecteur ne se réinitialisait pas entre exercices → `key={id}` sur `DrillPlayer` ;
+  (2) le routage reproposait souvent le même exercice → `getNextDrill` prend un `excludeDrillId`
+  (passé via `?not=`), évite l'exercice courant, et **ne bloque jamais** (fallback sans exclusion).
+- **Variété** améliorée (rotation entre compétences/exercices).
+- **Francisation** : « drill » → « exercice » dans l'UI (le code garde `drill`).
+
+### À savoir / suite
+- Branding **visuel** appliqué (couleur + logo + nom). Sous-domaine dédié par client = encore backlog.
+- Contenu : 13 exercices EM ; le porteur peut en **créer d'autres via l'admin de contenu**.
+- `npm run build` OK. Poussé sur Vercel.
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA

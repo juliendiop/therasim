@@ -9,10 +9,13 @@ export const dynamic = "force-dynamic";
 
 export default async function DrillPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ focus?: string }>;
 }) {
   const { id } = await params;
+  const { focus } = await searchParams;
   const user = await requireUser();
   const drill = await prisma.drill.findUnique({ where: { id } });
   if (!drill) notFound();
@@ -21,5 +24,5 @@ export default async function DrillPage({
 
   // key={id} : force la réinitialisation du lecteur quand on passe à l'exercice suivant.
   // On ne passe au client QUE la vue publique (aucun corrigé).
-  return <DrillPlayer key={id} drill={publicDrill(drill)} />;
+  return <DrillPlayer key={id} drill={publicDrill(drill)} focusCompetency={focus ?? null} />;
 }

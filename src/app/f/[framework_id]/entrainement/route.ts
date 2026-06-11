@@ -20,8 +20,10 @@ export async function GET(
     return NextResponse.redirect(new URL("/catalogue", req.nextUrl.origin));
 
   const result = await getNextDrill(user.id, framework_id, competency, exclude);
+  // Si on s'entraîne sur une compétence précise, on garde le "focus" pour rester dessus.
+  const suffix = competency ? `?focus=${competency}` : "";
   const url = result.drillId
-    ? new URL(`/drills/${result.drillId}`, req.nextUrl.origin)
+    ? new URL(`/drills/${result.drillId}${suffix}`, req.nextUrl.origin)
     : new URL(`/f/${framework_id}?vide=1`, req.nextUrl.origin);
 
   return NextResponse.redirect(url);

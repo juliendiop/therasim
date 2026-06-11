@@ -34,33 +34,15 @@ export default async function FrameworkPage({
       </Link>
 
       {/* En-tête */}
-      <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]">
-            {TYPE_LABEL[framework.type] ?? framework.type}
-          </span>
-          <h1 className="mt-2 text-2xl font-semibold">{framework.nom}</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <form action={startMiniSceneAction}>
-            <input type="hidden" name="frameworkId" value={framework.id} />
-            <button className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium hover:border-[var(--accent)] hover:text-[var(--accent)]">
-              <Layers className="h-4 w-4" /> Mini-scène guidée
-            </button>
-          </form>
-          <Link
-            href={`/f/${framework.id}/simulation`}
-            className="inline-flex items-center gap-2 rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
-          >
-            <MessagesSquare className="h-4 w-4" /> Entretien simulé
-          </Link>
-          <Link
-            href={`/f/${framework.id}/entrainement`}
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
-          >
-            <Dumbbell className="h-4 w-4" /> S&apos;entraîner
-          </Link>
-        </div>
+      <div className="mt-3">
+        <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]">
+          {TYPE_LABEL[framework.type] ?? framework.type}
+        </span>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{framework.nom}</h1>
+        <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">
+          Choisissez une façon de vous entraîner ci-dessous. Chaque essai met à jour votre
+          carte de progression, plus bas.
+        </p>
       </div>
 
       {/* Bandeau de stats */}
@@ -72,6 +54,74 @@ export default async function FrameworkPage({
         />
         <Stat label="Niveau" value={overall.niveau} />
       </div>
+
+      {/* Première fois : guider le premier pas */}
+      {overall.competencesCouvertes === 0 && (
+        <div className="mt-6 flex flex-col items-start gap-3 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-5 sm:flex-row sm:items-center">
+          <div className="flex-1">
+            <h2 className="font-semibold">Première fois ici ?</h2>
+            <p className="mt-0.5 text-sm text-[var(--muted)]">
+              Commencez par un exercice — on choisit automatiquement le bon pour vous.
+            </p>
+          </div>
+          <Link
+            href={`/f/${framework.id}/entrainement`}
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
+          >
+            <Dumbbell className="h-4 w-4" /> Commencer
+          </Link>
+        </div>
+      )}
+
+      {/* Comment s'entraîner : les 3 modes, du guidé à l'autonome */}
+      <section className="mt-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+          Comment s&apos;entraîner&nbsp;?
+        </h2>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <ModeCard
+            niveau="Débutant"
+            titre="Exercices"
+            desc="Une compétence à la fois, avec un feedback immédiat. Idéal pour débuter ou réviser."
+            icon={<Dumbbell className="h-4 w-4" />}
+          >
+            <Link
+              href={`/f/${framework.id}/entrainement`}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
+            >
+              S&apos;entraîner
+            </Link>
+          </ModeCard>
+
+          <ModeCard
+            niveau="Confirmé"
+            titre="Mini-scène guidée"
+            desc="Un court échange de quelques tours avec un patient, sur 2 compétences. Le pont vers la vraie pratique."
+            icon={<Layers className="h-4 w-4" />}
+          >
+            <form action={startMiniSceneAction}>
+              <input type="hidden" name="frameworkId" value={framework.id} />
+              <button className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]">
+                Lancer une mini-scène
+              </button>
+            </form>
+          </ModeCard>
+
+          <ModeCard
+            niveau="Autonome"
+            titre="Entretien simulé"
+            desc="Un entretien complet, sans filet, débriefé à la fin. Pour éprouver votre autonomie."
+            icon={<MessagesSquare className="h-4 w-4" />}
+          >
+            <Link
+              href={`/f/${framework.id}/simulation`}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+            >
+              Démarrer un entretien
+            </Link>
+          </ModeCard>
+        </div>
+      </section>
 
       {/* À travailler en priorité */}
       {priorites.length > 0 && (
@@ -101,8 +151,18 @@ export default async function FrameworkPage({
         </section>
       )}
 
+      {/* Légende de la carte de progression */}
+      <div className="mt-8 flex items-baseline justify-between gap-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+          Vos compétences
+        </h2>
+        <p className="text-xs text-[var(--muted)]">
+          Barre = niveau de maîtrise · points = à quel point c&apos;est pratiqué
+        </p>
+      </div>
+
       {/* Carte par catégorie */}
-      <section className="mt-8 space-y-6">
+      <section className="mt-3 space-y-6">
         {categories.map((cat) => (
           <div key={cat.code}>
             <h3 className="text-sm font-semibold">{cat.nom}</h3>
@@ -149,9 +209,17 @@ export default async function FrameworkPage({
                         />
                       ))}
                     </div>
-                    <div className="w-12 shrink-0 text-right text-sm font-semibold">
+                    <div className="w-10 shrink-0 text-right text-sm font-semibold">
                       {pct(c.mastery)}
                     </div>
+                    <Link
+                      href={`/f/${framework.id}/entrainement?competency=${c.id}`}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                      title={`S'entraîner sur « ${c.nom} »`}
+                    >
+                      <Dumbbell className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">S&apos;entraîner</span>
+                    </Link>
                   </div>
                 );
               })}
@@ -168,6 +236,34 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-xl font-semibold">{value}</div>
       <div className="text-xs text-[var(--muted)]">{label}</div>
+    </div>
+  );
+}
+
+function ModeCard({
+  niveau,
+  titre,
+  desc,
+  icon,
+  children,
+}: {
+  niveau: string;
+  titre: string;
+  desc: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col rounded-xl border border-[var(--border)] bg-white p-4">
+      <span className="self-start rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--accent)]">
+        {niveau}
+      </span>
+      <div className="mt-2 flex items-center gap-2 font-semibold text-[var(--accent)]">
+        {icon}
+        <span className="text-[var(--foreground)]">{titre}</span>
+      </div>
+      <p className="mt-1 flex-1 text-xs text-[var(--muted)]">{desc}</p>
+      <div className="mt-3 grid">{children}</div>
     </div>
   );
 }

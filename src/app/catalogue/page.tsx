@@ -14,19 +14,27 @@ export default async function CataloguePage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Référentiels</h1>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Choisissez un référentiel pour voir votre carte de progression et vous entraîner.
-        Chaque référentiel a son propre profil — ils ne se mélangent jamais.
+      <h1 className="text-2xl font-semibold tracking-tight">Bienvenue 👋</h1>
+      <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">
+        Entraînez-vous à la pratique clinique sur des cas réalistes — du feedback immédiat
+        jusqu&apos;à l&apos;entretien complet — et suivez vos progrès, compétence par compétence.
       </p>
 
+      {/* Comment ça marche */}
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <Step n="1" titre="Choisissez un domaine" desc="Une approche ou une compétence clinique à travailler." />
+        <Step n="2" titre="Entraînez-vous" desc="Du guidé à l'autonome, à votre rythme." />
+        <Step n="3" titre="Visualisez vos progrès" desc="Vos forces et vos lacunes, mises à jour en temps réel." />
+      </div>
+
+      <h2 className="mt-8 text-lg font-semibold">Choisissez un domaine à travailler</h2>
+
       {frameworks.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-dashed border-[var(--border)] bg-white p-8 text-center text-sm text-[var(--muted)]">
-          Aucun référentiel publié. Lancez le seed (<code>npm run db:seed</code>) pour
-          charger l&apos;entretien motivationnel (EM).
+        <div className="mt-3 rounded-lg border border-dashed border-[var(--border)] bg-white p-8 text-center text-sm text-[var(--muted)]">
+          Aucun domaine n&apos;est encore disponible sur votre espace. Revenez bientôt !
         </div>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
           {frameworks.map((f) => (
             <Link
               key={f.id}
@@ -66,6 +74,20 @@ export default async function CataloguePage() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function Step({ n, titre, desc }: { n: string; titre: string; desc: string }) {
+  return (
+    <div className="flex gap-3 rounded-xl border border-[var(--border)] bg-white p-4">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-sm font-semibold text-[var(--accent)]">
+        {n}
+      </span>
+      <div>
+        <div className="text-sm font-semibold">{titre}</div>
+        <div className="mt-0.5 text-xs text-[var(--muted)]">{desc}</div>
+      </div>
     </div>
   );
 }
