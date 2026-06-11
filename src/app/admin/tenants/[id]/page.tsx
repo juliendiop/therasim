@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Check } from "lucide-react";
+import { Check, Eye } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { effectiveFrameworkIds } from "@/lib/entitlements";
 import {
@@ -7,6 +7,7 @@ import {
   toggleTenantPack,
   updateBranding,
 } from "../../actions";
+import { impersonateTenant } from "../../impersonate-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -35,12 +36,20 @@ export default async function TenantDetail({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-lg font-semibold">{tenant.nom}</h2>
-        <p className="text-xs text-[var(--muted)]">
-          /{tenant.slug} · {tenant.type === "public" ? "public (B2C)" : "marque blanche"} ·{" "}
-          {users} utilisateur(s) · {attempts} essai(s)
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">{tenant.nom}</h2>
+          <p className="text-xs text-[var(--muted)]">
+            /{tenant.slug} · {tenant.type === "public" ? "public (B2C)" : "marque blanche"} ·{" "}
+            {users} utilisateur(s) · {attempts} essai(s)
+          </p>
+        </div>
+        <form action={impersonateTenant}>
+          <input type="hidden" name="tenantId" value={id} />
+          <button className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+            <Eye className="h-4 w-4" /> Accéder à la plateforme
+          </button>
+        </form>
       </div>
 
       {/* Packs accordés */}

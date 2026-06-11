@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Eye } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { createTenant } from "../actions";
+import { impersonateTenant } from "../impersonate-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -22,12 +23,8 @@ export default async function TenantsPage() {
         </h2>
         <div className="mt-3 divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] bg-white">
           {tenants.map((t) => (
-            <Link
-              key={t.id}
-              href={`/admin/tenants/${t.id}`}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50"
-            >
-              <div className="min-w-0 flex-1">
+            <div key={t.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
+              <Link href={`/admin/tenants/${t.id}`} className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{t.nom}</span>
                   <Badge>{t.type === "public" ? "public (B2C)" : "marque blanche"}</Badge>
@@ -36,9 +33,20 @@ export default async function TenantsPage() {
                 <div className="text-xs text-[var(--muted)]">
                   /{t.slug} · {countByTenant.get(t.id) ?? 0} utilisateur(s)
                 </div>
-              </div>
-              <ArrowRight className="h-4 w-4 text-[var(--muted)]" />
-            </Link>
+              </Link>
+              <form action={impersonateTenant}>
+                <input type="hidden" name="tenantId" value={t.id} />
+                <button
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-indigo-50"
+                  title="Accéder à la plateforme de ce client"
+                >
+                  <Eye className="h-3.5 w-3.5" /> Accéder
+                </button>
+              </form>
+              <Link href={`/admin/tenants/${t.id}`}>
+                <ArrowRight className="h-4 w-4 text-[var(--muted)]" />
+              </Link>
+            </div>
           ))}
         </div>
       </div>

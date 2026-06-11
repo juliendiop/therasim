@@ -14,7 +14,23 @@ const SESSION_TTL = "30d";
 const TOKEN_TTL_MIN = 15; // durée de vie d'un lien magique
 
 export type Role = "super_admin" | "tenant_admin" | "learner";
-export type SessionPayload = { userId: string; tenantId: string; role: Role };
+// `tenantId` = tenant ACTIF (= tenant de l'utilisateur, ou tenant impersonné par le super-admin).
+// `imp` = true quand le super-admin accède à la plateforme d'un client.
+export type SessionPayload = {
+  userId: string;
+  tenantId: string;
+  role: Role;
+  imp?: boolean;
+};
+
+// Identité applicative : tenantId est le tenant ACTIF (issu de la session).
+export type CurrentUser = {
+  id: string;
+  email: string;
+  role: Role;
+  tenantId: string;
+  impersonating: boolean;
+};
 
 function secret() {
   const s = process.env.AUTH_SECRET;
@@ -23,7 +39,7 @@ function secret() {
 }
 
 export async function createSessionToken(p: SessionPayload): Promise<string> {
-  return new SignJWT({ tenantId: p.tenantId, role: p.role })
+  return new SignJWT({ tenantId: p.tenantId, role: p.role, imp: p.imp ?? false })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(p.userId)
     .setIssuedAt()
@@ -54,18 +70,30 @@ export async function getSession(): Promise<SessionPayload | null> {
       userId: String(payload.sub),
       tenantId: String(payload.tenantId),
       role: payload.role as Role,
+      imp: Boolean(payload.imp),
     };
   } catch {
     return null;
   }
 }
 
-/** Pour les Server Components : renvoie l'utilisateur ou null. */
-export async function getSessionUser() {
+/**
+ * Identité applicative. `tenantId` est le tenant ACTIF (issu de la session) :
+ * pour un utilisateur normal = son tenant ; pour un super-admin en impersonation
+ * = le tenant du client consulté.
+ */
+export async function getSessionUser(): Promise<CurrentUser | null> {
   const s = await getSession();
   if (!s) return null;
   const user = await prisma.user.findUnique({ where: { id: s.userId } });
-  return user;
+  if (!user) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    role: s.role,
+    tenantId: s.tenantId,
+    impersonating: Boolean(s.imp),
+  };
 }
 
 /** Pour les Server Components : redirige vers /login si non connecté. */

@@ -251,6 +251,57 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
 
 ---
 
+## Session 2 (suite) — 11 juin 2026 — Déploiement Vercel + email Resend
+
+### Ce qui a été fait
+- **Dépôt GitHub** créé et poussé : https://github.com/juliendiop/therasim (branche `main`).
+- **Déploiement Vercel** : 1er build échouait (« No Output Directory public ») → ajout de
+  `vercel.json` (`framework: nextjs`) → OK. Base Neon + Mistral fonctionnent en prod.
+- **Email réel des liens magiques (Resend)** : `src/lib/email.ts` + branchement dans
+  `/api/auth/magic-link` (email si `RESEND_API_KEY`, sinon lien à l'écran en dev). Clé installée,
+  **test d'envoi réel OK (status 200)**.
+
+### Pièges / à savoir
+- **Resend domaine de test** (`onboarding@resend.dev`) : n'envoie qu'à l'email du **compte
+  Resend** (julien.diop@gmail.com). Pour que d'autres utilisateurs reçoivent le lien → **vérifier
+  un domaine** dans Resend et régler `EMAIL_FROM`.
+- **Vercel** : ajouter `RESEND_API_KEY` + `EMAIL_FROM` dans les variables d'env, puis redéployer,
+  pour que la connexion fonctionne sur le site en ligne.
+- Commits via Bash : utiliser des `-m` simples (la syntaxe here-string PowerShell `@'...'@` casse).
+
+### État
+- App **en ligne sur Vercel** ; connexion en prod opérationnelle une fois les variables Resend
+  ajoutées côté Vercel (limitée à l'email du compte Resend tant qu'aucun domaine n'est vérifié).
+
+### Prochaine étape suggérée
+- Ajouter les variables Resend sur Vercel + redéployer ; tester la connexion en ligne.
+- Plus tard : vérifier un domaine d'envoi ; espace admin tenant ; calibration évaluateurs.
+
+---
+
+## Session 2 (suite) — 11 juin 2026 — Accès super-admin aux plateformes (impersonation)
+
+### Ce qui a été fait
+- Le **tenant actif** vient désormais de la **session** (token), plus du tenant DB de l'user.
+  `getSessionUser` renvoie un `CurrentUser { id, email, role, tenantId(actif), impersonating }`.
+- **Impersonation super-admin** : bouton **« Accéder à la plateforme »** sur chaque client
+  (liste + fiche `/admin/tenants`). Pose une session scopée au tenant (rôle super_admin + `imp`),
+  redirige vers `/catalogue` → on voit la plateforme du client (ses référentiels via ses droits).
+- **Bandeau** orange global « Vous consultez la plateforme : X — **Quitter** » (revient à sa
+  session d'origine). Fichiers : `src/lib/auth.ts`, `src/app/admin/impersonate-actions.ts`,
+  `layout.tsx`, pages tenants.
+
+### À savoir
+- L'app étant mono-domaine pour l'instant, « accéder » = scoper l'app au tenant (pas encore de
+  sous-domaine/branding visuel appliqué côté apprenant — backlog).
+- `npm run build` OK.
+
+### Prochaine étape suggérée
+- Tester l'accès depuis l'admin (créer un client B2B, lui accorder un pack, « Accéder »).
+- Puis : application du branding (logo/couleurs), espace admin tenant, vérif domaine Resend.
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA
