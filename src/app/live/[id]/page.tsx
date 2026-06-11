@@ -2,10 +2,11 @@ import type { CSSProperties } from "react";
 import { cookies } from "next/headers";
 import { Brain } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { isLiveOpen } from "@/lib/live";
+import { canJoin } from "@/lib/live";
 import { publicDrill } from "@/lib/drill-view";
 import { joinLive } from "./actions";
 import LivePlayer from "./live-player";
+import Lobby from "./lobby";
 
 export const dynamic = "force-dynamic";
 
@@ -55,13 +56,13 @@ export default async function LivePage({
       <Shell>
         <Msg
           titre={session.titre}
-          texte="La session n'a pas encore démarré. Patientez : le formateur va la lancer."
+          texte="La session n'est pas encore ouverte. Patientez : le formateur va l'ouvrir."
         />
       </Shell>
     );
   }
 
-  if (!isLiveOpen(session)) {
+  if (session.statut === "fermee") {
     return (
       <Shell>
         <Msg titre={session.titre} texte="Session terminée. Merci de votre participation !" />
@@ -69,13 +70,13 @@ export default async function LivePage({
     );
   }
 
-  // Session ouverte : participant déjà inscrit ?
+  // Session ouverte (sas) ou en cours : participant déjà inscrit ?
   const participantId = (await cookies()).get(`lp_${id}`)?.value;
   const participant = participantId
     ? await prisma.liveParticipant.findUnique({ where: { id: participantId } })
     : null;
 
-  if (!participant || participant.sessionId !== id) {
+  if ((!participant || participant.sessionId !== id) && canJoin(session)) {
     // Formulaire pour rejoindre.
     return (
       <Shell>
@@ -109,7 +110,24 @@ export default async function LivePage({
     );
   }
 
-  // Inscrit : on charge les questions (mêmes pour tous) + ses réponses déjà données.
+  if (!participant) {
+    return (
+      <Shell>
+        <Msg titre={session.titre} texte="Rechargez la page pour rejoindre la session." />
+      </Shell>
+    );
+  }
+
+  // Inscrit mais le chrono n'est pas encore lancé -> sas d'attente.
+  if (session.statut === "ouverte") {
+    return (
+      <Shell>
+        <Lobby sessionId={id} prenom={participant.prenom} titre={session.titre} />
+      </Shell>
+    );
+  }
+
+  // En cours : on charge les questions (mêmes pour tous) + ses réponses déjà données.
   const drillIds = session.drillIds as string[];
   const drills = await prisma.drill.findMany({ where: { id: { in: drillIds } } });
   const byId = new Map(drills.map((d) => [d.id, d]));

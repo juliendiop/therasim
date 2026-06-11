@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { isLiveOpen } from "@/lib/live";
+import { isRunning } from "@/lib/live";
 import { parseOptions } from "@/lib/drill-view";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export async function POST(
 
   const session = await prisma.liveSession.findUnique({ where: { id } });
   if (!session) return NextResponse.json({ error: "introuvable" }, { status: 404 });
-  if (!isLiveOpen(session)) {
+  if (!isRunning(session)) {
     return NextResponse.json({ error: "temps_ecoule" }, { status: 403 });
   }
 
@@ -46,6 +46,7 @@ export async function POST(
         sessionId: id,
         participantId,
         drillId,
+        frameworkId: drill.frameworkId,
         competencyId: drill.competencyId,
         optionIndex: idx,
         score: chosen.score,

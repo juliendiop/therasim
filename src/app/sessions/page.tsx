@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowRight, Radio } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { roleCanManageLive } from "@/lib/live";
+import { getSessionPairs, roleCanManageLive } from "@/lib/live";
 import { effectiveFrameworkIds } from "@/lib/entitlements";
 import CreateSessionForm from "./create-form";
 
@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
 
 const STATUT: Record<string, { label: string; cls: string }> = {
   brouillon: { label: "brouillon", cls: "bg-gray-100 text-gray-600" },
-  ouverte: { label: "ouverte", cls: "bg-green-50 text-green-700" },
+  ouverte: { label: "ouverte", cls: "bg-amber-50 text-amber-700" },
+  en_cours: { label: "en cours", cls: "bg-green-50 text-green-700" },
   fermee: { label: "fermée", cls: "bg-gray-100 text-gray-500" },
 };
 
@@ -71,6 +72,11 @@ export default async function SessionsPage() {
           <div className="mt-3 divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] bg-white">
             {sessions.map((s) => {
               const st = STATUT[s.statut] ?? STATUT.brouillon;
+              const ps = getSessionPairs(s);
+              const fwLabel =
+                Array.from(new Set(ps.map((p) => p.frameworkId)))
+                  .map((f) => fwNom.get(f) ?? f)
+                  .join(", ") || "—";
               return (
                 <Link
                   key={s.id}
@@ -85,8 +91,7 @@ export default async function SessionsPage() {
                       </span>
                     </div>
                     <div className="text-xs text-[var(--muted)]">
-                      {fwNom.get(s.frameworkId) ?? s.frameworkId} ·{" "}
-                      {(s.competencies as string[]).length} compétence(s) ·{" "}
+                      {fwLabel} · {ps.length} compétence(s) ·{" "}
                       {s.mode === "apprentissage" ? "apprentissage" : "évaluation"} · {s.durationMin} min
                     </div>
                   </div>

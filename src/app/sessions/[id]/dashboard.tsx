@@ -50,9 +50,9 @@ export default function LiveDashboard({
     };
   }, [sessionId]);
 
-  // Compte à rebours.
+  // Compte à rebours (uniquement quand le chrono tourne).
   useEffect(() => {
-    if (!data.closesAt || data.statut !== "ouverte") {
+    if (!data.closesAt || data.statut !== "en_cours") {
       setRemaining(null);
       return;
     }
@@ -111,20 +111,22 @@ export default function LiveDashboard({
         <Stat
           icon={<Clock className="h-4 w-4" />}
           value={
-            data.statut === "ouverte" && remaining != null
+            data.statut === "en_cours" && remaining != null
               ? mmss(remaining)
               : data.statut === "fermee"
                 ? "terminée"
-                : "—"
+                : data.statut === "ouverte"
+                  ? "non démarré"
+                  : "—"
           }
           label="temps restant"
         />
       </div>
 
-      {/* Synthèse par module (catégorie) */}
+      {/* Synthèse par catégorie du référentiel */}
       {r && r.parModule.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold">Synthèse par module</h3>
+          <h3 className="text-sm font-semibold">Synthèse par catégorie</h3>
           <div className="mt-2 grid gap-3 sm:grid-cols-2">
             {r.parModule.map((m) => (
               <div
@@ -156,7 +158,7 @@ export default function LiveDashboard({
         <div className="mt-2 space-y-2 rounded-xl border border-[var(--border)] bg-white p-4">
           {r && r.parCompetence.length > 0 ? (
             r.parCompetence.map((c) => (
-              <div key={c.competencyId} className="flex items-center gap-3">
+              <div key={c.key} className="flex items-center gap-3">
                 <div className="w-40 shrink-0 truncate text-sm">{c.nom}</div>
                 <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-100">
                   <div

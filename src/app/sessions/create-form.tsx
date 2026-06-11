@@ -79,7 +79,7 @@ export default function CreateSessionForm({
       </div>
 
       <div>
-        <label className="text-xs font-medium">Compétences testées (modules)</label>
+        <label className="text-xs font-medium">Compétences testées</label>
         <div className="mt-2 space-y-3">
           {cats.map((cat) => (
             <div key={cat}>

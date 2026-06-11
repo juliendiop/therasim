@@ -395,6 +395,30 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
 
 ---
 
+## Session 2 (suite) — 11 juin 2026 — Formations/modules multi-réf + sas d'attente
+
+### Formations & modules
+- `Formation` (programme) + `FormationModule` (`items` = [{frameworkId, competencies[]}]) :
+  **un module couvre PLUSIEURS référentiels**, chacun avec ses compétences. UI `/formations`.
+- Lancer une session **par module** (sa propre durée) **ou pour toute la formation** (agrégation
+  de tous les modules). Actions `createSessionFromModule` / `createSessionFromFormation`.
+
+### Sessions live — moteur multi-référentiel
+- `LiveSession.pairs` = [{frameworkId, code}] (multi-réf). `LiveAnswer.frameworkId` ajouté.
+  `buildQuestionSet`/`getLiveResults` gèrent plusieurs référentiels (identité = framework+code).
+  Résultats par compétence ET par catégorie, à travers les référentiels.
+
+### Cycle de vie (sas d'attente)
+- **brouillon → ouverte (sas) → en_cours (chrono) → fermee.** Le compte à rebours **ne démarre
+  plus à l'ouverture** : étape séparée **« Démarrer le compte à rebours »** (durée ajustable juste
+  avant). Côté participant : **sas d'attente** qui se lance tout seul quand le formateur déclenche
+  (poll `/api/live/[id]/status`).
+
+### Vérif
+- `npm run build` OK. Smoke multi-réf : create→open→start→answers→results OK (4 comp / 3 modules).
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA

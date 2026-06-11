@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { isLiveOpen } from "@/lib/live";
+import { canJoin } from "@/lib/live";
 
 // Rejoindre une session live (participant anonyme : prénom + nom).
 export async function joinLive(formData: FormData) {
@@ -13,7 +13,7 @@ export async function joinLive(formData: FormData) {
   if (!prenom || !nom) redirect(`/live/${id}?erreur=nom`);
 
   const session = await prisma.liveSession.findUnique({ where: { id } });
-  if (!session || !isLiveOpen(session)) redirect(`/live/${id}`);
+  if (!session || !canJoin(session)) redirect(`/live/${id}`);
 
   const participant = await prisma.liveParticipant.create({
     data: { sessionId: id, prenom, nom },

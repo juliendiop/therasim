@@ -234,6 +234,34 @@ model SimMessage {
   @@map("sim_messages")
 }
 
+// --- Formations & modules (structure pédagogique du formateur) ------------
+
+// Une formation = un programme, composé de modules.
+model Formation {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  createdBy   String   @map("created_by") @db.Uuid
+  titre       String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("formations")
+}
+
+// Un module couvre un ou plusieurs référentiels, chacun avec ses compétences.
+// items = [{ frameworkId, competencies: [codes] }]
+model FormationModule {
+  id          String @id @default(uuid()) @db.Uuid
+  formationId String @map("formation_id") @db.Uuid
+  nom         String
+  items       Json
+  ordre       Int    @default(0)
+
+  @@index([formationId])
+  @@map("formation_modules")
+}
+
 // --- Sessions live (évaluation animée par un formateur) -------------------
 
 model LiveSession {
@@ -241,13 +269,16 @@ model LiveSession {
   tenantId     String    @map("tenant_id") @db.Uuid
   createdBy    String    @map("created_by") @db.Uuid
   titre        String
-  frameworkId  String    @map("framework_id")
-  competencies Json // codes des compétences testées
+  pairs        Json? // [{ frameworkId, code }] : compétences testées (multi-référentiel)
+  frameworkId  String?   @map("framework_id") // legacy / référentiel principal (affichage)
+  competencies Json? // legacy : codes des compétences
   drillIds     Json // snapshot des exercices (identiques pour tous les participants)
   mode         String // 'apprentissage' | 'evaluation'
   durationMin  Int       @map("duration_min")
-  statut       String    @default("brouillon") // 'brouillon' | 'ouverte' | 'fermee'
+  // cycle de vie : brouillon -> ouverte (sas d'attente) -> en_cours (chrono) -> fermee
+  statut       String    @default("brouillon")
   opensAt      DateTime? @map("opens_at")
+  startedAt    DateTime? @map("started_at")
   closesAt     DateTime? @map("closes_at")
   createdAt    DateTime  @default(now()) @map("created_at")
 
@@ -272,6 +303,7 @@ model LiveAnswer {
   sessionId     String   @map("session_id") @db.Uuid
   participantId String   @map("participant_id") @db.Uuid
   drillId       String   @map("drill_id")
+  frameworkId   String?  @map("framework_id")
   competencyId  String   @map("competency_id")
   optionIndex   Int      @map("option_index")
   score         Float

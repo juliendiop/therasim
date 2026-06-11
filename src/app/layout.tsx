@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Brain, Eye, Radio, ShieldCheck, Users } from "lucide-react";
+import { Brain, Eye, GraduationCap, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { canManageLive } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
@@ -82,6 +82,14 @@ export default async function RootLayout({
                     className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"
                   >
                     <Users className="h-4 w-4" /> Gestion
+                  </Link>
+                )}
+                {canManageLive(user.role) && (
+                  <Link
+                    href="/formations"
+                    className="hidden items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)] sm:inline-flex"
+                  >
+                    <GraduationCap className="h-4 w-4" /> Formations
                   </Link>
                 )}
                 {canManageLive(user.role) && (
