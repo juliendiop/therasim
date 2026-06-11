@@ -112,9 +112,13 @@ export async function requireSuperAdmin() {
 
 // --- Liens magiques --------------------------------------------------------
 
-export async function createMagicToken(email: string, tenantId: string) {
+export async function createMagicToken(
+  email: string,
+  tenantId: string,
+  ttlMinutes: number = TOKEN_TTL_MIN,
+) {
   const token = randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + TOKEN_TTL_MIN * 60 * 1000);
+  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
   await prisma.authToken.create({ data: { token, email, tenantId, expiresAt } });
   return token;
 }

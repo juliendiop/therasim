@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { requireUser, type Role } from "@/lib/auth";
-import { ASSIGNABLE_ROLES, canManageMembers } from "@/lib/roles";
+import { createMagicToken, requireUser, type Role } from "@/lib/auth";
+import { isEmailConfigured, sendInvitation } from "@/lib/email";
+import { ASSIGNABLE_ROLES, ROLE_LABELS, canManageMembers } from "@/lib/roles";
 
 async function requireManager() {
   const user = await requireUser();
@@ -16,19 +18,59 @@ function isAssignable(role: string): role is Role {
   return ASSIGNABLE_ROLES.some((r) => r.value === role);
 }
 
-export async function createMember(formData: FormData) {
+export type MemberResult = {
+  ok: boolean;
+  message: string;
+  inviteLink?: string;
+  emailSent?: boolean;
+};
+
+export async function createMember(
+  _prev: MemberResult | null,
+  formData: FormData,
+): Promise<MemberResult> {
   const manager = await requireManager();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const role = String(formData.get("role") ?? "learner");
-  if (!email.includes("@") || !isAssignable(role)) redirect("/gestion?erreur=invalide");
+  const role = String(formData.get("role") ?? "learner") as Role;
+  if (!email.includes("@") || !isAssignable(role)) {
+    return { ok: false, message: "Email ou rôle invalide." };
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) redirect("/gestion?erreur=existe");
+  if (existing) return { ok: false, message: "Cet email a déjà un compte." };
 
-  await prisma.user.create({
-    data: { email, role, tenantId: manager.tenantId },
-  });
+  await prisma.user.create({ data: { email, role, tenantId: manager.tenantId } });
+
+  // Lien d'invitation longue durée (7 jours) qui connecte directement.
+  const token = await createMagicToken(email, manager.tenantId, 60 * 24 * 7);
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const proto = host.includes("localhost") ? "http" : "https";
+  const base = process.env.APP_BASE_URL || `${proto}://${host}`;
+  const inviteLink = `${base}/api/auth/callback?token=${token}`;
+
+  const tenant = await prisma.tenant.findUnique({ where: { id: manager.tenantId } });
+  const brandName = tenant?.brandName || tenant?.nom || "TheraSim";
+
+  let emailSent = false;
+  if (isEmailConfigured()) {
+    try {
+      await sendInvitation(email, inviteLink, brandName, ROLE_LABELS[role]);
+      emailSent = true;
+    } catch (e) {
+      console.error("[invitation] échec envoi", e);
+    }
+  }
+
   revalidatePath("/gestion");
+  return {
+    ok: true,
+    message: emailSent
+      ? `Invitation envoyée à ${email}.`
+      : `Membre ajouté. Partagez-lui le lien d'invitation ci-dessous.`,
+    inviteLink,
+    emailSent,
+  };
 }
 
 export async function updateMemberRole(formData: FormData) {

@@ -3,7 +3,8 @@ import { Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { ASSIGNABLE_ROLES, ROLE_LABELS, canManageMembers } from "@/lib/roles";
-import { createMember, removeMember, updateMemberRole } from "./actions";
+import { removeMember, updateMemberRole } from "./actions";
+import AddMemberForm from "./add-member-form";
 
 export const dynamic = "force-dynamic";
 
@@ -34,38 +35,9 @@ export default async function GestionPage() {
       <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
         Ajouter un membre
       </h2>
-      <form
-        action={createMember}
-        className="mt-3 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--border)] bg-white p-4"
-      >
-        <div className="flex-1">
-          <label className="text-xs font-medium">Email</label>
-          <input
-            name="email"
-            type="email"
-            required
-            placeholder="personne@exemple.fr"
-            className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-medium">Rôle</label>
-          <select
-            name="role"
-            defaultValue="formateur"
-            className="mt-1 rounded-lg border border-[var(--border)] p-2 text-sm"
-          >
-            {ASSIGNABLE_ROLES.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
-          Ajouter
-        </button>
-      </form>
+      <div className="mt-3">
+        <AddMemberForm />
+      </div>
 
       {/* Liste des membres */}
       <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
