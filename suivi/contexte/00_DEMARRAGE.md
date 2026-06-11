@@ -19,6 +19,9 @@ Trois niveaux (continuum guidé → autonome) :
 Au-dessus : la **carte de progression** par référentiel, qui visualise la maîtrise et **route**
 vers ce qu'il faut travailler.
 
+**Dépôt Git** : https://github.com/juliendiop/therasim (branche `main`).
+**Base de données** : Neon (PostgreSQL cloud, région eu-west-2) — déjà en ligne.
+
 > **Spécification de référence** : `Conception/spec-v2-entrainement-progression (1).md`.
 > Cette spec étend un MVP « simulateur d'entretien » (deux LLM patient + évaluateur) qui
 > reste à construire pour le N3.
