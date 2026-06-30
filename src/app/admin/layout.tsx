@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   BookOpen,
   Building2,
+  Coins,
   Cpu,
   KeyRound,
   LayoutGrid,
@@ -31,6 +32,7 @@ export default async function AdminLayout({
         <AdminLink href="/admin/referentiels" icon={<BookOpen className="h-4 w-4" />} label="Référentiels (contenu)" />
         <AdminLink href="/admin/packs" icon={<Package className="h-4 w-4" />} label="Packs & catalogue" />
         <AdminLink href="/admin/modeles" icon={<Cpu className="h-4 w-4" />} label="Modèles IA" />
+        <AdminLink href="/admin/credits" icon={<Coins className="h-4 w-4" />} label="Crédits & quotas" />
         <AdminLink href="/admin/compte" icon={<KeyRound className="h-4 w-4" />} label="Mon compte" />
       </nav>
       {children}

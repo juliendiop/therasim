@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Brain, Eye, GraduationCap, Radio, ShieldCheck, Users } from "lucide-react";
+import { Brain, Coins, Eye, GraduationCap, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { canManageLive } from "@/lib/roles";
+import { syncWallet } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
 import { stopImpersonation } from "./admin/impersonate-actions";
 import "./globals.css";
@@ -23,6 +24,8 @@ export default async function RootLayout({
   const tenant = user
     ? await prisma.tenant.findUnique({ where: { id: user.tenantId } })
     : null;
+  // Solde de crédits pour les apprenants (initialise le pack de bienvenue au 1er accès).
+  const credits = user && user.role === "learner" ? await syncWallet(user.id) : null;
 
   const isPublic = !tenant || tenant.type === "public";
   const brandName = isPublic ? "TheraSim" : tenant!.brandName || tenant!.nom;
@@ -75,6 +78,15 @@ export default async function RootLayout({
 
             {user && (
               <div className="ml-auto flex items-center gap-2.5 text-sm">
+                {credits !== null && (
+                  <Link
+                    href="/credits"
+                    title="Vos crédits de pratique IA"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 font-semibold text-[var(--accent)] transition hover:brightness-95"
+                  >
+                    <Coins className="h-4 w-4" /> {credits}
+                  </Link>
+                )}
                 {(user.role === "tenant_admin" ||
                   (user.role === "super_admin" && user.impersonating)) && (
                   <Link

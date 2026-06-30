@@ -34,6 +34,7 @@ export default function SimChat({
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [ending, setEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debrief, setDebrief] = useState<Debrief | null>(initialDebrief);
   const [ended, setEnded] = useState(statut === "terminee");
@@ -66,7 +67,7 @@ export default function SimChat({
 
   async function send() {
     const content = input.trim();
-    if (!content || busy || ended || capReached) return;
+    if (!content || busy || ending || ended || capReached) return;
     setInput("");
     setError(null);
     setMessages((m) => [...m, { role: "apprenant", content }]);
@@ -93,8 +94,12 @@ export default function SimChat({
   }
 
   async function terminer() {
-    if (busy) return;
-    setBusy(true);
+    if (busy || ending) return;
+    if (turns === 0) {
+      setError("Échangez au moins une fois avec le patient avant de terminer la mise en situation.");
+      return;
+    }
+    setEnding(true);
     setError(null);
     try {
       const res = await fetch(`/api/sim/${sessionId}/end`, { method: "POST" });
@@ -109,7 +114,7 @@ export default function SimChat({
     } catch {
       setError("Connexion impossible.");
     } finally {
-      setBusy(false);
+      setEnding(false);
     }
   }
 
@@ -123,10 +128,10 @@ export default function SimChat({
         {!ended && (
           <button
             onClick={terminer}
-            disabled={busy || turns === 0}
+            disabled={busy || ending}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm font-medium hover:border-red-400 hover:text-red-600 disabled:opacity-50"
           >
-            <Flag className="h-4 w-4" /> Terminer
+            <Flag className="h-4 w-4" /> {ending ? "Analyse…" : "Terminer"}
           </button>
         )}
       </div>
@@ -204,7 +209,7 @@ export default function SimChat({
           <div className="flex flex-col gap-1.5">
             <button
               onClick={send}
-              disabled={busy || !input.trim()}
+              disabled={busy || ending || !input.trim()}
               className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
             >
               <Send className="h-4 w-4" /> {busy ? "…" : "Envoyer"}

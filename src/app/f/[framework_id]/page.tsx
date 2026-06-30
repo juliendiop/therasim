@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Dumbbell, Layers, MessagesSquare, RotateCcw } from "lucide-react";
+import { ArrowLeft, Coins, Dumbbell, Layers, MessagesSquare, RotateCcw } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { tenantCanAccess } from "@/lib/entitlements";
+import { creditSettings } from "@/lib/credits";
 import { startMiniSceneAction } from "@/app/sim/actions";
 import { buildFrameworkDetail } from "@/lib/progress";
 import { palier } from "@/lib/mastery";
@@ -21,6 +22,7 @@ export default async function FrameworkPage({
   if (!(await tenantCanAccess(user.tenantId, framework_id))) notFound();
   const detail = await buildFrameworkDetail(user.id, framework_id);
   if (!detail) notFound();
+  const credits = await creditSettings();
 
   const { framework, overall, categories, priorites } = detail;
 
@@ -105,6 +107,7 @@ export default async function FrameworkPage({
                 Lancer une mini-scène
               </button>
             </form>
+            <CreditNote cost={credits.costMiniscene} />
           </ModeCard>
 
           <ModeCard
@@ -119,6 +122,7 @@ export default async function FrameworkPage({
             >
               Démarrer un entretien
             </Link>
+            <CreditNote cost={credits.costSimulation} />
           </ModeCard>
         </div>
       </section>
@@ -228,6 +232,14 @@ export default async function FrameworkPage({
         ))}
       </section>
     </div>
+  );
+}
+
+function CreditNote({ cost }: { cost: number }) {
+  return (
+    <p className="mt-1.5 flex items-center justify-center gap-1 text-[11px] text-[var(--muted)]">
+      <Coins className="h-3 w-3 text-[var(--accent)]" /> {cost} crédit{cost > 1 ? "s" : ""}
+    </p>
   );
 }
 
