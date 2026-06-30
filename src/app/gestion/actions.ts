@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { createMagicToken, requireUser, type Role } from "@/lib/auth";
+import { appBaseUrl } from "@/lib/base-url";
 import { isEmailConfigured, sendInvitation } from "@/lib/email";
 import { ASSIGNABLE_ROLES, ROLE_LABELS, canManageMembers } from "@/lib/roles";
 
@@ -46,7 +47,7 @@ export async function createMember(
   const h = await headers();
   const host = h.get("host") ?? "localhost:3000";
   const proto = host.includes("localhost") ? "http" : "https";
-  const base = process.env.APP_BASE_URL || `${proto}://${host}`;
+  const base = appBaseUrl(`${proto}://${host}`);
   const inviteLink = `${base}/api/auth/callback?token=${token}`;
 
   const tenant = await prisma.tenant.findUnique({ where: { id: manager.tenantId } });
