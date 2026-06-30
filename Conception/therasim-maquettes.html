@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TheraSim · maquettes redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   THERASIM · SYSTÈME DE DESIGN (tokens)
+   À transmettre à Claude Code. Mapping Tailwind v4 en commentaire.
+   ============================================================ */
+:root{
+  /* Surfaces  ---------------------------------------------- */
+  --paper:#F4F1E9;        /* fond global (warm paper)        */
+  --paper-2:#ECE7DA;      /* fond enfoncé / zones secondaires */
+  --surface:#FFFFFF;      /* cartes                           */
+  --surface-tint:#FBF9F4; /* cartes secondaires               */
+  --line:#E4DECF;         /* filets / bordures hairline       */
+  --line-strong:#D6CFBC;
+
+  /* Encre & texte ----------------------------------------- */
+  --ink:#15302C;          /* titres, encre principale         */
+  --ink-soft:#3F514C;     /* texte courant                    */
+  --muted:#76817A;        /* légendes, métadonnées            */
+
+  /* Marque ------------------------------------------------- */
+  --teal:#0E5A54;         /* primaire (boutons, liens)        */
+  --teal-700:#0B4A45;
+  --teal-600:#127268;     /* hover                            */
+  --teal-50:#E5EFEC;      /* fonds teintés                    */
+  --ochre:#A8772A;        /* accent unique (eyebrows, focus)  */
+  --ochre-soft:#F2E7CF;
+
+  /* Échelle de MAÎTRISE (signature) ----------------------- */
+  --m-faible:#C26F5F;     /* < 0.40  faible                   */
+  --m-emergent:#D29A4A;   /* 0.40-0.60 émergent               */
+  --m-solide:#3E8E86;     /* 0.60-0.80 solide                 */
+  --m-maitrise:#1E6B57;   /* > 0.80  maîtrisé                 */
+
+  --shadow-sm:0 1px 2px rgba(21,48,44,.05);
+  --shadow:0 6px 24px -10px rgba(21,48,44,.18);
+  --shadow-lg:0 24px 60px -28px rgba(21,48,44,.30);
+  --r:14px;
+  --r-lg:20px;
+}
+
+*{box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink-soft);
+  font-family:"Hanken Grotesk",system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+}
+h1,h2,h3,h4{font-family:"Fraunces",Georgia,serif;color:var(--ink);margin:0;font-weight:600;letter-spacing:-.01em}
+.mono{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+a{color:inherit;text-decoration:none}
+
+/* ---- chrome de présentation des maquettes (pas l'appli) ---- */
+.page{max-width:1180px;margin:0 auto;padding:48px 28px 90px}
+.deck-head{margin-bottom:40px}
+.deck-eyebrow{font:600 12px/1 "Hanken Grotesk";letter-spacing:.16em;text-transform:uppercase;color:var(--ochre);margin-bottom:14px}
+.deck-title{font-size:40px;line-height:1.05;letter-spacing:-.02em}
+.deck-sub{max-width:62ch;margin-top:14px;color:var(--ink-soft);font-size:16px}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.swatch{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 13px 7px 9px;font-size:12.5px;box-shadow:var(--shadow-sm)}
+.swatch i{width:16px;height:16px;border-radius:5px;display:block}
+.swatch b{font-weight:600;color:var(--ink)}
+.swatch .mono{font-size:11px;color:var(--muted)}
+
+.screen-label{display:flex;align-items:baseline;gap:14px;margin:60px 0 16px}
+.screen-num{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ochre);font-weight:600}
+.screen-name{font-family:"Fraunces";font-size:22px;color:var(--ink);font-weight:600}
+.screen-note{color:var(--muted);font-size:13.5px;margin-left:auto;max-width:48ch;text-align:right}
+
+/* fenêtre navigateur factice */
+.frame{background:var(--paper);border:1px solid var(--line-strong);border-radius:18px;overflow:hidden;box-shadow:var(--shadow-lg)}
+.frame-bar{display:flex;align-items:center;gap:8px;padding:11px 16px;background:var(--surface-tint);border-bottom:1px solid var(--line)}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--line-strong)}
+.frame-url{margin-left:14px;font:500 12px/1 "JetBrains Mono";color:var(--muted);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+.viewport{padding:0}
+
+/* ============================================================
+   APPLICATION · composants partagés
+   ============================================================ */
+.app{background:var(--paper)}
+
+/* bandeau impersonation (slim, plus de violet criard) */
+.imp-bar{display:flex;align-items:center;gap:10px;background:var(--ink);color:#EBE7DC;padding:9px 22px;font-size:13px}
+.imp-bar svg{width:15px;height:15px;opacity:.8}
+.imp-bar b{color:#fff;font-weight:600}
+.imp-bar .spacer{flex:1}
+.imp-quit{border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:8px;padding:5px 12px;font-size:12.5px;font-weight:500;background:transparent}
+
+/* barre de navigation */
+.nav{display:flex;align-items:center;gap:28px;padding:16px 26px;background:rgba(244,241,233,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(150deg,var(--teal),var(--teal-700));display:grid;place-items:center;box-shadow:var(--shadow-sm)}
+.brand-mark svg{width:21px;height:21px;color:#EAF3F0}
+.brand-text b{display:block;font-family:"Fraunces";font-weight:600;color:var(--ink);font-size:17px;letter-spacing:-.01em;line-height:1.1}
+.brand-text span{font-size:11.5px;color:var(--muted)}
+.nav-links{display:flex;gap:4px;margin-left:8px}
+.nav-links a{display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:10px;font-size:14px;font-weight:500;color:var(--ink-soft)}
+.nav-links a svg{width:16px;height:16px;opacity:.7}
+.nav-links a:hover{background:var(--paper-2)}
+.nav-links a.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);border:1px solid var(--line)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:16px;font-size:13px;color:var(--muted)}
+.nav-right .who{color:var(--ink-soft);font-weight:500}
+
+/* contenu */
+.main{padding:36px 40px 56px;max-width:1080px;margin:0 auto}
+.eyebrow{font:600 11.5px/1 "Hanken Grotesk";letter-spacing:.15em;text-transform:uppercase;color:var(--ochre)}
+
+/* boutons */
+.btn{display:inline-flex;align-items:center;gap:8px;font:600 14px/1 "Hanken Grotesk";border-radius:11px;padding:12px 18px;border:1px solid transparent;cursor:pointer}
+.btn svg{width:17px;height:17px}
+.btn-primary{background:var(--teal);color:#F3FAF8}
+.btn-primary:hover{background:var(--teal-600)}
+.btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--line-strong)}
+.btn-ghost:hover{border-color:var(--teal);color:var(--teal)}
+.btn-sm{padding:9px 13px;font-size:13px}
+
+/* badges */
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;letter-spacing:.01em;padding:4px 10px;border-radius:999px;background:var(--teal-50);color:var(--teal-700)}
+.tag-ochre{background:var(--ochre-soft);color:var(--ochre)}
+.tag-line{background:transparent;border:1px solid var(--line-strong);color:var(--muted)}
+.badge-revoir{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--m-emergent);background:#FBF1DC;border:1px solid #EBD9AE;padding:3px 8px;border-radius:7px}
+.badge-revoir svg{width:12px;height:12px}
+
+/* anneau de maîtrise (signature) */
+.ring{position:relative;display:grid;place-items:center}
+.ring svg{transform:rotate(-90deg)}
+.ring .ring-val{position:absolute;font-family:"JetBrains Mono";font-weight:600;color:var(--ink);font-size:15px}
+
+/* barre de maîtrise */
+.mbar{height:8px;border-radius:6px;background:var(--paper-2);overflow:hidden}
+.mbar > i{display:block;height:100%;border-radius:6px}
+/* points de couverture */
+.cov{display:inline-flex;gap:4px}
+.cov i{width:7px;height:7px;border-radius:50%;background:var(--line-strong)}
+.cov i.on{background:var(--teal)}
+
+.footer{text-align:center;color:var(--muted);font-size:12.5px;padding:30px 0 36px}
+
+/* ---------- ÉCRAN 1 · accueil apprenant ---------- */
+.welcome-top{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:26px}
+.welcome-top h1{font-size:34px;line-height:1.06;letter-spacing:-.02em;margin-top:10px}
+.welcome-top p{color:var(--ink-soft);margin-top:10px;max-width:46ch;font-size:15.5px}
+.week{display:flex;gap:22px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 20px;box-shadow:var(--shadow-sm)}
+.week .k{font-family:"JetBrains Mono";font-size:22px;font-weight:600;color:var(--ink);line-height:1}
+.week .l{font-size:11.5px;color:var(--muted);margin-top:5px}
+.week .sep{width:1px;background:var(--line)}
+
+/* carte héros : prochaine pratique */
+.resume{position:relative;display:grid;grid-template-columns:1.5fr 1fr;gap:0;background:linear-gradient(135deg,#0E544E,#0B3E3A);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow);color:#E9F1EE;margin-bottom:34px}
+.resume-l{padding:30px 32px}
+.resume-l .eyebrow{color:#9FD0C7}
+.resume-l h2{color:#fff;font-size:25px;margin:12px 0 6px;letter-spacing:-.015em}
+.resume-l .ctx{color:#AEC9C3;font-size:14px}
+.resume-l .reason{display:flex;align-items:center;gap:9px;margin:20px 0 24px;font-size:13.5px;color:#CFE2DD;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 14px}
+.resume-l .reason svg{width:16px;height:16px;color:#9FD0C7;flex-shrink:0}
+.resume-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn-on-dark{background:#F3FAF8;color:var(--teal-700)}
+.btn-on-dark:hover{background:#fff}
+.btn-out-dark{background:transparent;border-color:rgba(255,255,255,.3);color:#fff}
+.btn-out-dark:hover{border-color:#fff}
+.resume-r{display:grid;place-items:center;padding:24px;background:rgba(255,255,255,.04);border-left:1px solid rgba(255,255,255,.08)}
+
+.section-h{display:flex;align-items:center;justify-content:space-between;margin:0 0 16px}
+.section-h h3{font-size:19px}
+.section-h a{font-size:13.5px;color:var(--teal);font-weight:600;display:inline-flex;align-items:center;gap:5px}
+.section-h a svg{width:15px;height:15px}
+
+/* tuiles de domaine */
+.domains{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.domain{display:flex;gap:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow-sm);transition:transform .15s,box-shadow .15s,border-color .15s}
+.domain:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--line-strong)}
+.domain-body{flex:1;min-width:0}
+.domain-tags{display:flex;gap:7px;margin-bottom:10px}
+.domain h4{font-size:18px;letter-spacing:-.01em}
+.domain .desc{font-size:13.5px;color:var(--muted);margin:6px 0 14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.domain-stats{display:flex;align-items:center;gap:18px;font-size:12.5px;color:var(--muted)}
+.domain-stats b{font-family:"JetBrains Mono";color:var(--ink);font-size:14px;font-weight:600;display:block}
+.domain .go{align-self:flex-end;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);display:grid;place-items:center;color:var(--teal);margin-left:auto}
+.domain:hover .go{background:var(--teal);color:#fff;border-color:var(--teal)}
+.domain .go svg{width:17px;height:17px}
+
+/* bande onboarding discrète */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--surface-tint);border:1px solid var(--line);border-radius:var(--r);margin-top:34px;overflow:hidden}
+.step{padding:18px 20px;display:flex;gap:13px}
+.step + .step{border-left:1px solid var(--line)}
+.step .n{font-family:"JetBrains Mono";font-weight:600;font-size:13px;color:#fff;background:var(--teal);width:24px;height:24px;border-radius:7px;display:grid;place-items:center;flex-shrink:0}
+.step b{display:block;color:var(--ink);font-weight:600;font-size:14px;margin-bottom:3px}
+.step span{font-size:12.5px;color:var(--muted)}
+
+/* ---------- ÉCRAN 2 · carte de progression ---------- */
+.back{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:var(--muted);font-weight:500;margin-bottom:18px}
+.back svg{width:15px;height:15px}
+.card-head{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:26px 30px;box-shadow:var(--shadow-sm);margin-bottom:24px}
+.card-head .row{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
+.card-head h1{font-size:27px;letter-spacing:-.02em;margin:12px 0 8px}
+.card-head .lede{color:var(--ink-soft);max-width:60ch;font-size:14.5px}
+.head-stats{display:flex;gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface-tint);flex-shrink:0}
+.head-stat{padding:16px 22px;text-align:center}
+.head-stat + .head-stat{border-left:1px solid var(--line)}
+.head-stat .k{font-family:"JetBrains Mono";font-size:21px;font-weight:600;color:var(--ink);line-height:1}
+.head-stat .l{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:.02em}
+
+.split{display:grid;grid-template-columns:1.55fr 1fr;gap:24px;align-items:start}
+
+/* colonne catégories */
+.cat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm);margin-bottom:18px;overflow:hidden}
+.cat-h{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;background:var(--surface-tint);border-bottom:1px solid var(--line)}
+.cat-h b{font-family:"Fraunces";font-weight:600;font-size:16px;color:var(--ink)}
+.cat-h span{font-size:12px;color:var(--muted)}
+.comp{display:grid;grid-template-columns:1fr 130px auto;align-items:center;gap:18px;padding:14px 20px}
+.comp + .comp{border-top:1px solid var(--line)}
+.comp-name{font-weight:500;color:var(--ink);font-size:14px}
+.comp-name .code{font-family:"JetBrains Mono";font-size:11px;color:var(--muted);font-weight:500;margin-top:3px}
+.comp-meta{display:flex;align-items:center;gap:12px;justify-content:flex-end}
+.palier{font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px}
+
+/* panneau priorités */
+.prio{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm);position:sticky;top:20px;overflow:hidden}
+.prio-h{padding:18px 20px 14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--ochre-soft),transparent)}
+.prio-h .eyebrow{color:var(--ochre)}
+.prio-h b{display:block;font-family:"Fraunces";font-size:18px;color:var(--ink);font-weight:600;margin-top:7px}
+.prio-h span{font-size:12.5px;color:var(--muted)}
+.pitem{padding:16px 20px}
+.pitem + .pitem{border-top:1px solid var(--line)}
+.pitem .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pitem .top b{font-size:14px;color:var(--ink);font-weight:600}
+.pitem .why{font-size:12.5px;color:var(--muted);margin:7px 0 13px;display:flex;align-items:flex-start;gap:7px}
+.pitem .why svg{width:14px;height:14px;color:var(--ochre);flex-shrink:0;margin-top:1px}
+.prank{font-family:"JetBrains Mono";font-size:12px;font-weight:600;color:#fff;background:var(--ochre);width:22px;height:22px;border-radius:6px;display:grid;place-items:center}
+
+/* ---------- ÉCRAN 3 · console admin ---------- */
+.admin-seg{display:flex;gap:4px;background:var(--surface-tint);border:1px solid var(--line);border-radius:13px;padding:5px;margin-bottom:28px;width:fit-content;box-shadow:var(--shadow-sm)}
+.admin-seg a{display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--ink-soft)}
+.admin-seg a svg{width:16px;height:16px;opacity:.7}
+.admin-seg a.active{background:var(--teal);color:#fff}
+.admin-seg a.active svg{opacity:1}
+.admin-seg a:not(.active):hover{background:var(--paper-2)}
+
+.admin-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px}
+.admin-head h1{font-size:28px;letter-spacing:-.02em;margin-bottom:8px}
+.admin-head p{color:var(--ink-soft);max-width:58ch;font-size:14.5px}
+
+/* registre de métriques (pas de gros chiffres flottants) */
+.ledger{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:28px}
+.lcell{padding:20px 22px}
+.lcell + .lcell{border-left:1px solid var(--line)}
+.lcell .ico{width:32px;height:32px;border-radius:9px;background:var(--teal-50);color:var(--teal);display:grid;place-items:center;margin-bottom:14px}
+.lcell .ico svg{width:17px;height:17px}
+.lcell .k{font-family:"JetBrains Mono";font-size:26px;font-weight:600;color:var(--ink);line-height:1}
+.lcell .l{font-size:12.5px;color:var(--muted);margin-top:7px}
+.lcell .t{font-size:11px;color:var(--m-maitrise);font-weight:600;margin-top:9px;display:inline-flex;align-items:center;gap:4px}
+.lcell .t svg{width:12px;height:12px}
+
+.admin-sub-h{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin:0 0 14px}
+.consoles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.console{display:block;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow-sm);transition:transform .15s,box-shadow .15s,border-color .15s}
+.console:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--line-strong)}
+.console .ico{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;margin-bottom:14px;background:var(--ochre-soft);color:var(--ochre)}
+.console .ico svg{width:19px;height:19px}
+.console b{display:block;color:var(--ink);font-family:"Fraunces";font-weight:600;font-size:16.5px;margin-bottom:5px}
+.console p{font-size:13px;color:var(--muted);margin:0 0 12px;line-height:1.45}
+.console .arrow{font-size:12.5px;color:var(--teal);font-weight:600;display:inline-flex;align-items:center;gap:5px}
+.console .arrow svg{width:14px;height:14px}
+
+@media (max-width:880px){
+  .resume,.split,.domains,.ledger,.consoles,.steps{grid-template-columns:1fr}
+  .head-stats{flex-wrap:wrap}
+  .main{padding:26px 18px 40px}
+  .welcome-top{flex-direction:column;align-items:flex-start}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+:focus-visible{outline:2px solid var(--ochre);outline-offset:2px;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="deck-head">
+    <div class="deck-eyebrow">TheraSim · proposition de redesign</div>
+    <h1 class="deck-title">Trois écrans, un seul langage clinique</h1>
+    <p class="deck-sub">Le fil rouge : une échelle de maîtrise qui colore toute l'interface (faible → maîtrisé), un fond papier chaud, une encre vert sapin et un unique accent ocre. Le but, faire ressentir un outil clinique sérieux mais humain, pas un tableau de bord SaaS générique.</p>
+
+    <div class="legend">
+      <span class="swatch"><i style="background:#0E5A54"></i><b>Primaire</b><span class="mono">#0E5A54</span></span>
+      <span class="swatch"><i style="background:#A8772A"></i><b>Accent</b><span class="mono">#A8772A</span></span>
+      <span class="swatch"><i style="background:#F4F1E9;border:1px solid #E4DECF"></i><b>Papier</b><span class="mono">#F4F1E9</span></span>
+      <span class="swatch"><i style="background:#C26F5F"></i><b>Faible</b></span>
+      <span class="swatch"><i style="background:#D29A4A"></i><b>Émergent</b></span>
+      <span class="swatch"><i style="background:#3E8E86"></i><b>Solide</b></span>
+      <span class="swatch"><i style="background:#1E6B57"></i><b>Maîtrisé</b></span>
+      <span class="swatch"><b>Fraunces</b><span class="mono">titres</span></span>
+      <span class="swatch"><b>Hanken Grotesk</b><span class="mono">interface</span></span>
+    </div>
+  </header>
+
+  <!-- ============================== ÉCRAN 1 ============================== -->
+  <div class="screen-label">
+    <span class="screen-num">01</span>
+    <span class="screen-name">Accueil apprenant</span>
+    <span class="screen-note">Le héros n'est plus un slogan : c'est la prochaine pratique recommandée par le moteur de routage.</span>
+  </div>
+
+  <div class="frame">
+    <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="frame-url">therasim.app /accueil</span></div>
+    <div class="viewport"><div class="app">
+
+      <div class="imp-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        Vous consultez la plateforme <b>Formation Ménopause</b>
+        <span class="spacer"></span>
+        <button class="imp-quit">Quitter</button>
+      </div>
+
+      <nav class="nav">
+        <div class="brand">
+          <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 .5 5.5A3 3 0 0 0 9 22a3 3 0 0 0 3-1"/><path d="M12 2a3 3 0 0 1 3 3v1a3 3 0 0 1 3 3 3 3 0 0 1-.5 5.5A3 3 0 0 1 15 22a3 3 0 0 1-3-1"/><path d="M12 5v16"/></svg></div>
+          <div class="brand-text"><b>TheraSim</b><span>entraînement clinique par compétences</span></div>
+        </div>
+        <div class="nav-links">
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.2 7.8 14.1 14.1 7.8 16.2 9.9 9.9"/></svg> Catalogue</a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg> Progrès</a>
+        </div>
+        <div class="nav-right"><span class="who">Julien Diop</span><a href="#">Déconnexion</a></div>
+      </nav>
+
+      <div class="main">
+
+        <div class="welcome-top">
+          <div>
+            <span class="eyebrow">Votre pratique</span>
+            <h1>Bonjour Julien.<br>Prêt pour quelques minutes de cabinet ?</h1>
+            <p>Entraînez-vous sur des cas réalistes, du feedback immédiat jusqu'à l'entretien complet, et suivez vos progrès compétence par compétence.</p>
+          </div>
+          <div class="week">
+            <div><div class="k">4</div><div class="l">essais cette semaine</div></div>
+            <div class="sep"></div>
+            <div><div class="k">+6%</div><div class="l">maîtrise moy.</div></div>
+            <div class="sep"></div>
+            <div><div class="k">2</div><div class="l">à réviser</div></div>
+          </div>
+        </div>
+
+        <!-- HÉROS : reprendre l'entraînement -->
+        <div class="resume">
+          <div class="resume-l">
+            <span class="eyebrow">Recommandé pour vous</span>
+            <h2>Reflets complexes</h2>
+            <div class="ctx">Accompagner la transition ménopausique · niveau N2 · mini-scène guidée</div>
+            <div class="reason">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M19 5l-3 3M5 19l3-3M19 19l-3-3"/></svg>
+              Compétence prioritaire : maîtrise émergente et pas pratiquée depuis 9 jours.
+            </div>
+            <div class="resume-actions">
+              <button class="btn btn-on-dark">Commencer la mini-scène
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+              <button class="btn btn-out-dark">Choisir un autre exercice</button>
+            </div>
+          </div>
+          <div class="resume-r">
+            <div class="ring" style="width:128px;height:128px">
+              <svg viewBox="0 0 120 120" width="128" height="128">
+                <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="11"/>
+                <circle cx="60" cy="60" r="52" fill="none" stroke="#D29A4A" stroke-width="11" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="166.6"/>
+              </svg>
+              <div class="ring-val" style="color:#fff;font-size:22px;text-align:center;line-height:1.1">49%<br><span style="font-size:10px;color:#AEC9C3;font-family:'Hanken Grotesk';font-weight:500">émergent</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOMAINES -->
+        <div class="section-h">
+          <h3>Vos domaines</h3>
+          <a href="#">Tout le catalogue <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+
+        <div class="domains">
+          <div class="domain">
+            <div class="domain-body">
+              <div class="domain-tags"><span class="tag-line tag">Situation</span><span class="tag tag-ochre">niveau N1</span></div>
+              <h4>Accompagner la transition ménopausique</h4>
+              <div class="desc">Accompagner les femmes en transition ménopausique de façon rigoureuse, personnalisée et sécurisée, en complément du suivi médical.</div>
+              <div class="domain-stats">
+                <div><b>60%</b>maîtrise moy.</div>
+                <div><b>1/9</b>couvertes</div>
+                <div style="display:flex;align-items:center;gap:6px"><span class="badge-revoir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg> 2 à réviser</span></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+              <div class="ring" style="width:60px;height:60px">
+                <svg viewBox="0 0 60 60" width="60" height="60"><circle cx="30" cy="30" r="25" fill="none" stroke="var(--paper-2)" stroke-width="6"/><circle cx="30" cy="30" r="25" fill="none" stroke="var(--m-solide)" stroke-width="6" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="62.8"/></svg>
+                <div class="ring-val" style="font-size:13px">60</div>
+              </div>
+              <div class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+            </div>
+          </div>
+
+          <div class="domain">
+            <div class="domain-body">
+              <div class="domain-tags"><span class="tag-line tag">Approche</span><span class="tag">10 compétences</span></div>
+              <h4>Entretien motivationnel (EM)</h4>
+              <div class="desc">Susciter et renforcer la motivation au changement : reflets, questions ouvertes, évocation du discours-changement.</div>
+              <div class="domain-stats">
+                <div><b>72%</b>maîtrise moy.</div>
+                <div><b>6/10</b>couvertes</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+              <div class="ring" style="width:60px;height:60px">
+                <svg viewBox="0 0 60 60" width="60" height="60"><circle cx="30" cy="30" r="25" fill="none" stroke="var(--paper-2)" stroke-width="6"/><circle cx="30" cy="30" r="25" fill="none" stroke="var(--m-solide)" stroke-width="6" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="44"/></svg>
+                <div class="ring-val" style="font-size:13px">72</div>
+              </div>
+              <div class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- onboarding discret -->
+        <div class="steps">
+          <div class="step"><span class="n">1</span><div><b>Choisissez un domaine</b><span>Une approche ou une compétence clinique à travailler.</span></div></div>
+          <div class="step"><span class="n">2</span><div><b>Entraînez-vous</b><span>Du guidé à l'autonome, à votre rythme.</span></div></div>
+          <div class="step"><span class="n">3</span><div><b>Visualisez vos progrès</b><span>Forces et lacunes, mises à jour en temps réel.</span></div></div>
+        </div>
+
+      </div>
+      <div class="footer">TheraSim · outil formatif, non certifiant.</div>
+    </div></div>
+  </div>
+
+  <!-- ============================== ÉCRAN 2 ============================== -->
+  <div class="screen-label">
+    <span class="screen-num">02</span>
+    <span class="screen-name">Carte de progression</span>
+    <span class="screen-note">Le cœur du produit. Chaque compétence est lue d'un coup d'œil : palier coloré, couverture, à réviser.</span>
+  </div>
+
+  <div class="frame">
+    <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="frame-url">therasim.app /f/menopause</span></div>
+    <div class="viewport"><div class="app">
+      <nav class="nav">
+        <div class="brand">
+          <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 .5 5.5A3 3 0 0 0 9 22a3 3 0 0 0 3-1"/><path d="M12 2a3 3 0 0 1 3 3v1a3 3 0 0 1 3 3 3 3 0 0 1-.5 5.5A3 3 0 0 1 15 22a3 3 0 0 1-3-1"/><path d="M12 5v16"/></svg></div>
+          <div class="brand-text"><b>TheraSim</b><span>entraînement clinique par compétences</span></div>
+        </div>
+        <div class="nav-links">
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.2 7.8 14.1 14.1 7.8 16.2 9.9 9.9"/></svg> Catalogue</a>
+          <a href="#" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg> Progrès</a>
+        </div>
+        <div class="nav-right"><span class="who">Julien Diop</span><a href="#">Déconnexion</a></div>
+      </nav>
+
+      <div class="main">
+        <a href="#" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Catalogue</a>
+
+        <div class="card-head">
+          <div class="row">
+            <div>
+              <div class="domain-tags"><span class="tag-line tag">Approche</span><span class="tag tag-ochre">publié</span></div>
+              <h1>Entretien motivationnel</h1>
+              <p class="lede">Susciter et renforcer la motivation intrinsèque au changement. Votre carte se met à jour à chaque essai, drill comme entretien simulé.</p>
+            </div>
+            <div class="head-stats">
+              <div class="head-stat"><div class="k">72%</div><div class="l">MAÎTRISE MOY.</div></div>
+              <div class="head-stat"><div class="k">6/10</div><div class="l">COUVERTES</div></div>
+              <div class="head-stat"><div class="k" style="color:var(--m-emergent)">2</div><div class="l">À RÉVISER</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="split">
+          <!-- catégories -->
+          <div>
+            <div class="cat">
+              <div class="cat-h"><b>Esprit & posture</b><span>3 compétences</span></div>
+
+              <div class="comp">
+                <div><div class="comp-name">Refléter (reflets simples)</div><div class="code">reflets_simples</div></div>
+                <div><div class="mbar"><i style="width:86%;background:var(--m-maitrise)"></i></div><div class="cov" style="margin-top:8px"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+                <div class="comp-meta"><span class="palier" style="background:#E4EFEB;color:var(--m-maitrise)">maîtrisé</span></div>
+              </div>
+
+              <div class="comp">
+                <div><div class="comp-name">Refléter (reflets complexes)</div><div class="code">reflets_complexes</div></div>
+                <div><div class="mbar"><i style="width:49%;background:var(--m-emergent)"></i></div><div class="cov" style="margin-top:8px"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div></div>
+                <div class="comp-meta"><span class="badge-revoir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg> réviser</span><span class="palier" style="background:#FBF1DC;color:var(--m-emergent)">émergent</span></div>
+              </div>
+
+              <div class="comp">
+                <div><div class="comp-name">Questions ouvertes</div><div class="code">questions_ouvertes</div></div>
+                <div><div class="mbar"><i style="width:71%;background:var(--m-solide)"></i></div><div class="cov" style="margin-top:8px"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+                <div class="comp-meta"><span class="palier" style="background:#E6F0EE;color:var(--m-solide)">solide</span></div>
+              </div>
+            </div>
+
+            <div class="cat">
+              <div class="cat-h"><b>Faire évoluer le discours</b><span>2 compétences</span></div>
+
+              <div class="comp">
+                <div><div class="comp-name">Évoquer le discours-changement</div><div class="code">evoquer_discours_changement</div></div>
+                <div><div class="mbar"><i style="width:33%;background:var(--m-faible)"></i></div><div class="cov" style="margin-top:8px"><i class="on"></i><i></i><i></i><i></i><i></i></div></div>
+                <div class="comp-meta"><span class="palier" style="background:#F6E6E2;color:var(--m-faible)">faible</span></div>
+              </div>
+
+              <div class="comp">
+                <div><div class="comp-name">Renforcer l'engagement</div><div class="code">renforcer_engagement</div></div>
+                <div><div class="mbar"><i style="width:58%;background:var(--m-emergent)"></i></div><div class="cov" style="margin-top:8px"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div></div>
+                <div class="comp-meta"><span class="palier" style="background:#FBF1DC;color:var(--m-emergent)">émergent</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- priorités -->
+          <div class="prio">
+            <div class="prio-h">
+              <span class="eyebrow">À travailler en priorité</span>
+              <b>Vos 2 prochains exercices</b>
+              <span>Choisis par le moteur selon maîtrise, couverture et oubli.</span>
+            </div>
+
+            <div class="pitem">
+              <div class="top"><b>Évoquer le discours-changement</b><span class="prank">1</span></div>
+              <div class="why"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg> Maîtrise faible (33%) et seulement 1 essai. Plus fort levier de progression.</div>
+              <button class="btn btn-primary btn-sm">S'entraîner
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+
+            <div class="pitem">
+              <div class="top"><b>Reflets complexes</b><span class="prank">2</span></div>
+              <div class="why"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg> À réviser : pas pratiqué depuis 9 jours, palier émergent.</div>
+              <button class="btn btn-ghost btn-sm">Mini-scène guidée
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+
+            <div class="pitem" style="background:var(--surface-tint)">
+              <div class="top" style="margin-bottom:4px"><b style="font-family:'Fraunces';font-size:15px">Aller plus loin</b></div>
+              <span style="font-size:12.5px;color:var(--muted)">Prêt à enchaîner ? Lancez un entretien simulé complet sur ce référentiel.</span>
+              <div style="margin-top:12px"><button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center">Entretien simulé (N3)</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">TheraSim · outil formatif, non certifiant.</div>
+    </div></div>
+  </div>
+
+  <!-- ============================== ÉCRAN 3 ============================== -->
+  <div class="screen-label">
+    <span class="screen-num">03</span>
+    <span class="screen-name">Console super-admin</span>
+    <span class="screen-note">Les chiffres deviennent un registre lisible, et chaque section est une porte d'entrée explicite.</span>
+  </div>
+
+  <div class="frame">
+    <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="frame-url">therasim.app /admin</span></div>
+    <div class="viewport"><div class="app">
+
+      <div class="imp-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        Vous consultez la plateforme <b>Formation Ménopause</b>
+        <span class="spacer"></span>
+        <button class="imp-quit">Quitter</button>
+      </div>
+
+      <nav class="nav">
+        <div class="brand">
+          <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 .5 5.5A3 3 0 0 0 9 22a3 3 0 0 0 3-1"/><path d="M12 2a3 3 0 0 1 3 3v1a3 3 0 0 1 3 3 3 3 0 0 1-.5 5.5A3 3 0 0 1 15 22a3 3 0 0 1-3-1"/><path d="M12 5v16"/></svg></div>
+          <div class="brand-text"><b>TheraSim</b><span>entraînement clinique par compétences</span></div>
+        </div>
+        <div class="nav-links">
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/></svg> Gestion</a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> Formations</a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11a9 9 0 0 1 18 0M7 11a5 5 0 0 1 10 0M12 11v8"/></svg> Sessions live</a>
+          <a href="#" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg> Admin</a>
+        </div>
+        <div class="nav-right"><span class="who">julien.diop@gmail.com</span><a href="#">Déconnexion</a></div>
+      </nav>
+
+      <div class="main">
+
+        <div class="admin-seg">
+          <a href="#" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Vue d'ensemble</a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg> Plateformes</a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5Z"/></svg> Référentiels</a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5Z"/><path d="m3 8 9 5 9-5M12 13v9"/></svg> Packs</a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg> Modèles IA</a>
+        </div>
+
+        <div class="admin-head">
+          <div>
+            <h1>Console super-admin</h1>
+            <p>Pilotage central de vos plateformes clientes : catalogue, packs, attribution des droits et supervision de l'usage.</p>
+          </div>
+          <button class="btn btn-primary btn-sm">Nouvelle plateforme</button>
+        </div>
+
+        <!-- registre de métriques -->
+        <div class="ledger">
+          <div class="lcell">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg></div>
+            <div class="k">3</div><div class="l">Plateformes clientes</div>
+          </div>
+          <div class="lcell">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5Z"/><path d="m3 8 9 5 9-5"/></svg></div>
+            <div class="k">4</div><div class="l">Packs au catalogue</div>
+          </div>
+          <div class="lcell">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5Z"/></svg></div>
+            <div class="k">4</div><div class="l">Référentiels publiés</div>
+          </div>
+          <div class="lcell">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+            <div class="k">3</div><div class="l">Utilisateurs actifs</div>
+          </div>
+          <div class="lcell">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg></div>
+            <div class="k">13</div><div class="l">Essais réalisés</div>
+            <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17 17 7M17 7H9M17 7v8"/></svg> +5 cette semaine</div>
+          </div>
+        </div>
+
+        <div class="admin-sub-h">Gérer</div>
+        <div class="consoles">
+          <a href="#" class="console">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg></div>
+            <b>Plateformes clientes</b>
+            <p>Créer une plateforme, accorder des packs, ajuster par référentiel, branding et statut.</p>
+            <span class="arrow">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </a>
+          <a href="#" class="console">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5Z"/></svg></div>
+            <b>Référentiels & contenu</b>
+            <p>Compétences, ancrages, cartes d'entraînement et génération IA des exercices.</p>
+            <span class="arrow">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </a>
+          <a href="#" class="console">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2"/></svg></div>
+            <b>Modèles IA par usage</b>
+            <p>Choisir le modèle Mistral pour le patient, l'évaluateur et la génération de contenu.</p>
+            <span class="arrow">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </a>
+        </div>
+
+      </div>
+      <div class="footer">TheraSim · outil formatif, non certifiant.</div>
+    </div></div>
+  </div>
+
+</div>
+</body>
+</html>
