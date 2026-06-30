@@ -2372,8 +2372,8 @@ async function main() {
   // --- Fondation multi-tenant -------------------------------------------
   const publicTenant = await prisma.tenant.upsert({
     where: { slug: "public" },
-    update: { nom: "TheraSim (site public)", type: "public", statut: "actif" },
-    create: { slug: "public", nom: "TheraSim (site public)", type: "public" },
+    update: { nom: "MELETA (site public)", type: "public", statut: "actif" },
+    create: { slug: "public", nom: "MELETA (site public)", type: "public" },
   });
 
   // Super-admin (toi) — lien magique + (si ADMIN_INITIAL_PASSWORD) mot de passe.

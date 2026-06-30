@@ -10,7 +10,7 @@ import { stopImpersonation } from "./admin/impersonate-actions";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TheraSim — entraînement clinique par compétences",
+  title: "MELETA — entraînement clinique par compétences",
   description:
     "Apprendre et s'entraîner sur des cas cliniques réalistes, du feedback au fil de l'eau à l'autonomie complète.",
 };
@@ -28,7 +28,7 @@ export default async function RootLayout({
   const credits = user && user.role === "learner" ? await syncWallet(user.id) : null;
 
   const isPublic = !tenant || tenant.type === "public";
-  const brandName = isPublic ? "TheraSim" : tenant!.brandName || tenant!.nom;
+  const brandName = isPublic ? "MELETA" : tenant!.brandName || tenant!.nom;
   const logoUrl = !isPublic ? tenant!.logoUrl : null;
   const color =
     !isPublic && tenant!.colorPrimary && HEX.test(tenant!.colorPrimary)
@@ -135,10 +135,10 @@ export default async function RootLayout({
 
         <footer className="mx-auto max-w-5xl px-5 pb-10 pt-4 text-center text-xs text-[var(--muted)]">
           {isPublic ? (
-            <>TheraSim — outil formatif, non certifiant.</>
+            <>MELETA — outil formatif, non certifiant.</>
           ) : (
             <>
-              {brandName} · <span className="opacity-70">propulsé par TheraSim</span>
+              {brandName} · <span className="opacity-70">propulsé par MELETA</span>
             </>
           )}
         </footer>

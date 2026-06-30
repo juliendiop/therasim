@@ -51,7 +51,7 @@ export async function createMember(
   const inviteLink = `${base}/api/auth/callback?token=${token}`;
 
   const tenant = await prisma.tenant.findUnique({ where: { id: manager.tenantId } });
-  const brandName = tenant?.brandName || tenant?.nom || "TheraSim";
+  const brandName = tenant?.brandName || tenant?.nom || "MELETA";
 
   let emailSent = false;
   if (isEmailConfigured()) {

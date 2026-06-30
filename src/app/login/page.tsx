@@ -89,7 +89,7 @@ export default function LoginPage() {
         <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-md">
           <Brain className="h-6 w-6" />
         </span>
-        <h1 className="mt-3 text-xl font-semibold tracking-tight">TheraSim</h1>
+        <h1 className="mt-3 text-xl font-semibold tracking-tight">MELETA</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Entraînement clinique par compétences
         </p>

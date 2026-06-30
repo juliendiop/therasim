@@ -25,7 +25,7 @@ export default async function LivePage({
     ? await prisma.tenant.findUnique({ where: { id: session.tenantId } })
     : null;
   const isPublic = !tenant || tenant.type === "public";
-  const brandName = isPublic ? "TheraSim" : tenant!.brandName || tenant!.nom;
+  const brandName = isPublic ? "MELETA" : tenant!.brandName || tenant!.nom;
   const color =
     !isPublic && tenant!.colorPrimary && HEX.test(tenant!.colorPrimary)
       ? tenant!.colorPrimary

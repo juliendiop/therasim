@@ -1,18 +1,29 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
+/* MELETA — système de design clinique : papier chaud, encre vert sapin,
+   primaire teal, accent ocre, échelle de maîtrise signature. */
 :root {
-  --background: #f5f6f9;
-  --foreground: #14161a;
+  --background: #f4f1e9; /* papier chaud */
+  --paper-2: #ece7da; /* fond enfoncé / zones secondaires */
+  --foreground: #15302c; /* encre vert sapin */
+  --ink-soft: #3f514c; /* texte courant adouci */
   --card: #ffffff;
-  --border: #e7e9ee;
-  --muted: #6b7280;
+  --surface-tint: #fbf9f4; /* cartes secondaires */
+  --border: #e4decf; /* filets hairline */
+  --border-strong: #d6cfbc;
+  --muted: #76817a;
 
-  /* Couleur de marque. --accent peut être surchargée par tenant (marque blanche).
-     Les nuances en dérivent automatiquement via color-mix : changer --accent suffit. */
-  --accent: #4f46e5;
+  /* Marque. --accent peut être surchargée par tenant (marque blanche) ;
+     les nuances en dérivent via color-mix : changer --accent suffit. */
+  --accent: #0e5a54; /* teal — primaire (boutons, liens) */
   --accent-hover: color-mix(in srgb, var(--accent), #000 14%);
-  --accent-soft: color-mix(in srgb, var(--accent) 9%, #fff);
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, #fff);
   --accent-border: color-mix(in srgb, var(--accent) 24%, #fff);
+
+  /* Accent ocre (eyebrows, focus, priorités). */
+  --ochre: #a8772a;
+  --ochre-soft: #f2e7cf;
 }
 
 @theme inline {
@@ -31,8 +42,8 @@ body {
 body {
   min-height: 100vh;
   font-family:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+    "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
   /* Halo subtil teinté par la couleur de marque (suit le branding). */
   background:
     radial-gradient(
@@ -56,6 +67,27 @@ body {
 /* Lien d'accentuation sobre */
 a {
   color: inherit;
+}
+
+/* Titres en serif clinique (Fraunces) ; le reste en Hanken Grotesk. */
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Fraunces", Georgia, "Times New Roman", serif;
+  color: var(--foreground);
+  letter-spacing: -0.015em;
+}
+
+/* Chiffres alignés (compteurs, scores, métriques). */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ochre);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* Petit utilitaire de carte douce */

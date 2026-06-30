@@ -1,12 +1,13 @@
 // Tokens visuels partagés (couleurs par palier de maîtrise).
 import type { Palier } from "./mastery";
 
+// Échelle de maîtrise signature MELETA (terracotta → vert sapin).
 export const PALIER_COLOR: Record<Palier, string> = {
-  non_pratique: "#cbd5e1", // gris : non couvert, pas une faiblesse
-  faible: "#ef4444", // rouge
-  emergent: "#f59e0b", // orange
-  solide: "#3b82f6", // bleu
-  maitrise: "#22c55e", // vert
+  non_pratique: "#d6cfbc", // filet neutre : non couvert, pas une faiblesse
+  faible: "#c26f5f", // terracotta
+  emergent: "#d29a4a", // ambre
+  solide: "#3e8e86", // teal solide
+  maitrise: "#1e6b57", // vert sapin
 };
 
 export const TYPE_LABEL: Record<string, string> = {
