@@ -50,7 +50,8 @@ async function chargerEtats(userId: string, frameworkId: string, gridId: string)
 
   const enriched = competencies.map((c) => {
     const st = stateByCode.get(c.code);
-    const mastery = st?.mastery ?? null;
+    // Une maîtrise NaN historique (débrief IA défaillant) est lue comme non pratiquée.
+    const mastery = Number.isFinite(st?.mastery) ? (st!.mastery as number) : null;
     const attempts = st?.attempts ?? 0;
     const last = st?.lastPracticed ?? null;
     return {
@@ -68,7 +69,9 @@ async function chargerEtats(userId: string, frameworkId: string, gridId: string)
 function calcOverall(
   enriched: { mastery: number | null; attempts: number }[],
 ): OverallVue {
-  const avec = enriched.filter((e) => e.mastery !== null) as { mastery: number }[];
+  const avec = enriched.filter(
+    (e) => e.mastery !== null && Number.isFinite(e.mastery),
+  ) as { mastery: number }[];
   const masteryMoyenne =
     avec.length > 0 ? avec.reduce((s, e) => s + e.mastery, 0) / avec.length : null;
   const competencesCouvertes = enriched.filter((e) => e.attempts > 0).length;

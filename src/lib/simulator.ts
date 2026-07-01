@@ -225,6 +225,8 @@ export async function endSimulation(sessionId: string) {
   const validCodes = new Set(competencies.map((c) => c.code));
   for (const s of debrief.scores) {
     if (s.non_evalue || !validCodes.has(s.competency_id)) continue;
+    // Note IA absente/non numérique : on ignore plutôt que de corrompre la carte.
+    if (!Number.isFinite(Number(s.note))) continue;
     await recordAttempt({
       userId: session.userId,
       tenantId: session.tenantId,

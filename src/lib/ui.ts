@@ -17,6 +17,6 @@ export const TYPE_LABEL: Record<string, string> = {
 };
 
 export function pct(x: number | null): string {
-  if (x === null || x === undefined) return "—";
+  if (x === null || x === undefined || !Number.isFinite(x)) return "—";
   return `${Math.round(x * 100)}%`;
 }

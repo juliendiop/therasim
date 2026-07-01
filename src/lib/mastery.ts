@@ -5,13 +5,17 @@ export const ALPHA = 0.4; // pondération récence de la moyenne mobile (spec §
 
 /** Note 1..5 -> score [0,1]. (note - 1) / 4 (spec §5.1). */
 export function normalizeNote(note: number): number {
-  return clamp((note - 1) / 4, 0, 1);
+  const n = Number(note);
+  if (!Number.isFinite(n)) return 0; // note IA invalide -> score plancher (jamais NaN)
+  return clamp((n - 1) / 4, 0, 1);
 }
 
 /** Moyenne mobile pondérée par la récence (spec §5.2). */
 export function updateMastery(prev: number | null, s: number): number {
-  if (prev === null || prev === undefined) return s;
-  return (1 - ALPHA) * prev + ALPHA * s;
+  const score = Number.isFinite(s) ? s : 0;
+  // prev absent OU corrompu (NaN historique) -> on repart du score courant.
+  if (prev === null || prev === undefined || !Number.isFinite(prev)) return score;
+  return (1 - ALPHA) * prev + ALPHA * score;
 }
 
 export type Palier = "non_pratique" | "faible" | "emergent" | "solide" | "maitrise";
