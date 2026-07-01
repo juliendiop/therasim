@@ -60,6 +60,19 @@ export async function sendInvitation(
   await send(email, `Invitation à rejoindre ${brandName}`, html);
 }
 
+/** Email libre (offres/relances) : le texte est échappé, les retours à la ligne conservés. */
+export async function sendCustomEmail(
+  to: string,
+  subject: string,
+  bodyText: string,
+): Promise<void> {
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:480px;margin:0 auto;color:#1a1d23;line-height:1.5;white-space:pre-line">
+${escapeHtml(bodyText)}
+  </div>`;
+  await send(to, subject, html);
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string,

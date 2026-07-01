@@ -5,6 +5,8 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { setConfig } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 import { grant } from "@/lib/credits";
+import { isEmailConfigured, sendCustomEmail } from "@/lib/email";
+import { DEFAULT_OFFERS, getOffer, renderOffer } from "@/lib/offers";
 
 // Enregistre les réglages de crédits (quotas + coûts) dans app_config.
 export async function saveCreditSettings(formData: FormData) {
@@ -20,6 +22,76 @@ export async function saveCreditSettings(formData: FormData) {
     if (Number.isFinite(n) && n >= 0) await setConfig(cfgKey, String(n));
   }
   revalidatePath("/admin/credits");
+}
+
+// Enregistre les textes des offres (sujet/corps/crédits) dans app_config.
+export async function saveOffers(formData: FormData) {
+  await requireSuperAdmin();
+  for (const o of DEFAULT_OFFERS) {
+    const subject = String(formData.get(`subject_${o.id}`) ?? "").trim();
+    const body = String(formData.get(`body_${o.id}`) ?? "").trim();
+    if (subject) await setConfig(`offer.${o.id}.subject`, subject);
+    if (body) await setConfig(`offer.${o.id}.body`, body);
+    if (o.kind === "grant") {
+      const c = parseInt(String(formData.get(`credits_${o.id}`) ?? ""), 10);
+      if (Number.isFinite(c) && c >= 0) await setConfig(`offer.${o.id}.credits`, String(c));
+    }
+  }
+  revalidatePath("/admin/credits");
+}
+
+export type OfferResult = { ok: boolean; message: string };
+
+// Envoie une offre à un utilisateur (crédite le compte si kind='grant', puis email).
+export async function sendOffer(
+  _prev: OfferResult | null,
+  formData: FormData,
+): Promise<OfferResult> {
+  await requireSuperAdmin();
+  const userId = String(formData.get("userId"));
+  const offerId = String(formData.get("offerId"));
+
+  const offer = await getOffer(offerId);
+  if (!offer) return { ok: false, message: "Offre inconnue." };
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return { ok: false, message: "Utilisateur introuvable." };
+  const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId } });
+  const brand = tenant?.brandName || tenant?.nom || "MELETA";
+
+  let granted = 0;
+  if (offer.kind === "grant" && offer.credits > 0) {
+    await grant(user.id, offer.credits, "admin_grant", { offer: offer.id });
+    granted = offer.credits;
+  }
+
+  const { subject, body } = renderOffer(offer, {
+    brand,
+    credits: offer.credits,
+    email: user.email,
+  });
+
+  let emailSent = false;
+  if (isEmailConfigured()) {
+    try {
+      await sendCustomEmail(user.email, subject, body);
+      emailSent = true;
+    } catch (e) {
+      console.error("[offer] envoi échoué", e);
+    }
+  }
+
+  revalidatePath("/admin/credits");
+
+  if (offer.kind === "promo" && !emailSent) {
+    return {
+      ok: false,
+      message: "Email non configuré : la promo n'a pas pu être envoyée.",
+    };
+  }
+  const parts: string[] = [];
+  if (granted) parts.push(`${granted} crédits ajoutés`);
+  parts.push(emailSent ? "email envoyé" : "email non envoyé (email non configuré)");
+  return { ok: true, message: `${user.email} : ${parts.join(" · ")}.` };
 }
 
 export type GrantResult = { ok: boolean; message: string };
