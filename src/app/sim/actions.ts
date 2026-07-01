@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { tenantCanAccess } from "@/lib/entitlements";
@@ -42,6 +43,8 @@ export async function startSimulationAction(formData: FormData) {
     await grant(user.id, s.costSimulation, "refund", { frameworkId, of: "simulation" });
     throw e;
   }
+  // Rafraîchit le compteur de crédits de l'en-tête (layout racine).
+  revalidatePath("/", "layout");
   redirect(`/sim/${sessionId}`);
 }
 
@@ -81,5 +84,7 @@ export async function startMiniSceneAction(formData: FormData) {
     await grant(user.id, s.costMiniscene, "refund", { frameworkId, of: "miniscene" });
     throw e;
   }
+  // Rafraîchit le compteur de crédits de l'en-tête (layout racine).
+  revalidatePath("/", "layout");
   redirect(`/sim/${sessionId}`);
 }
