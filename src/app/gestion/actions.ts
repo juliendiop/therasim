@@ -74,6 +74,48 @@ export async function createMember(
   };
 }
 
+// (Re)génère un lien de connexion (magique, 7 jours) pour un membre déjà inscrit.
+export async function createMemberInvite(
+  _prev: MemberResult | null,
+  formData: FormData,
+): Promise<MemberResult> {
+  const manager = await requireManager();
+  const id = String(formData.get("id"));
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target || target.tenantId !== manager.tenantId || target.role === "super_admin") {
+    return { ok: false, message: "Membre introuvable." };
+  }
+
+  const token = await createMagicToken(target.email, manager.tenantId, 60 * 24 * 7);
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const proto = host.includes("localhost") ? "http" : "https";
+  const base = appBaseUrl(`${proto}://${host}`);
+  const inviteLink = `${base}/api/auth/callback?token=${token}`;
+
+  const tenant = await prisma.tenant.findUnique({ where: { id: manager.tenantId } });
+  const brandName = tenant?.brandName || tenant?.nom || "MELETA";
+
+  let emailSent = false;
+  if (isEmailConfigured()) {
+    try {
+      await sendInvitation(target.email, inviteLink, brandName, ROLE_LABELS[target.role as Role]);
+      emailSent = true;
+    } catch (e) {
+      console.error("[invite] échec envoi", e);
+    }
+  }
+
+  return {
+    ok: true,
+    message: emailSent
+      ? `Lien renvoyé par email à ${target.email}.`
+      : `Lien de connexion généré (valable 7 jours).`,
+    inviteLink,
+    emailSent,
+  };
+}
+
 export async function updateMemberRole(formData: FormData) {
   const manager = await requireManager();
   const id = String(formData.get("id"));

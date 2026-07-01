@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { ASSIGNABLE_ROLES, ROLE_LABELS, canManageMembers } from "@/lib/roles";
 import { removeMember, updateMemberRole } from "./actions";
 import AddMemberForm from "./add-member-form";
+import MemberInvite from "./member-invite";
 
 export const dynamic = "force-dynamic";
 
@@ -85,14 +86,17 @@ export default async function GestionPage() {
                       </form>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-4 py-2">
                     {!locked && (
-                      <form action={removeMember}>
-                        <input type="hidden" name="id" value={m.id} />
-                        <button className="text-xs text-[var(--muted)] hover:text-red-600">
-                          Retirer
-                        </button>
-                      </form>
+                      <div className="flex items-center justify-end gap-3">
+                        <MemberInvite memberId={m.id} />
+                        <form action={removeMember}>
+                          <input type="hidden" name="id" value={m.id} />
+                          <button className="text-xs text-[var(--muted)] hover:text-red-600">
+                            Retirer
+                          </button>
+                        </form>
+                      </div>
                     )}
                   </td>
                 </tr>
