@@ -71,26 +71,27 @@ export async function sendOffer(
   });
 
   let emailSent = false;
-  if (isEmailConfigured()) {
+  let emailError: string | null = null;
+  if (!isEmailConfigured()) {
+    emailError = "email non configuré (RESEND_API_KEY absent côté serveur)";
+  } else {
     try {
       await sendCustomEmail(user.email, subject, body);
       emailSent = true;
     } catch (e) {
       console.error("[offer] envoi échoué", e);
+      emailError = "envoi refusé (clé Resend invalide ou domaine non vérifié)";
     }
   }
 
   revalidatePath("/admin/credits");
 
   if (offer.kind === "promo" && !emailSent) {
-    return {
-      ok: false,
-      message: "Email non configuré : la promo n'a pas pu être envoyée.",
-    };
+    return { ok: false, message: `Promo non envoyée : ${emailError}.` };
   }
   const parts: string[] = [];
   if (granted) parts.push(`${granted} crédits ajoutés`);
-  parts.push(emailSent ? "email envoyé" : "email non envoyé (email non configuré)");
+  parts.push(emailSent ? "email envoyé" : `email non envoyé (${emailError})`);
   return { ok: true, message: `${user.email} : ${parts.join(" · ")}.` };
 }
 
