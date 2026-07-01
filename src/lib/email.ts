@@ -13,9 +13,9 @@ export function isEmailConfigured(): boolean {
 }
 
 function fromAddress(): string {
-  // Par défaut : domaine de test Resend (n'autorise l'envoi qu'à l'email du compte Resend).
-  // Pour envoyer à tout le monde : vérifier un domaine et régler EMAIL_FROM.
-  return process.env.EMAIL_FROM || "MELETA <onboarding@resend.dev>";
+  // Domaine meleta.app vérifié sur Resend -> envoi possible vers n'importe qui.
+  // Surchargeable via EMAIL_FROM (ex. pour changer l'adresse d'expéditeur).
+  return process.env.EMAIL_FROM || "MELETA <noreply@meleta.app>";
 }
 
 export async function sendMagicLink(email: string, link: string): Promise<void> {
