@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { consumeMagicToken, createSessionToken, setSessionCookie } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,13 @@ export async function GET(req: NextRequest) {
     role: user.role as "super_admin" | "tenant_admin" | "learner",
   });
   await setSessionCookie(sessionToken);
+  await logAudit({
+    action: "login",
+    email: user.email,
+    tenantId: user.tenantId,
+    userId: user.id,
+    meta: { method: "magic" },
+  });
 
   const dest = user.role === "super_admin" ? "/admin" : "/catalogue";
   return NextResponse.redirect(new URL(dest, req.nextUrl.origin));

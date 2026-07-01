@@ -21,6 +21,9 @@ const TYPE_BADGE: Record<ActivityType, string> = {
   simulation: "bg-[var(--ochre-soft)] text-[var(--ochre)]",
   credit: "bg-gray-100 text-[var(--foreground)]",
   signup: "bg-green-50 text-green-700",
+  login: "bg-[var(--accent-soft)] text-[var(--accent)]",
+  invite: "bg-green-50 text-green-700",
+  role: "bg-gray-100 text-[var(--foreground)]",
 };
 
 export default async function AdminActivityPage({

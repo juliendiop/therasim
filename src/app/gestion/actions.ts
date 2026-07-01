@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { createMagicToken, requireUser, type Role } from "@/lib/auth";
 import { appBaseUrl } from "@/lib/base-url";
+import { logAudit } from "@/lib/audit";
 import { isEmailConfigured, sendInvitation } from "@/lib/email";
 import { ASSIGNABLE_ROLES, ROLE_LABELS, canManageMembers } from "@/lib/roles";
 
@@ -41,6 +42,13 @@ export async function createMember(
   if (existing) return { ok: false, message: "Cet email a déjà un compte." };
 
   await prisma.user.create({ data: { email, role, tenantId: manager.tenantId } });
+  await logAudit({
+    action: "invite",
+    email: manager.email,
+    tenantId: manager.tenantId,
+    userId: manager.id,
+    meta: { target: email, role },
+  });
 
   // Lien d'invitation longue durée (7 jours) qui connecte directement.
   const token = await createMagicToken(email, manager.tenantId, 60 * 24 * 7);
@@ -106,6 +114,14 @@ export async function createMemberInvite(
     }
   }
 
+  await logAudit({
+    action: "invite",
+    email: manager.email,
+    tenantId: manager.tenantId,
+    userId: manager.id,
+    meta: { target: target.email, role: target.role, resend: true },
+  });
+
   return {
     ok: true,
     message: emailSent
@@ -125,6 +141,13 @@ export async function updateMemberRole(formData: FormData) {
   // On ne touche qu'aux membres de sa propre plateforme, jamais un super-admin.
   if (!target || target.tenantId !== manager.tenantId || target.role === "super_admin") return;
   await prisma.user.update({ where: { id }, data: { role } });
+  await logAudit({
+    action: "role_change",
+    email: manager.email,
+    tenantId: manager.tenantId,
+    userId: manager.id,
+    meta: { target: target.email, role },
+  });
   revalidatePath("/gestion");
 }
 
@@ -135,5 +158,12 @@ export async function removeMember(formData: FormData) {
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target || target.tenantId !== manager.tenantId || target.role === "super_admin") return;
   await prisma.user.delete({ where: { id } });
+  await logAudit({
+    action: "member_removed",
+    email: manager.email,
+    tenantId: manager.tenantId,
+    userId: manager.id,
+    meta: { target: target.email },
+  });
   revalidatePath("/gestion");
 }

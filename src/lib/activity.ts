@@ -4,7 +4,15 @@
 import "server-only";
 import { prisma } from "./prisma";
 
-export type ActivityType = "drill" | "miniscene" | "simulation" | "credit" | "signup";
+export type ActivityType =
+  | "drill"
+  | "miniscene"
+  | "simulation"
+  | "credit"
+  | "signup"
+  | "login"
+  | "invite"
+  | "role";
 
 export type ActivityEvent = {
   at: string; // ISO
@@ -32,6 +40,9 @@ export const ACTIVITY_TYPE_LABEL: Record<ActivityType, string> = {
   simulation: "Entretien simulé",
   credit: "Crédits",
   signup: "Inscription",
+  login: "Connexion",
+  invite: "Invitation",
+  role: "Rôle",
 };
 
 const CREDIT_REASON_LABEL: Record<string, string> = {
@@ -61,7 +72,7 @@ export async function buildActivity(opts: ActivityFilters): Promise<{
   const limit = opts.limit ?? 250;
   const whereTenant = opts.tenantId ? { tenantId: opts.tenantId } : {};
 
-  const [users, tenants, attempts, sims, ledger] = await Promise.all([
+  const [users, tenants, attempts, sims, ledger, audits] = await Promise.all([
     prisma.user.findMany({
       select: { id: true, email: true, tenantId: true, createdAt: true },
     }),
@@ -95,6 +106,18 @@ export async function buildActivity(opts: ActivityFilters): Promise<{
     prisma.creditLedger.findMany({
       where: { createdAt: { gte: since } },
       select: { userId: true, delta: true, reason: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 2000,
+    }),
+    prisma.auditEvent.findMany({
+      where: { createdAt: { gte: since }, ...whereTenant },
+      select: {
+        email: true,
+        tenantId: true,
+        action: true,
+        meta: true,
+        createdAt: true,
+      },
       orderBy: { createdAt: "desc" },
       take: 2000,
     }),
@@ -162,6 +185,37 @@ export async function buildActivity(opts: ActivityFilters): Promise<{
     if (u.createdAt < since) continue;
     if (opts.tenantId && u.tenantId !== opts.tenantId) continue;
     add(u.id, u.tenantId, u.createdAt, "signup", "Compte créé");
+  }
+
+  for (const ev of audits) {
+    const tId = ev.tenantId ?? "";
+    const meta = (ev.meta ?? {}) as Record<string, unknown>;
+    let type: ActivityType = "login";
+    let detail = ev.action;
+    if (ev.action === "login") {
+      type = "login";
+      detail = meta.method === "magic" ? "Lien magique" : "Mot de passe";
+    } else if (ev.action === "invite") {
+      type = "invite";
+      detail = `→ ${String(meta.target ?? "?")}${
+        meta.role ? ` (${String(meta.role)})` : ""
+      }${meta.resend ? " · relance" : ""}`;
+    } else if (ev.action === "role_change") {
+      type = "role";
+      detail = `${String(meta.target ?? "?")} → ${String(meta.role ?? "?")}`;
+    } else if (ev.action === "member_removed") {
+      type = "role";
+      detail = `Retiré : ${String(meta.target ?? "?")}`;
+    }
+    events.push({
+      at: ev.createdAt.toISOString(),
+      email: ev.email,
+      tenantId: tId,
+      tenantName: tenantNom.get(tId) ?? "—",
+      type,
+      label: ACTIVITY_TYPE_LABEL[type],
+      detail,
+    });
   }
 
   // Filtres email / type (en mémoire).

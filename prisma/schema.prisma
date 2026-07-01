@@ -58,6 +58,22 @@ model User {
   @@map("users")
 }
 
+// Journal d'audit : évènements non dérivables des autres tables
+// (connexions, invitations, changements de rôle). Alimente le journal d'activité.
+model AuditEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String?  @map("tenant_id") @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  email     String // acteur (dénormalisé pour l'affichage/filtre)
+  action    String // 'login' | 'invite' | 'role_change' | 'member_removed'
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([createdAt])
+  @@map("audit_events")
+}
+
 // Journal des mouvements de crédits (traçabilité : bienvenue, recharge, consommation, octroi).
 model CreditLedger {
   id           String   @id @default(uuid()) @db.Uuid

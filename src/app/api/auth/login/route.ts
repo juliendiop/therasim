@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { createSessionToken, setSessionCookie, type Role } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,13 @@ export async function POST(req: NextRequest) {
     role: user.role as Role,
   });
   await setSessionCookie(token);
+  await logAudit({
+    action: "login",
+    email: user.email,
+    tenantId: user.tenantId,
+    userId: user.id,
+    meta: { method: "password" },
+  });
 
   const redirect = user.role === "super_admin" ? "/admin" : "/catalogue";
   return NextResponse.json({ ok: true, redirect });
