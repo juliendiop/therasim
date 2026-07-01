@@ -6,6 +6,7 @@ import { setConfig } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 import { grant } from "@/lib/credits";
 import { isEmailConfigured, sendCustomEmail } from "@/lib/email";
+import { appBaseUrl } from "@/lib/base-url";
 import { DEFAULT_OFFERS, getOffer, renderOffer } from "@/lib/offers";
 
 // Enregistre les réglages de crédits (quotas + coûts) dans app_config.
@@ -64,10 +65,12 @@ export async function sendOffer(
     granted = offer.credits;
   }
 
+  const link = appBaseUrl();
   const { subject, body } = renderOffer(offer, {
     brand,
     credits: offer.credits,
     email: user.email,
+    link,
   });
 
   let emailSent = false;
@@ -76,7 +79,10 @@ export async function sendOffer(
     emailError = "email non configuré (RESEND_API_KEY absent côté serveur)";
   } else {
     try {
-      await sendCustomEmail(user.email, subject, body);
+      await sendCustomEmail(user.email, subject, body, {
+        url: link,
+        label: `Accéder à ${brand}`,
+      });
       emailSent = true;
     } catch (e) {
       console.error("[offer] envoi échoué", e);

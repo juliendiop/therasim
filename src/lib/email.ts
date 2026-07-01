@@ -60,15 +60,21 @@ export async function sendInvitation(
   await send(email, `Invitation à rejoindre ${brandName}`, html);
 }
 
-/** Email libre (offres/relances) : le texte est échappé, les retours à la ligne conservés. */
+/** Email libre (offres/relances) : texte échappé, retours à la ligne conservés,
+ *  avec un bouton d'action optionnel (CTA) vers la plateforme. */
 export async function sendCustomEmail(
   to: string,
   subject: string,
   bodyText: string,
+  cta?: { url: string; label: string },
 ): Promise<void> {
+  const button = cta
+    ? `<p style="margin:24px 0"><a href="${cta.url}" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">${escapeHtml(cta.label)}</a></p>`
+    : "";
   const html = `
-  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:480px;margin:0 auto;color:#1a1d23;line-height:1.5;white-space:pre-line">
-${escapeHtml(bodyText)}
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:480px;margin:0 auto;color:#1a1d23;line-height:1.5">
+    <div style="white-space:pre-line">${escapeHtml(bodyText)}</div>
+    ${button}
   </div>`;
   await send(to, subject, html);
 }

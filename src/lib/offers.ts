@@ -61,12 +61,13 @@ export async function getOffer(id: string): Promise<Offer | null> {
 
 export function renderOffer(
   offer: Offer,
-  vars: { brand: string; credits: number; email: string },
+  vars: { brand: string; credits: number; email: string; link: string },
 ): { subject: string; body: string } {
   const apply = (s: string) =>
     s
       .replace(/\{brand\}/g, vars.brand)
       .replace(/\{credits\}/g, String(vars.credits))
-      .replace(/\{email\}/g, vars.email);
+      .replace(/\{email\}/g, vars.email)
+      .replace(/\{link\}/g, vars.link);
   return { subject: apply(offer.subject), body: apply(offer.body) };
 }
