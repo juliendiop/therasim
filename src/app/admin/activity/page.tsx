@@ -150,6 +150,7 @@ export default async function AdminActivityPage({
                 <tr key={i}>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-[var(--muted)]">
                     {new Date(e.at).toLocaleString("fr-FR", {
+                      timeZone: "Europe/Paris",
                       day: "2-digit",
                       month: "2-digit",
                       hour: "2-digit",

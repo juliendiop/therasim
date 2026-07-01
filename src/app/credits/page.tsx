@@ -121,7 +121,7 @@ export default async function CreditsPage({
                 <tr key={h.id}>
                   <td className="px-4 py-2">{REASON_LABEL[h.reason] ?? h.reason}</td>
                   <td className="px-4 py-2 text-xs text-[var(--muted)]">
-                    {h.createdAt.toLocaleDateString("fr-FR")}
+                    {h.createdAt.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}
                   </td>
                   <td
                     className={`px-4 py-2 text-right font-semibold ${
