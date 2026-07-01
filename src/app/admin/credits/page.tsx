@@ -7,6 +7,7 @@ import type { Role } from "@/lib/auth";
 import { saveCreditSettings, saveOffers } from "./actions";
 import GrantForm from "./grant-form";
 import OfferButton from "./offer-button";
+import AddCreditsButton from "./add-credits-button";
 
 export const dynamic = "force-dynamic";
 
@@ -114,13 +115,14 @@ export default async function AdminCreditsPage({
                 <th className="px-4 py-2">Plateforme</th>
                 <th className="px-4 py-2">Rôle</th>
                 <th className="px-4 py-2 text-right">Solde</th>
+                <th className="px-4 py-2 text-right">Ajouter</th>
                 <th className="px-4 py-2 text-right">Offre</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[var(--muted)]">
+                  <td colSpan={6} className="px-4 py-8 text-center text-[var(--muted)]">
                     Aucun utilisateur pour ces filtres.
                   </td>
                 </tr>
@@ -142,6 +144,9 @@ export default async function AdminCreditsPage({
                       >
                         {u.credits}
                       </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <AddCreditsButton userId={u.id} />
                     </td>
                     <td className="px-4 py-2">
                       <OfferButton userId={u.id} offers={offerOptions} />

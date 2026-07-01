@@ -119,3 +119,21 @@ export async function grantCredits(
     message: `+${amount} crédits accordés à ${email}. Nouveau solde : ${newBalance}.`,
   };
 }
+
+// Ajout rapide de crédits à un utilisateur donné (par id), sans email.
+export async function addUserCredits(
+  _prev: GrantResult | null,
+  formData: FormData,
+): Promise<GrantResult> {
+  await requireSuperAdmin();
+  const userId = String(formData.get("userId"));
+  const amount = parseInt(String(formData.get("amount") ?? ""), 10);
+  if (!Number.isFinite(amount) || amount < 1) {
+    return { ok: false, message: "Montant ≥ 1." };
+  }
+  const u = await prisma.user.findUnique({ where: { id: userId } });
+  if (!u) return { ok: false, message: "Introuvable." };
+  const newBalance = await grant(u.id, amount, "admin_grant");
+  revalidatePath("/admin/credits");
+  return { ok: true, message: `+${amount} · solde ${newBalance}` };
+}
