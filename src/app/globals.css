@@ -64,19 +64,19 @@ body {
   background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
-/* Lien d'accentuation sobre */
-a {
-  color: inherit;
-}
-
-/* Titres en serif clinique (Fraunces) ; le reste en Hanken Grotesk. */
-h1,
-h2,
-h3,
-h4 {
-  font-family: "Fraunces", Georgia, "Times New Roman", serif;
-  color: var(--foreground);
-  letter-spacing: -0.015em;
+/* Styles d'éléments dans @layer base : les classes utilitaires Tailwind
+   (text-white, text-[var(--muted)], tracking-*) gardent ainsi la priorité.
+   NB : Tailwind reset déjà `a { color: inherit }` — inutile de le redéclarer
+   hors calque, ce qui écraserait `text-white` sur les boutons-liens. */
+@layer base {
+  /* Titres en serif clinique (Fraunces) ; le reste en Hanken Grotesk. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Fraunces", Georgia, "Times New Roman", serif;
+    letter-spacing: -0.015em;
+  }
 }
 
 /* Chiffres alignés (compteurs, scores, métriques). */
