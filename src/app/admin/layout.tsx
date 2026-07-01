@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Activity,
   BookOpen,
   Building2,
   Coins,
@@ -33,6 +34,7 @@ export default async function AdminLayout({
         <AdminLink href="/admin/packs" icon={<Package className="h-4 w-4" />} label="Packs & catalogue" />
         <AdminLink href="/admin/modeles" icon={<Cpu className="h-4 w-4" />} label="Modèles IA" />
         <AdminLink href="/admin/credits" icon={<Coins className="h-4 w-4" />} label="Crédits & quotas" />
+        <AdminLink href="/admin/activity" icon={<Activity className="h-4 w-4" />} label="Journal d'activité" />
         <AdminLink href="/admin/compte" icon={<KeyRound className="h-4 w-4" />} label="Mon compte" />
       </nav>
       {children}
