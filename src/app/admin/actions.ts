@@ -28,6 +28,16 @@ export async function createTenant(formData: FormData) {
   revalidatePath("/admin/tenants");
 }
 
+export async function renameTenant(formData: FormData) {
+  await requireSuperAdmin();
+  const tenantId = String(formData.get("tenantId"));
+  const nom = String(formData.get("nom") ?? "").trim();
+  if (!nom) return;
+  await prisma.tenant.update({ where: { id: tenantId }, data: { nom } });
+  revalidatePath(`/admin/tenants/${tenantId}`);
+  revalidatePath("/admin/tenants");
+}
+
 export async function updateBranding(formData: FormData) {
   await requireSuperAdmin();
   const tenantId = String(formData.get("tenantId"));

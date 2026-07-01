@@ -3,6 +3,7 @@ import { Check, Eye } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { effectiveFrameworkIds } from "@/lib/entitlements";
 import {
+  renameTenant,
   setFrameworkOverride,
   toggleTenantPack,
   updateBranding,
@@ -51,6 +52,29 @@ export default async function TenantDetail({
           </button>
         </form>
       </div>
+
+      {/* Renommer la plateforme */}
+      <section>
+        <h3 className="text-sm font-semibold">Nom de la plateforme</h3>
+        <form action={renameTenant} className="mt-2 flex flex-wrap items-end gap-2">
+          <input type="hidden" name="tenantId" value={id} />
+          <div className="min-w-[240px] flex-1">
+            <input
+              name="nom"
+              defaultValue={tenant.nom}
+              required
+              className="w-full rounded-lg border border-[var(--border)] p-2 text-sm"
+            />
+          </div>
+          <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
+            Renommer
+          </button>
+        </form>
+        <p className="mt-2 text-xs text-[var(--muted)]">
+          Le nom interne de la plateforme. Pour l&apos;affichage en marque blanche côté
+          apprenant, utilisez le « Nom de marque » ci-dessous.
+        </p>
+      </section>
 
       {/* Packs accordés */}
       <section>
