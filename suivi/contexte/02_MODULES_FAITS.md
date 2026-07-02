@@ -208,6 +208,20 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 - Fichiers : `src/app/page.tsx`, `src/app/demo-drill.tsx`, `src/app/layout.tsx`.
 - ⚠️ Vérifier que la boîte `contact@meleta.app` existe (réception des demandes de démo).
 
+## 29. Espace supervision formateur + export CSV (2 juillet)
+**État : ✅ Fait (V1)** — ⚠️ nécessite `npm run db:push` (nouvelle table `supervisor_notes`)
+- `/supervision` : liste des apprenants du tenant + activité (dernier essai, nb exercices,
+  nb mises en situation), recherche par email.
+- `/supervision/[id]` : progression par référentiel (jamais de moyenne cross-référentiel),
+  historique des mises en situation, fil de **notes** du formateur.
+- `/supervision/[id]/sim/[simId]` : relecture lecture seule (transcript + débrief) d'un
+  entretien précis + note rattachée. Toute lecture vérifiée cross-tenant.
+- Export **CSV** des résultats individuels d'une session live : `/api/live/[id]/export`,
+  bouton sur `src/app/sessions/[id]/dashboard.tsx`.
+- Fichiers : `src/lib/supervision.ts`, `src/app/supervision/**`,
+  `src/app/api/live/[id]/export/`, `canSupervise()` dans `src/lib/roles.ts`,
+  modèle `SupervisorNote` dans `prisma/schema.prisma`.
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Brain, Coins, Eye, GraduationCap, Radio, ShieldCheck, Users } from "lucide-react";
+import { Brain, ClipboardList, Coins, Eye, GraduationCap, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
-import { canManageLive } from "@/lib/roles";
+import { canManageLive, canSupervise } from "@/lib/roles";
 import { syncWallet } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
 import { stopImpersonation } from "./admin/impersonate-actions";
@@ -132,6 +132,14 @@ export default async function RootLayout({
                     className="hidden items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)] sm:inline-flex"
                   >
                     <GraduationCap className="h-4 w-4" /> Formations
+                  </Link>
+                )}
+                {canSupervise(user.role) && (
+                  <Link
+                    href="/supervision"
+                    className="hidden items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)] sm:inline-flex"
+                  >
+                    <ClipboardList className="h-4 w-4" /> Supervision
                   </Link>
                 )}
                 {canManageLive(user.role) && (

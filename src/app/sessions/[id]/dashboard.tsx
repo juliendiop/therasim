@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Clock, Copy, Users } from "lucide-react";
+import { Check, Clock, Copy, Download, Users } from "lucide-react";
 import type { LiveResults } from "@/lib/live";
 
 type Payload = {
@@ -182,7 +182,15 @@ export default function LiveDashboard({
 
       {/* Résultats individuels */}
       <div>
-        <h3 className="text-sm font-semibold">Résultats individuels</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Résultats individuels</h3>
+          <a
+            href={`/api/live/${sessionId}/export`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            <Download className="h-3.5 w-3.5" /> Exporter CSV
+          </a>
+        </div>
         <div className="mt-2 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-left text-xs text-[var(--muted)]">

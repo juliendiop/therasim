@@ -106,8 +106,31 @@ Demande porteur : pendant une formation, faire passer une **étude de cas** en d
 - **Tableau de bord formateur** live : synthèse collective par compétence (barres projetables)
   + résultats individuels. Modèle : `LiveSession`/`LiveParticipant`/`LiveAnswer`. Rôles
   super_admin + tenant_admin (« formateur »).
+- ✅ (2 juillet) **Export CSV** des résultats individuels (`/api/live/[id]/export`, bouton sur le
+  tableau de bord).
 - ⚠️ Reste : **étude de cas = un scénario cohérent** (au lieu d'exercices indépendants enchaînés) ;
-  questions **non-QCM** (réponse libre évaluée) ; export PDF/CSV des résultats ; relance/2e passage.
+  questions **non-QCM** (réponse libre évaluée) ; export **PDF** ; relance/2e passage.
+
+## ⭐ Espace supervision formateur — ✅ V1 FAITE (2 juillet)
+
+Demande porteur (analyse du 2 juillet, priorité #1 des chantiers restants — cohérent avec le
+formulaire de demande de devis ajouté côté landing).
+- **`/supervision`** : liste des apprenants du tenant (email, depuis quand, dernière activité,
+  nb d'exercices, nb de mises en situation), recherche par email.
+- **`/supervision/[id]`** : progression de l'apprenant **par référentiel** (règle d'or — jamais
+  de moyenne entre référentiels), historique de ses mises en situation, fil de **notes** du
+  formateur (visibles par l'équipe de la plateforme).
+- **`/supervision/[id]/sim/[simId]`** : relecture **en lecture seule** d'un entretien précis
+  (transcript complet + débrief), avec possibilité de laisser une note rattachée à cet entretien.
+- Accès : `super_admin`, `tenant_admin`, `formateur` (`canSupervise()` dans `roles.ts`). Toute
+  lecture est vérifiée cross-tenant (`getLearnerInTenant`) — un formateur ne voit jamais un
+  apprenant d'une autre plateforme.
+- Fichiers : `src/lib/supervision.ts`, `src/app/supervision/**`, modèle `SupervisorNote`
+  (`prisma/schema.prisma`).
+- ⚠️ **Reste** : assignations (« faites cet exercice d'ici vendredi »), attestation de pratique,
+  export PDF/CSV du suivi individuel (aujourd'hui : CSV sessions live uniquement).
+- 🔴 **Action requise du porteur avant que ça fonctionne** : `npm run db:push` (nouvelle table
+  `supervisor_notes`) — voir `00_DEMARRAGE.md`.
 
 ## ⭐ Prochaine étape — PDF → session de formation (demande 11 juin)
 - Importer le **PDF d'un support / programme** de formation et le transformer en **une session**

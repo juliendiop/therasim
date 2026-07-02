@@ -478,6 +478,46 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
 - Build OK, types OK. Streaming non encore testé en conditions réelles avec la clé Mistral.
 - ANTHROPIC_API_KEY à poser sur Vercel pour activer Claude.
 
+### Suite de session (même jour, ter) : fix landing (mailto) + espace supervision formateur
+- **Fix** : les boutons « Demander une démo » de la landing utilisaient des liens `mailto:`
+  (invisibles/inertes sans client mail configuré). Remplacés par `/demande-demo` (formulaire
+  → email via Resend, reply-to = visiteur, repli si Resend absent). Note : le porteur a depuis
+  ajouté son propre formulaire de demande de devis en parallèle.
+- **Espace supervision formateur** (priorité choisie parmi les 3 chantiers restants de
+  l'analyse du 2 juillet, cohérente avec la poussée B2B en cours) :
+  `/supervision` (liste apprenants + activité), `/supervision/[id]` (progression par
+  référentiel + historique mises en situation + notes), `/supervision/[id]/sim/[simId]`
+  (relecture lecture seule transcript + débrief + note ciblée). Nouveau modèle
+  `SupervisorNote`. Accès `super_admin`/`tenant_admin`/`formateur` via `canSupervise()`.
+  Toute lecture vérifiée cross-tenant (`getLearnerInTenant`).
+- **Export CSV** des résultats individuels d'une session live (`/api/live/[id]/export`),
+  bouton sur le tableau de bord `/sessions/[id]`.
+- Lien « Supervision » ajouté à la navigation (mêmes rôles que Formations/Sessions live).
+
+### 🔴 Action requise du porteur avant le prochain déploiement utile
+- **`npm run db:push`** (local ET/OU contre la base de prod Neon) pour créer la table
+  `supervisor_notes` — sans ça, `/supervision/[id]` plante à l'ajout d'une note (table absente).
+  Le reste de la fonctionnalité (liste apprenants, progression, historique, transcript) marche
+  sans cette table.
+
+### État en fin de session (bis)
+- Build OK, types OK. Supervision et export CSV non testés en conditions réelles (nécessite
+  des apprenants avec de l'activité + `db:push` fait).
+
+### Prochaine étape suggérée
+- Faire `npm run db:push`, puis tester `/supervision` avec un compte formateur/tenant_admin.
+- Chantiers restants de l'analyse du 2 juillet, non commencés :
+  - **Auto-évaluation avant débrief + replay annoté** (estimation de l'apprenant comparée à
+    l'IA avant affichage de la note ; relecture du transcript avec moments clés surlignés en
+    contexte plutôt qu'en liste séparée).
+  - **Visages des patients + célébration des paliers** (avatars/portraits dans le chat et le
+    débrief ; animation + badge quand un palier de maîtrise est franchi).
+- Dans `/supervision`, restent : assignations (« faites cet exercice d'ici vendredi »),
+  attestation de pratique, export PDF/CSV du suivi individuel d'un apprenant (aujourd'hui
+  seul l'export CSV des sessions live existe).
+- Tester le streaming du chat de simulation en conditions réelles (toujours en attente).
+- Réparer `npm run lint` (config ESLint cassée, préexistante — toujours en attente).
+
 ### Prochaine étape suggérée
 - Tester le streaming sur un vrai entretien ; réparer la config ESLint ; créer/router la
   boîte `contact@meleta.app` ; puis chantiers supervision formateur / auto-évaluation

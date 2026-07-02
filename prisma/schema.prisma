@@ -349,6 +349,23 @@ model LiveAnswer {
   @@map("live_answers")
 }
 
+// --- Supervision formateur -------------------------------------------------
+
+// Note laissée par un formateur/admin sur la progression d'un apprenant,
+// éventuellement rattachée à une mise en situation précise (sourceRef = SimSession.id).
+model SupervisorNote {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  learnerId String   @map("learner_id") @db.Uuid
+  sessionId String?  @map("session_id") @db.Uuid // SimSession.id, si liée à un entretien précis
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, learnerId])
+  @@map("supervisor_notes")
+}
+
 // État de maîtrise agrégé par utilisateur × référentiel × compétence (spec §5.2).
 // La PK inclut framework_id : aucune fusion possible entre référentiels.
 model UserCompetencyState {

@@ -13,6 +13,11 @@ export function canManageLive(role: Role): boolean {
   return role === "super_admin" || role === "tenant_admin" || role === "formateur";
 }
 
+/** Peut consulter la progression et les débriefs des apprenants de sa plateforme. */
+export function canSupervise(role: Role): boolean {
+  return role === "super_admin" || role === "tenant_admin" || role === "formateur";
+}
+
 /** Peut gérer les membres de sa plateforme (déclarer formateurs / apprenants). */
 export function canManageMembers(role: Role): boolean {
   return role === "super_admin" || role === "tenant_admin";
