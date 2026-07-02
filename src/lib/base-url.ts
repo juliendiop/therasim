@@ -35,14 +35,34 @@ export function appBaseUrl(requestOrigin?: string): string {
 }
 
 /**
+ * Ramène une URL de déploiement Vercel vers l'alias stable du projet.
+ * Les URLs générées par déploiement (ex. therasim-28zp0srwk-mon-equipe-projects
+ * .vercel.app, ou therasim-git-main-....vercel.app) sont protégées par
+ * l'authentification Vercel : un lien envoyé par email vers ces adresses affiche
+ * un mur de connexion Vercel aux destinataires. L'alias projet.vercel.app, lui,
+ * est public.
+ */
+function stableVercelHost(host: string): string {
+  if (!host.endsWith(".vercel.app")) return host;
+  // URL de branche : <projet>-git-<branche>-<equipe>.vercel.app
+  const git = host.match(/^(.+?)-git-[a-z0-9-]+\.vercel\.app$/);
+  if (git) return `${git[1]}.vercel.app`;
+  // URL de déploiement unique : <projet>-<hash>-<equipe>.vercel.app
+  const dep = host.match(/^(.+?)-[a-z0-9]{7,}-[a-z0-9-]+\.vercel\.app$/);
+  if (dep) return `${dep[1]}.vercel.app`;
+  return host;
+}
+
+/**
  * Variante pour Route Handlers et Server Actions : reconstruit l'origine depuis les
  * en-têtes de la requête courante (x-forwarded-host/proto posés par Vercel), plus
  * fiable que req.nextUrl.origin derrière un proxy.
  */
 export async function appBaseUrlFromRequest(): Promise<string> {
   const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (!host) return appBaseUrl();
+  const rawHost = h.get("x-forwarded-host") ?? h.get("host");
+  if (!rawHost) return appBaseUrl();
+  const host = stableVercelHost(rawHost);
   const proto =
     h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
   return appBaseUrl(`${proto}://${host}`);
