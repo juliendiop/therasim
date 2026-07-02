@@ -234,7 +234,7 @@ export async function generateDraftAction(input: {
     return { ok: true, draft };
   } catch (e) {
     if (e instanceof EvaluatorNotConfiguredError) {
-      return { ok: false, error: "Clé MISTRAL_API_KEY absente : configurez-la pour générer." };
+      return { ok: false, error: "Clé API du fournisseur IA absente : configurez-la pour générer." };
     }
     return { ok: false, error: "Échec de la génération." };
   }

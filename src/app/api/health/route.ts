@@ -9,6 +9,7 @@ export async function GET() {
     env: {
       DATABASE_URL: Boolean(process.env.DATABASE_URL),
       MISTRAL_API_KEY: Boolean(process.env.MISTRAL_API_KEY),
+      ANTHROPIC_API_KEY: Boolean(process.env.ANTHROPIC_API_KEY),
     },
   };
   try {

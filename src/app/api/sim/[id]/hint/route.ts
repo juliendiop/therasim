@@ -26,7 +26,7 @@ export async function POST(
   } catch (e) {
     if (e instanceof EvaluatorNotConfiguredError) {
       return NextResponse.json(
-        { error: "evaluateur_non_configure", message: "Indice indisponible sans MISTRAL_API_KEY." },
+        { error: "evaluateur_non_configure", message: "Indice indisponible : la clé API du fournisseur IA est absente." },
         { status: 503 },
       );
     }

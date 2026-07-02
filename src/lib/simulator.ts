@@ -4,8 +4,7 @@
 // - Le débrief écrit des Attempt (source='simulation') -> même carte que les drills.
 
 import { prisma } from "./prisma";
-import { mistralChat, mistralChatStream, type ChatMsg } from "./mistral";
-import { getModel } from "./config";
+import { llmChat, llmChatStream, type ChatMsg } from "./llm";
 import { normalizeNote } from "./mastery";
 import { recordAttempt } from "./attempts";
 
@@ -68,7 +67,8 @@ export async function startSimulation(input: {
   try {
     const sys = patientSystemPrompt(framework.nom, scenario.titre, scenario.contexte ?? "");
     opener = (
-      await mistralChat(
+      await llmChat(
+        "patient",
         [
           { role: "system", content: sys },
           {
@@ -77,7 +77,7 @@ export async function startSimulation(input: {
               "(Le praticien vous accueille et vous invite à parler. Dites votre première phrase, avec vos mots.)",
           },
         ],
-        { temperature: 0.8, model: await getModel("patient") },
+        { temperature: 0.8, maxTokens: 1024 },
       )
     ).trim();
   } catch {
@@ -109,11 +109,12 @@ export async function patientReplyStream(sessionId: string, learnerText: string)
     role: m.role === "patient" ? "assistant" : "user",
     content: m.content,
   }));
-  // Le flux Mistral est ouvert AVANT d'écrire le tour en base : une erreur de
+  // Le flux LLM est ouvert AVANT d'écrire le tour en base : une erreur de
   // configuration (clé absente…) remonte proprement, sans tour fantôme.
-  const upstream = await mistralChatStream(
+  const upstream = await llmChatStream(
+    "patient",
     [{ role: "system", content: sys }, ...history, { role: "user", content: learnerText }],
-    { temperature: 0.8, model: await getModel("patient") },
+    { temperature: 0.8, maxTokens: 1024 },
   );
 
   await prisma.simMessage.create({
@@ -161,12 +162,13 @@ export async function generateHint(sessionId: string): Promise<string> {
     : "Quel indice pour bien démarrer ?";
 
   return (
-    await mistralChat(
+    await llmChat(
+      "evaluateur",
       [
         { role: "system", content: sys },
         { role: "user", content: user },
       ],
-      { temperature: 0.5, model: await getModel("evaluateur") },
+      { temperature: 0.5, maxTokens: 512 },
     )
   ).trim();
 }
@@ -224,12 +226,13 @@ export async function endSimulation(sessionId: string) {
 
   const user = `GRILLE DE COMPÉTENCES :\n${grille}\n\nVERBATIM DE L'ENTRETIEN :\n${transcript}`;
 
-  const raw = await mistralChat(
+  const raw = await llmChat(
+    "evaluateur",
     [
       { role: "system", content: sys },
       { role: "user", content: user },
     ],
-    { temperature: 0.2, json: true, model: await getModel("evaluateur") },
+    { temperature: 0.2, json: true, maxTokens: 8192 },
   );
   const parsed = JSON.parse(raw) as Partial<Debrief>;
 

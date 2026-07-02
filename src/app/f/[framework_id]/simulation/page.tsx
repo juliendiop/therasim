@@ -40,9 +40,9 @@ export default async function SimulationStart({
 
       {!isEvaluatorConfigured() && (
         <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-          ⚠️ Le simulateur a besoin d&apos;une clé <code>MISTRAL_API_KEY</code> (le patient et le
-          débrief sont générés par un LLM). Tu peux démarrer, mais le patient ne répondra qu&apos;une
-          fois la clé configurée dans <code>.env</code>.
+          ⚠️ Le simulateur a besoin d&apos;une clé API IA (<code>MISTRAL_API_KEY</code> ou{" "}
+          <code>ANTHROPIC_API_KEY</code> selon le fournisseur choisi). Tu peux démarrer, mais le
+          patient ne répondra qu&apos;une fois la clé configurée.
         </div>
       )}
 

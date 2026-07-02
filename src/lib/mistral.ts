@@ -1,5 +1,5 @@
-// Petit client Mistral partagé (chat). Utilisé par le simulateur (patient + débrief).
-import { EvaluatorNotConfiguredError } from "./evaluator";
+// Petit client Mistral partagé (chat). Consommé via src/lib/llm.ts (dispatch fournisseur).
+import { EvaluatorNotConfiguredError } from "./llm-errors";
 
 export type ChatMsg = { role: "system" | "user" | "assistant"; content: string };
 

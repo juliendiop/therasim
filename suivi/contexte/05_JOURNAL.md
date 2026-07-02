@@ -461,8 +461,22 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
   `contact@meleta.app` — **vérifier que la boîte existe**), réassurance, bandeau final.
   Bouton « Se connecter » dans l'en-tête visiteur.
 
+### Suite de session (même jour, bis) : multi-fournisseur LLM (Mistral + Claude)
+- **Couche LLM unifiée** `src/lib/llm.ts` : `llmChat`/`llmChatStream(usage, …)` → dispatch
+  vers Mistral ou **Claude/Anthropic** selon `/admin/modeles`. Nouveau `src/lib/anthropic.ts`
+  (SDK `@anthropic-ai/sdk` : system séparé, 1er message user forcé, streaming, extraction
+  JSON, thinking désactivé, pas de temperature — paramètre retiré des modèles Claude récents).
+- `/admin/modeles` : **fournisseur + modèle par usage**, statut des 2 clés. Config en base :
+  `provider.<usage>` + `model.<usage>` ; garde-fou modèle↔fournisseur dans `getLlm()`.
+  Suggestions Claude : claude-opus-4-8 (défaut) · claude-sonnet-5 · claude-haiku-4-5.
+- simulator/evaluator/generate refactorés sur `llmChat` ; messages d'erreur généralisés
+  (plus de mention exclusive de MISTRAL_API_KEY) ; `/api/health` expose ANTHROPIC_API_KEY.
+- Erreur commune déplacée dans `src/lib/llm-errors.ts` (évite un cycle d'imports) —
+  ré-exportée depuis evaluator.ts pour compatibilité.
+
 ### État en fin de session
 - Build OK, types OK. Streaming non encore testé en conditions réelles avec la clé Mistral.
+- ANTHROPIC_API_KEY à poser sur Vercel pour activer Claude.
 
 ### Prochaine étape suggérée
 - Tester le streaming sur un vrai entretien ; réparer la config ESLint ; créer/router la

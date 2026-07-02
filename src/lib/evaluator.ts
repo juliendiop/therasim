@@ -1,9 +1,13 @@
 // Évaluateur mono-compétence (mode "production") — spec §4.3.
 // Même moteur que la simulation, version restreinte : une seule compétence à juger.
 // Paramétré par référentiel via les ancrages 1/3/5 de la compétence.
-// Température basse (~0.2). En reconnaissance : AUCUN appel LLM (voir attempt route).
+// Fournisseur/modèle : usage « evaluateur » de /admin/modeles (Mistral ou Claude).
+// En reconnaissance : AUCUN appel LLM (voir attempt route).
 
-import { getModel } from "./config";
+import { llmChat } from "./llm";
+
+// Ré-export historique : routes et actions attrapent cette erreur pour le 503.
+export { EvaluatorNotConfiguredError } from "./llm-errors";
 
 export type EvaluationResult = {
   score: number; // note 1..5
@@ -13,15 +17,9 @@ export type EvaluationResult = {
   non_evalue: boolean;
 };
 
-export class EvaluatorNotConfiguredError extends Error {
-  constructor() {
-    super("MISTRAL_API_KEY non configurée : le mode production est indisponible.");
-    this.name = "EvaluatorNotConfiguredError";
-  }
-}
-
+/** Au moins un fournisseur IA dispose d'une clé (les fonctions IA sont activables). */
 export function isEvaluatorConfigured(): boolean {
-  return Boolean(process.env.MISTRAL_API_KEY);
+  return Boolean(process.env.MISTRAL_API_KEY || process.env.ANTHROPIC_API_KEY);
 }
 
 type EvaluateInput = {
@@ -37,10 +35,6 @@ type EvaluateInput = {
 export async function evaluateMonoCompetence(
   input: EvaluateInput,
 ): Promise<EvaluationResult> {
-  const apiKey = process.env.MISTRAL_API_KEY;
-  if (!apiKey) throw new EvaluatorNotConfiguredError();
-  const model = await getModel("evaluateur");
-
   const system = [
     "Tu es un superviseur clinique qui évalue UNE seule compétence à la fois.",
     "Tu notes la réponse de l'apprenant sur une échelle de 1 à 5 selon les ancrages fournis.",
@@ -62,31 +56,15 @@ export async function evaluateMonoCompetence(
     .filter(Boolean)
     .join("\n");
 
-  const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Mistral API erreur ${res.status}: ${txt}`);
-  }
-
-  const data = await res.json();
-  const content = data?.choices?.[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(content) as Partial<EvaluationResult>;
+  const raw = await llmChat(
+    "evaluateur",
+    [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    { temperature: 0.2, json: true, maxTokens: 2048 },
+  );
+  const parsed = JSON.parse(raw) as Partial<EvaluationResult>;
 
   return {
     score: clampNote(Number(parsed.score ?? 1)),

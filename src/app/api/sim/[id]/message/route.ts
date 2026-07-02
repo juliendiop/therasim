@@ -52,7 +52,7 @@ export async function POST(
         {
           error: "evaluateur_non_configure",
           message:
-            "Le simulateur nécessite MISTRAL_API_KEY (le patient est joué par un LLM). Ajoutez la clé dans .env.",
+            "Le simulateur nécessite la clé API du fournisseur IA choisi (voir /admin/modeles) : MISTRAL_API_KEY ou ANTHROPIC_API_KEY.",
         },
         { status: 503 },
       );

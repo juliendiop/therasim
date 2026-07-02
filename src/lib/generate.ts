@@ -1,8 +1,8 @@
 // Génération de brouillons de cartes (drills) par IA — brique B de la phase plateforme.
-// Réutilise l'API Mistral. Produit un BROUILLON à relire/valider (jamais publié d'office).
+// Fournisseur/modèle : usage « generation » de /admin/modeles (Mistral ou Claude).
+// Produit un BROUILLON à relire/valider (jamais publié d'office).
 
-import { EvaluatorNotConfiguredError } from "./evaluator";
-import { getModel } from "./config";
+import { llmChat } from "./llm";
 
 export type DrillDraft = {
   rappel_theorique: string;
@@ -24,10 +24,6 @@ type GenerateInput = {
 };
 
 export async function generateDrillDraft(input: GenerateInput): Promise<DrillDraft> {
-  const apiKey = process.env.MISTRAL_API_KEY;
-  if (!apiKey) throw new EvaluatorNotConfiguredError();
-  const model = await getModel("generation");
-
   const isReco = input.mode === "reconnaissance";
   const schema = isReco
     ? `{"rappel_theorique":str,"stimulus":str,"modele_reponse":str,"patient_reaction_si_bon":str,"options":[{"text":str,"is_best":bool,"score":number 0..1,"feedback":str}]}`
@@ -55,23 +51,15 @@ export async function generateDrillDraft(input: GenerateInput): Promise<DrillDra
     .filter(Boolean)
     .join("\n");
 
-  const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      temperature: 0.7,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
-
-  if (!res.ok) throw new Error(`Mistral API erreur ${res.status}: ${await res.text()}`);
-  const data = await res.json();
-  const parsed = JSON.parse(data?.choices?.[0]?.message?.content ?? "{}");
+  const raw = await llmChat(
+    "generation",
+    [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    { temperature: 0.7, json: true, maxTokens: 4096 },
+  );
+  const parsed = JSON.parse(raw);
 
   return {
     rappel_theorique: String(parsed.rappel_theorique ?? ""),

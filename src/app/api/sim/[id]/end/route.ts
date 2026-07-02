@@ -28,7 +28,7 @@ export async function POST(
       return NextResponse.json(
         {
           error: "evaluateur_non_configure",
-          message: "Le débrief nécessite MISTRAL_API_KEY (évaluateur LLM).",
+          message: "Le débrief nécessite la clé API du fournisseur IA choisi (évaluateur LLM).",
         },
         { status: 503 },
       );

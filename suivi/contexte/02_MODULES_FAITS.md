@@ -126,10 +126,16 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 - Fichiers : `src/lib/simulator.ts` (generateHint), `src/lib/next-drill.ts` (topPriorityCodes),
   `src/app/api/sim/[id]/hint/`, bouton sur `src/app/f/[framework_id]/page.tsx`.
 
-## 19. Config des modèles LLM par usage (session 2 suite)
-**État : ✅ Fait**
-- Table `app_config`, `src/lib/config.ts` (`getModel(usage)`), page `/admin/modeles` : choisir
-  le modèle Mistral pour `patient` / `evaluateur` / `generation` (défaut = `MISTRAL_MODEL`).
+## 19. Config des modèles LLM par usage (session 2 suite, étendu le 2 juillet)
+**État : ✅ Fait (multi-fournisseur)**
+- Table `app_config`, page `/admin/modeles` : choisir le **fournisseur** (Mistral ou
+  **Claude/Anthropic**) ET le modèle pour `patient` / `evaluateur` / `generation`.
+  Clés en env : `MISTRAL_API_KEY` / `ANTHROPIC_API_KEY` (statut affiché dans l'admin).
+- Couche unifiée `src/lib/llm.ts` (`llmChat`/`llmChatStream` par usage) → dispatch vers
+  `src/lib/mistral.ts` ou `src/lib/anthropic.ts` (SDK officiel `@anthropic-ai/sdk`,
+  streaming, extraction JSON, pas de temperature côté Claude — retirée des modèles récents).
+- Garde-fou : modèle incohérent avec le fournisseur → modèle par défaut du fournisseur
+  (Claude : `claude-opus-4-8`). `config.getLlm(usage)` remplace `getModel(usage)`.
 - Clé Mistral installée (palier gratuit), défaut `mistral-small-latest`, testée OK.
 
 ## 20. Impersonation super-admin (accès aux plateformes)

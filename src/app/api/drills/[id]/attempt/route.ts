@@ -125,7 +125,7 @@ export async function POST(
         {
           error: "evaluateur_non_configure",
           message:
-            "Le mode production nécessite MISTRAL_API_KEY. Utilisez un drill de reconnaissance ou configurez la clé.",
+            "Le mode production nécessite la clé API du fournisseur IA choisi. Utilisez un drill de reconnaissance ou configurez la clé.",
         },
         { status: 503 },
       );

@@ -143,7 +143,7 @@ export default function DrillEditor({
         <span className="ml-2 text-xs text-[var(--muted)]">
           {aiAvailable
             ? "Pré-remplit les champs ci-dessous (à relire/corriger)."
-            : "Indisponible : configurez MISTRAL_API_KEY."}
+            : "Indisponible : configurez une clé API IA (Mistral ou Anthropic)."}
         </span>
         {genError && <p className="mt-2 text-xs text-red-600">{genError}</p>}
       </div>
