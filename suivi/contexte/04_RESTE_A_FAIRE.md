@@ -51,7 +51,7 @@ Demande porteur (promo à sa communauté de thérapeutes). Avant : « Créer un 
   `/api/auth/register` (accès immédiat, tenant public, learner) ; magic link en alternative ;
   accueil de bienvenue personnalisé (`?bienvenue=1`) avec CTA direct vers le 1er domaine ;
   liens croisés `/login` ↔ `/inscription` ; tous les CTA landing/démo repointés.
-- 🔴 **Action requise du porteur** : `npm run db:push` (`first_name`, `consent_at`).
+- ✅ `npm run db:push` fait (2 juillet). Inscription B2C opérationnelle.
 - ⚠️ Reste (option) : **page politique de confidentialité** dédiée (RGPD — le consentement
   pointe vers un texte inline) ; **double opt-in** (vérification d'email) ; RGPD complet
   (export/suppression de compte, déjà au backlog transverse ci-dessous).

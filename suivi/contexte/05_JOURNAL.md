@@ -787,10 +787,11 @@ le paywall en cliquant dessus (incitation à débloquer).
   CTA direct vers l'entraînement du 1er domaine débloqué + rappel du parcours (3 étapes).
 - Tous les CTA d'inscription (landing ×3, démo ×1) repointés vers `/inscription` ; liens
   croisés `/login` ↔ `/inscription`. Header « Se connecter » (visiteur) reste sur `/login`.
-- 🔴 **Action requise** : `npm run db:push` (colonnes `first_name`, `consent_at`).
+- ✅ `npm run db:push` fait (2 juillet, contre Neon prod) — colonnes `first_name` +
+  `consent_at` créées. Inscription B2C pleinement opérationnelle.
 
 ### État en fin de session (septies)
-- Build OK, types OK. Reste au porteur : `npm run db:push`, puis tester le parcours complet
+- Build OK, types OK, db:push fait. Reste au porteur : tester le parcours complet
   landing → « Créer un compte » → /inscription → accueil de bienvenue.
 - Option backlog notée : page politique de confidentialité dédiée, double opt-in email.
 
