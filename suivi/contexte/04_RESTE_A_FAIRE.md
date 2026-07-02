@@ -10,12 +10,14 @@ des forfaits d'abonnement récurrents (« les deux », confirmé).
 - ✅ Checkout Stripe hébergé (packs = paiement unique, forfaits = abonnement mensuel),
   webhook avec vérification de signature + idempotence, portail Stripe pour la résiliation,
   `/admin/facturation` pour configurer les Price ID et créer/activer des forfaits.
-- 🔴 **Action requise du porteur** (détail pas-à-pas dans `00_DEMARRAGE.md` § Activer les
+- ✅ `npm run db:push` fait (2 juillet, contre Neon prod) — tables `SubscriptionPlan`,
+  `UserSubscription`, `StripeEvent` + champ `User.stripeCustomerId` créés.
+- 🔴 **Reste à faire côté porteur** (détail pas-à-pas dans `00_DEMARRAGE.md` § Activer les
   paiements) : compte Stripe + clé API, création des Prices dans le Dashboard, Price ID
-  collés dans `/admin/facturation`, enregistrement du webhook + son secret, activation du
-  Customer Portal, `npm run db:push`. **Non testé de bout en bout** (je n'ai pas de compte
-  Stripe) — la validation finale (paiement carte test → crédits accordés → gestion
-  abonnement) revient au porteur.
+  collés dans `/admin/facturation` (+ y créer les forfaits d'abonnement souhaités),
+  enregistrement du webhook + son secret, activation du Customer Portal. **Non testé de
+  bout en bout** (je n'ai pas de compte Stripe) — la validation finale (paiement carte
+  test → crédits accordés → gestion abonnement) revient au porteur.
 - ⚠️ Reste (option, hors scope V1) : édition en place d'un forfait (aujourd'hui : créer +
   activer/désactiver), Stripe Tax (TVA automatique), forfait « accès illimité » sans
   décompte de crédits, facture téléchargeable dans l'app (Stripe envoie déjà un reçu email).

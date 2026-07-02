@@ -630,7 +630,10 @@ dans les `.d.ts` du paquet installé plutôt que suppose :
 - `Invoice.subscription` n'existe plus → déplacé vers
   `Invoice.parent.subscription_details.subscription`.
 
-### 🔴 Action requise du porteur (setup Stripe, détaillé dans `00_DEMARRAGE.md`)
+### ✅ `npm run db:push` fait (2 juillet, contre Neon prod)
+- Tables `SubscriptionPlan`/`UserSubscription`/`StripeEvent` + champ `User.stripeCustomerId`
+  créés. Reste du setup Stripe (détaillé dans `00_DEMARRAGE.md`), toujours à faire côté
+  porteur :
 1. Compte Stripe + clé secrète **test** → `STRIPE_SECRET_KEY`.
 2. Créer les Prices dans le Dashboard Stripe (3 one-time pour les packs, 1 recurring par
    forfait souhaité) → coller les Price ID dans `/admin/facturation` (et y créer les
@@ -639,17 +642,17 @@ dans les `.d.ts` du paquet installé plutôt que suppose :
    `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`,
    `customer.subscription.deleted`) → `STRIPE_WEBHOOK_SECRET`.
 4. Activer le Customer Portal Stripe (Réglages → Facturation).
-5. `npm run db:push` (nouveaux modèles + champ `User.stripeCustomerId`).
-6. Tester avec la carte `4242 4242 4242 4242` sur le site déployé.
+5. Tester avec la carte `4242 4242 4242 4242` sur le site déployé.
 - ⚠️ **Je n'ai pas de compte Stripe : aucun test de bout en bout possible de mon côté.**
   Seuls `npm run build` + `npx tsc --noEmit` valident la correction statique du code.
 
 ### État en fin de session (quater)
-- Build OK, types OK. Fonctionnalité complète côté code, **non testée en conditions
-  réelles** — nécessite le setup manuel Stripe ci-dessus avant tout test possible.
+- Build OK, types OK, `db:push` fait. Fonctionnalité complète côté code, **non testée en
+  conditions réelles** — nécessite le reste du setup manuel Stripe (clé, Prices, webhook,
+  Customer Portal) avant tout test possible.
 
 ### Prochaine étape suggérée
-- Faire le setup Stripe (voir ci-dessus), puis tester un achat de pack ET une souscription
+- Terminer le setup Stripe (voir ci-dessus), puis tester un achat de pack ET une souscription
   d'abonnement en mode test, vérifier l'octroi de crédits et le portail de résiliation.
 - Reste du backlog inchangé : streaming en conditions réelles, `npm run lint`, boîte
   `contact@meleta.app`, chantiers `/supervision` (assignations, attestations).
