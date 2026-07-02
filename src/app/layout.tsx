@@ -59,7 +59,7 @@ export default async function RootLayout({
 
         <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-white/80 backdrop-blur-md">
           <div className="mx-auto flex max-w-5xl items-center gap-3 px-5 py-3.5">
-            <Link href="/catalogue" className="flex items-center gap-2.5">
+            <Link href="/accueil" className="flex items-center gap-2.5">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={brandName} className="h-7 w-auto object-contain" />
@@ -70,10 +70,32 @@ export default async function RootLayout({
               )}
               <span className="text-[15px] font-semibold tracking-tight">{brandName}</span>
             </Link>
-            {isPublic && (
+            {isPublic && !user && (
               <span className="hidden text-xs text-[var(--muted)] sm:inline">
                 entraînement clinique par compétences
               </span>
+            )}
+            {user && (
+              <nav className="ml-2 hidden items-center gap-1 text-sm sm:flex">
+                <Link
+                  href="/accueil"
+                  className="rounded-lg px-2.5 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"
+                >
+                  Accueil
+                </Link>
+                <Link
+                  href="/catalogue"
+                  className="rounded-lg px-2.5 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"
+                >
+                  Domaines
+                </Link>
+                <Link
+                  href="/historique"
+                  className="rounded-lg px-2.5 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"
+                >
+                  Historique
+                </Link>
+              </nav>
             )}
 
             {user && (

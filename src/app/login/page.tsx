@@ -31,7 +31,7 @@ export default function LoginPage() {
         setError(data.message ?? data.error ?? "Erreur");
         return;
       }
-      router.push(data.redirect ?? "/catalogue");
+      router.push(data.redirect ?? "/accueil");
     } catch {
       setError("Connexion impossible.");
     } finally {

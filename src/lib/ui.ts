@@ -20,3 +20,26 @@ export function pct(x: number | null): string {
   if (x === null || x === undefined || !Number.isFinite(x)) return "—";
   return `${Math.round(x * 100)}%`;
 }
+
+export const KIND_LABEL: Record<string, string> = {
+  simulation: "Entretien simulé",
+  miniscene: "Mini-scène guidée",
+};
+
+/** Date lisible en Europe/Paris (le serveur tourne en UTC). */
+export function fmtDate(d: Date | string | null | undefined): string {
+  if (!d) return "—";
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeZone: "Europe/Paris",
+  }).format(new Date(d));
+}
+
+export function fmtDateTime(d: Date | string | null | undefined): string {
+  if (!d) return "—";
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Europe/Paris",
+  }).format(new Date(d));
+}

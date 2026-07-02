@@ -36,6 +36,6 @@ export async function GET(req: NextRequest) {
     meta: { method: "magic" },
   });
 
-  const dest = user.role === "super_admin" ? "/admin" : "/catalogue";
+  const dest = user.role === "super_admin" ? "/admin" : "/accueil";
   return NextResponse.redirect(new URL(dest, req.nextUrl.origin));
 }

@@ -14,7 +14,7 @@ export default async function CataloguePage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Bienvenue 👋</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Domaines d&apos;entraînement</h1>
       <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">
         Entraînez-vous à la pratique clinique sur des cas réalistes — du feedback immédiat
         jusqu&apos;à l&apos;entretien complet — et suivez vos progrès, compétence par compétence.
@@ -27,7 +27,7 @@ export default async function CataloguePage() {
         <Step n="3" titre="Visualisez vos progrès" desc="Vos forces et vos lacunes, mises à jour en temps réel." />
       </div>
 
-      <h2 className="mt-8 text-lg font-semibold">Choisissez un domaine à travailler</h2>
+      <h2 className="mt-8 text-lg font-semibold">Choisissez un domaine</h2>
 
       {frameworks.length === 0 ? (
         <div className="mt-3 rounded-lg border border-dashed border-[var(--border)] bg-white p-8 text-center text-sm text-[var(--muted)]">

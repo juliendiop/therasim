@@ -38,6 +38,6 @@ export async function POST(req: NextRequest) {
     meta: { method: "password" },
   });
 
-  const redirect = user.role === "super_admin" ? "/admin" : "/catalogue";
+  const redirect = user.role === "super_admin" ? "/admin" : "/accueil";
   return NextResponse.json({ ok: true, redirect });
 }
