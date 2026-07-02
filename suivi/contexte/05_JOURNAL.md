@@ -729,6 +729,18 @@ le paywall en cliquant dessus (incitation à débloquer).
 - 🔴 **Action requise** : `npm run db:push` (ajoute `framework_quota`, supprime
   `plan_frameworks`), puis renseigner le quota de chaque forfait dans `/admin/facturation`.
 
+### Suite de session (même jour, nonies) : abonnements réservés au site public
+- Question porteur : « que se passe-t-il si un apprenant d'une plateforme (B2B) achète un
+  abonnement ? » → Incohérence détectée : l'abonnement se serait créé normalement et les
+  crédits mensuels auraient été versés, mais la promesse « N domaines au choix » était
+  **inconsommable** pour lui (sa plateforme lui donne déjà tout son catalogue, aucun paywall
+  ne lui est jamais montré) — vente trompeuse, risque de litige.
+- Correctif : `isFreemiumLearner(user)` (apprenant du tenant public) dans `entitlements.ts` ;
+  la section « S'abonner » de `/credits` n'est affichée qu'aux freemium ; garde serveur dans
+  `checkoutPlanAction` (message explicite sinon). Les membres B2B **gardent** l'achat de
+  packs de crédits (valeur honnête : recharge d'usage IA) et le bouton « Gérer mon
+  abonnement » reste visible pour quiconque aurait déjà un abonnement actif (résiliation).
+
 ### État en fin de session (sexies)
 - Build OK, types OK. Reste au porteur : db:push, quotas des forfaits, Prices one-time
   des référentiels à l'unité, puis test complet en compte apprenant.

@@ -2,6 +2,7 @@ import { Coins, History, RefreshCw, Sparkles } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CREDIT_PACKS, creditSettings, syncWallet } from "@/lib/credits";
+import { isFreemiumLearner } from "@/lib/entitlements";
 import { isStripeConfigured } from "@/lib/stripe";
 import { checkoutPackAction, checkoutPlanAction, manageBillingAction } from "./actions";
 
@@ -34,7 +35,7 @@ export default async function CreditsPage({
   const { need, success, canceled, error } = await searchParams;
   const stripeReady = isStripeConfigured();
 
-  const [balance, settings, history, plans, subscription] = await Promise.all([
+  const [balance, settings, history, plans, subscription, freemium] = await Promise.all([
     syncWallet(user.id),
     creditSettings(),
     prisma.creditLedger.findMany({
@@ -44,6 +45,7 @@ export default async function CreditsPage({
     }),
     prisma.subscriptionPlan.findMany({ where: { active: true }, orderBy: { ordre: "asc" } }),
     prisma.userSubscription.findUnique({ where: { userId: user.id } }),
+    isFreemiumLearner(user),
   ]);
   const activePlan = subscription
     ? plans.find((p) => p.id === subscription.planId) ??
@@ -152,8 +154,9 @@ export default async function CreditsPage({
         </div>
       )}
 
-      {/* Forfaits d'abonnement */}
-      {plans.length > 0 && !hasActiveSubscription && (
+      {/* Forfaits d'abonnement — réservés au site public (les membres des
+          plateformes clientes ont déjà tout le catalogue de leur plateforme). */}
+      {freemium && plans.length > 0 && !hasActiveSubscription && (
         <>
           <h2 className="mt-7 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
             <RefreshCw className="h-3.5 w-3.5" /> S&apos;abonner

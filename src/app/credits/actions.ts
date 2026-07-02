@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
-import { activateSubscriptionChoice } from "@/lib/entitlements";
+import { activateSubscriptionChoice, isFreemiumLearner } from "@/lib/entitlements";
 import {
   createBillingPortalSession,
   createCreditsCheckout,
@@ -31,10 +31,17 @@ export async function checkoutPackAction(formData: FormData) {
   redirect(url);
 }
 
-/** Lance un abonnement Stripe récurrent pour un forfait. */
+/** Lance un abonnement Stripe récurrent pour un forfait (site public uniquement). */
 export async function checkoutPlanAction(formData: FormData) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
+  // Les membres des plateformes clientes ont déjà tout leur catalogue : leur
+  // vendre un abonnement « domaines au choix » serait trompeur.
+  if (!(await isFreemiumLearner(user))) {
+    redirect(
+      `/credits?error=${encodeURIComponent("Les abonnements sont réservés au site public — votre plateforme vous donne déjà accès à son catalogue.")}`,
+    );
+  }
   const planId = String(formData.get("planId") ?? "");
   const baseUrl = await appBaseUrlFromRequest();
 

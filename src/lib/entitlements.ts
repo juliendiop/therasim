@@ -68,6 +68,18 @@ export async function freeFrameworkIds(): Promise<Set<string>> {
 
 type UserLike = { id: string; tenantId: string; role: Role };
 
+/**
+ * Vrai si l'utilisateur relève du freemium : apprenant du site public (B2C).
+ * Les membres des plateformes clientes (B2B) ont déjà tout le catalogue de leur
+ * plateforme — leur vendre un abonnement « domaines au choix » serait trompeur
+ * (seuls les packs de crédits ont une valeur honnête pour eux).
+ */
+export async function isFreemiumLearner(user: UserLike): Promise<boolean> {
+  if (user.role !== "learner") return false;
+  const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId } });
+  return Boolean(tenant && tenant.type === "public");
+}
+
 export type FrameworkAccess = {
   /** Référentiels utilisables par CET utilisateur. */
   unlocked: Set<string>;
