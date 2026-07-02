@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createMagicToken } from "@/lib/auth";
-import { appBaseUrl } from "@/lib/base-url";
+import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { isEmailConfigured, sendPasswordReset } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ sent: true });
 
   const token = await createMagicToken(email, user.tenantId, 60);
-  const base = appBaseUrl(req.nextUrl.origin);
+  const base = await appBaseUrlFromRequest();
   const link = `${base}/reset-password?token=${token}`;
 
   // eslint-disable-next-line no-console

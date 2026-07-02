@@ -2,10 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { createMagicToken, requireUser, type Role } from "@/lib/auth";
-import { appBaseUrl } from "@/lib/base-url";
+import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { logAudit } from "@/lib/audit";
 import { isEmailConfigured, sendInvitation } from "@/lib/email";
 import { ASSIGNABLE_ROLES, ROLE_LABELS, canManageMembers } from "@/lib/roles";
@@ -52,10 +51,7 @@ export async function createMember(
 
   // Lien d'invitation longue durée (7 jours) qui connecte directement.
   const token = await createMagicToken(email, manager.tenantId, 60 * 24 * 7);
-  const h = await headers();
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = host.includes("localhost") ? "http" : "https";
-  const base = appBaseUrl(`${proto}://${host}`);
+  const base = await appBaseUrlFromRequest();
   const inviteLink = `${base}/api/auth/callback?token=${token}`;
 
   const tenant = await prisma.tenant.findUnique({ where: { id: manager.tenantId } });
@@ -95,10 +91,7 @@ export async function createMemberInvite(
   }
 
   const token = await createMagicToken(target.email, manager.tenantId, 60 * 24 * 7);
-  const h = await headers();
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = host.includes("localhost") ? "http" : "https";
-  const base = appBaseUrl(`${proto}://${host}`);
+  const base = await appBaseUrlFromRequest();
   const inviteLink = `${base}/api/auth/callback?token=${token}`;
 
   const tenant = await prisma.tenant.findUnique({ where: { id: manager.tenantId } });

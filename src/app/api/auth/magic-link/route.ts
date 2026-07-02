@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createMagicToken } from "@/lib/auth";
-import { appBaseUrl } from "@/lib/base-url";
+import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { isEmailConfigured, sendMagicLink } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   const token = await createMagicToken(email, tenantId);
-  const base = appBaseUrl(req.nextUrl.origin);
+  const base = await appBaseUrlFromRequest();
   const link = `${base}/api/auth/callback?token=${token}`;
 
   // eslint-disable-next-line no-console
