@@ -451,12 +451,23 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
 - ⚠️ `npm run lint` était **déjà cassé avant cette session** (crash de la config ESLint au
   chargement — config circulaire) — à réparer. `npm run build` et `npx tsc --noEmit` passent.
 
+### Suite de session (même jour) : mot de passe oublié + landing publique
+- **Mot de passe oublié** : lien sur `/login` → email de réinitialisation (Resend, lien
+  affiché en dev) → `/reset-password` → nouveau hash + session ouverte. Réponse générique
+  (pas de fuite d'existence de compte), token usage unique 60 min, audit `password_reset`.
+- **Landing publique `/`** (visiteur non connecté ; connecté → `/accueil`) : héro,
+  **démo jouable sans compte** (`demo-drill.tsx`, 3 QCM embarqués — zéro LLM, zéro crédit),
+  3 niveaux + carte, sections B2C (praticiens) et B2B (écoles, CTA mailto
+  `contact@meleta.app` — **vérifier que la boîte existe**), réassurance, bandeau final.
+  Bouton « Se connecter » dans l'en-tête visiteur.
+
 ### État en fin de session
 - Build OK, types OK. Streaming non encore testé en conditions réelles avec la clé Mistral.
 
 ### Prochaine étape suggérée
-- Tester le streaming sur un vrai entretien ; réparer la config ESLint ; puis chantiers
-  supervision formateur / auto-évaluation avant débrief (cf. propositions du 2 juillet).
+- Tester le streaming sur un vrai entretien ; réparer la config ESLint ; créer/router la
+  boîte `contact@meleta.app` ; puis chantiers supervision formateur / auto-évaluation
+  avant débrief (cf. propositions du 2 juillet).
 
 ---
 

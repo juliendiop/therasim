@@ -179,6 +179,29 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 - Fichiers : `src/lib/mistral.ts` (mistralChatStream), `src/lib/simulator.ts`
   (patientReplyStream), `src/app/api/sim/[id]/message/route.ts`, `src/app/sim/[id]/sim-chat.tsx`.
 
+## 27. Mot de passe oublié (2 juillet)
+**État : ✅ Fait**
+- Lien « Mot de passe oublié ? » sur `/login` → `/api/auth/forgot-password` (réponse
+  générique, ne révèle pas si le compte existe ; réutilise AuthToken, TTL 60 min) →
+  email Resend (`sendPasswordReset`) ou lien affiché en dev → page `/reset-password`
+  (nouveau mot de passe ×2, ≥8 caractères) → `/api/auth/reset-password` (consomme le
+  token, pose le hash bcrypt, ouvre la session, audit `password_reset`).
+- Fichiers : `src/app/api/auth/forgot-password/`, `src/app/api/auth/reset-password/`,
+  `src/app/reset-password/`, `src/app/login/page.tsx`, `src/lib/email.ts`, `src/lib/audit.ts`.
+
+## 28. Page publique d'acquisition + démo jouable (2 juillet)
+**État : ✅ Fait**
+- `/` (visiteur non connecté) : landing MELETA — héro, **exercice de démonstration
+  jouable sans compte** (3 drills de reconnaissance embarqués côté client : aucun appel
+  LLM, aucun crédit, rien en base), « comment ça marche » (3 niveaux + carte), section
+  **praticiens/coachs** (B2C) et section **écoles/organismes** (B2B, marque blanche,
+  sessions live, CTA mailto `contact@meleta.app`), réassurance (fictif, formatif non
+  certifiant), bandeau final. Connecté → redirection `/accueil`.
+- En-tête : bouton « Se connecter » pour les visiteurs, logo → `/` (visiteur) ou
+  `/accueil` (connecté).
+- Fichiers : `src/app/page.tsx`, `src/app/demo-drill.tsx`, `src/app/layout.tsx`.
+- ⚠️ Vérifier que la boîte `contact@meleta.app` existe (réception des demandes de démo).
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,
