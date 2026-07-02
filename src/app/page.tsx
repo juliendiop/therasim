@@ -3,8 +3,10 @@ import { redirect } from "next/navigation";
 import {
   ArrowRight,
   BarChart3,
+  Bot,
   Building2,
   CheckCircle2,
+  ClipboardCheck,
   Dumbbell,
   GraduationCap,
   Layers,
@@ -40,8 +42,8 @@ export default async function LandingPage() {
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-base text-[var(--ink-soft)] sm:text-lg">
           Entraînez vos compétences relationnelles sur des cas réalistes — du feedback
-          immédiat à l&apos;entretien complet avec un patient simulé — et visualisez vos
-          progrès, compétence par compétence.
+          immédiat à l&apos;entretien complet avec un <b>patient simulé par IA</b> qui
+          réagit à votre posture — et visualisez vos progrès, compétence par compétence.
         </p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
@@ -110,6 +112,58 @@ export default async function LandingPage() {
             titre="Carte de progression"
             desc="Vos forces et vos lacunes, mises à jour à chaque essai. L'application vous route vers ce qu'il faut travailler."
           />
+        </div>
+      </section>
+
+      {/* ---- IA spécialisée ---- */}
+      <section className="mt-20">
+        <div className="text-center">
+          <span className="text-xs font-semibold uppercase tracking-widest text-[var(--ochre)]">
+            Une IA spécialisée pour la clinique
+          </span>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+            Pas un chatbot générique.
+          </h2>
+          <p className="mx-auto mt-1 max-w-2xl text-sm text-[var(--muted)]">
+            MELETA repose sur une IA conçue et paramétrée spécifiquement pour
+            l&apos;entraînement clinique : elle joue le patient, évalue vos réponses selon
+            des grilles professionnelles, et reste à sa place — celle d&apos;un outil
+            d&apos;entraînement.
+          </p>
+        </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="card-soft p-5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <Bot className="h-5 w-5" />
+            </span>
+            <h3 className="mt-3 font-semibold">Un patient qui réagit comme en séance</h3>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Confrontez-le, il se braque. Écoutez-le, reflétez, respectez son autonomie —
+              il s&apos;ouvre et explore. Son ambivalence est réaliste : il ne «&nbsp;guérit&nbsp;»
+              pas en trois répliques.
+            </p>
+          </div>
+          <div className="card-soft p-5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <ClipboardCheck className="h-5 w-5" />
+            </span>
+            <h3 className="mt-3 font-semibold">Une évaluation ancrée sur des grilles cliniques</h3>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Chaque compétence est notée selon des critères explicites définis par
+              référentiel (entretien motivationnel, ACT, anamnèse…), avec justification et
+              citation de vos propres mots — pas une impression générale.
+            </p>
+          </div>
+          <div className="card-soft p-5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <ShieldCheck className="h-5 w-5" />
+            </span>
+            <h3 className="mt-3 font-semibold">Un cadre maîtrisé</h3>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Des cas fictifs, un feedback formatif, et une IA qui complète la formation et
+              la supervision humaines — elle ne les remplace pas et ne certifie rien.
+            </p>
+          </div>
         </div>
       </section>
 
