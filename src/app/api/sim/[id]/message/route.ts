@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
-import { patientReply } from "@/lib/simulator";
+import { patientReplyStream } from "@/lib/simulator";
 import { EvaluatorNotConfiguredError } from "@/lib/evaluator";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/sim/{id}/message — body { content } : un tour de l'entretien.
+// Réponse : text/plain STREAMÉ (la réplique du patient arrive au fil de l'eau).
+// Les erreurs restent en JSON — le client les distingue par le Content-Type.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -25,8 +27,25 @@ export async function POST(
   if (!content) return NextResponse.json({ error: "message vide" }, { status: 400 });
 
   try {
-    const { reply } = await patientReply(id, content);
-    return NextResponse.json({ reply });
+    const { stream } = await patientReplyStream(id, content);
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        try {
+          for await (const chunk of stream) controller.enqueue(encoder.encode(chunk));
+          controller.close();
+        } catch (e) {
+          console.error(e);
+          controller.error(e);
+        }
+      },
+    });
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (e) {
     if (e instanceof EvaluatorNotConfiguredError) {
       return NextResponse.json(

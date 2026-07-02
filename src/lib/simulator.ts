@@ -4,7 +4,7 @@
 // - Le débrief écrit des Attempt (source='simulation') -> même carte que les drills.
 
 import { prisma } from "./prisma";
-import { mistralChat, type ChatMsg } from "./mistral";
+import { mistralChat, mistralChatStream, type ChatMsg } from "./mistral";
 import { getModel } from "./config";
 import { normalizeNote } from "./mastery";
 import { recordAttempt } from "./attempts";
@@ -91,34 +91,52 @@ export async function startSimulation(input: {
   return { sessionId: session.id, opener };
 }
 
-/** Un tour : enregistre la réplique du praticien, renvoie la réponse du patient. */
-export async function patientReply(sessionId: string, learnerText: string) {
+/**
+ * Un tour, en flux : enregistre la réplique du praticien puis renvoie un
+ * générateur des fragments de la réponse du patient (streaming vers l'UI).
+ * La réponse complète est persistée à la fin du flux ; en cas d'interruption,
+ * le texte déjà reçu est persisté pour garder la conversation cohérente.
+ */
+export async function patientReplyStream(sessionId: string, learnerText: string) {
   const { session, scenario, framework, messages } = await loadContext(sessionId);
   if (session.statut !== "en_cours") throw new Error("simulation terminée");
   if (!scenario || !framework) throw new Error("contexte invalide");
 
   const nextTurn = (messages.at(-1)?.turn ?? -1) + 1;
-  await prisma.simMessage.create({
-    data: { sessionId, role: "apprenant", content: learnerText, turn: nextTurn },
-  });
 
   const sys = patientSystemPrompt(framework.nom, scenario.titre, scenario.contexte ?? "");
   const history: ChatMsg[] = messages.map((m) => ({
     role: m.role === "patient" ? "assistant" : "user",
     content: m.content,
   }));
-  const reply = (
-    await mistralChat(
-      [{ role: "system", content: sys }, ...history, { role: "user", content: learnerText }],
-      { temperature: 0.8, model: await getModel("patient") },
-    )
-  ).trim();
+  // Le flux Mistral est ouvert AVANT d'écrire le tour en base : une erreur de
+  // configuration (clé absente…) remonte proprement, sans tour fantôme.
+  const upstream = await mistralChatStream(
+    [{ role: "system", content: sys }, ...history, { role: "user", content: learnerText }],
+    { temperature: 0.8, model: await getModel("patient") },
+  );
 
   await prisma.simMessage.create({
-    data: { sessionId, role: "patient", content: reply, turn: nextTurn + 1 },
+    data: { sessionId, role: "apprenant", content: learnerText, turn: nextTurn },
   });
 
-  return { reply };
+  async function* stream(): AsyncGenerator<string, void, unknown> {
+    let full = "";
+    try {
+      for await (const chunk of upstream) {
+        full += chunk;
+        yield chunk;
+      }
+    } finally {
+      const content = full.trim();
+      if (content) {
+        await prisma.simMessage.create({
+          data: { sessionId, role: "patient", content, turn: nextTurn + 1 },
+        });
+      }
+    }
+  }
+  return { stream: stream() };
 }
 
 /** Indice à la demande (mini-scène N2) : un conseil ciblé sur les compétences travaillées. */
