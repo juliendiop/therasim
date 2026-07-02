@@ -151,7 +151,8 @@ Chantier 4 de l'analyse du 2 juillet.
 - Fichiers : `src/lib/moment-match.ts`, `src/app/sim/[id]/sim-chat.tsx`, `src/app/sim/[id]/page.tsx`,
   `src/app/api/sim/[id]/end/route.ts`, `src/lib/simulator.ts` (`endSimulation` accepte
   `selfAssessment`), `src/app/supervision/[id]/sim/[simId]/page.tsx`.
-- 🔴 **Action requise du porteur** : `npm run db:push` (nouveau champ `SimSession.selfAssessment`).
+- ✅ `npm run db:push` fait (2 juillet, contre Neon prod) — champ `SimSession.selfAssessment`
+  créé, fonctionnalité pleinement opérationnelle.
 - ⚠️ Reste (option) : afficher l'écart self/IA de façon plus visuelle (pas juste du texte) ;
   historiser la progression de la justesse de l'auto-évaluation dans le temps.
 

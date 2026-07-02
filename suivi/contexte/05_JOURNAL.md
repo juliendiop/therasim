@@ -539,20 +539,19 @@ priorisation demandée, traités ensemble) :
 - Fichiers additionnels : `src/app/api/drills/[id]/attempt/route.ts` (payload `level_up`),
   `src/app/drills/[id]/drill-player.tsx`.
 
-### 🔴 Action requise du porteur avant que l'auto-évaluation fonctionne
-- **`npm run db:push`** — nouveau champ `SimSession.selfAssessment` (Json?). Sans ça, la fin
-  d'un entretien/mini-scène plantera à l'écriture (le reste — avatars, célébration,
-  replay annoté sur les anciennes sessions déjà en base — fonctionne sans cette étape).
+### ✅ `npm run db:push` fait (2 juillet, contre Neon prod)
+- Champ `SimSession.selfAssessment` créé. Auto-évaluation, replay annoté, avatars et
+  célébration des paliers sont désormais pleinement opérationnels.
 
 ### État en fin de session (ter)
-- Build OK (`npm run build`, TypeScript inclus), `npx tsc --noEmit` OK. Non testé en
-  conditions réelles (nécessite `db:push` + une session complète pour voir auto-évaluation,
-  replay annoté et célébration en vrai).
+- Build OK (`npm run build`, TypeScript inclus), `npx tsc --noEmit` OK, `db:push` fait.
+  Reste à jouer un entretien complet en conditions réelles pour valider visuellement
+  l'enchaînement (auto-évaluation → débrief → replay annoté → célébration éventuelle).
 
 ### Prochaine étape suggérée
-- Faire `npm run db:push`, puis jouer un entretien complet de bout en bout pour valider :
-  auto-évaluation → débrief avec comparaison → moments clés surlignés dans le fil → (si palier
-  franchi) bannière de célébration.
+- Jouer un entretien complet de bout en bout pour valider visuellement : auto-évaluation →
+  débrief avec comparaison → moments clés surlignés dans le fil → (si palier franchi)
+  bannière de célébration.
 - Dans `/supervision`, restent : assignations, attestation de pratique, export PDF/CSV du
   suivi individuel d'un apprenant.
 - Visages des patients : reste en option la démo publique (`demo-drill.tsx`), et un portrait
