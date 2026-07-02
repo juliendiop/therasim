@@ -4,6 +4,7 @@ import { getConfig } from "@/lib/config";
 import { CREDIT_PACKS } from "@/lib/credits";
 import { freeFrameworkIds } from "@/lib/entitlements";
 import { isStripeConfigured } from "@/lib/stripe";
+import { planQuotaLabel } from "@/lib/ui";
 import {
   createPlan,
   savePackPriceIds,
@@ -122,10 +123,7 @@ export default async function FacturationPage() {
                   <span className="text-xs text-[var(--muted)]">({plan.key})</span>
                   <div className="text-xs text-[var(--muted)]">
                     {(plan.priceEurCents / 100).toFixed(2)} € / mois · {plan.monthlyCredits}{" "}
-                    crédits/mois ·{" "}
-                    {plan.frameworkQuota == null
-                      ? "tout le catalogue"
-                      : `${plan.frameworkQuota} domaine(s) au choix`}{" "}
+                    crédits/mois · {planQuotaLabel(plan.frameworkQuota)}{" "}
                     {!plan.active && "· inactif"}
                   </div>
                 </div>
@@ -187,7 +185,7 @@ export default async function FacturationPage() {
         </div>
         <div className="sm:col-span-2">
           <label className="text-xs font-medium">
-            Domaines au choix de l&apos;abonné (vide = tout le catalogue)
+            Domaines au choix de l&apos;abonné (vide = tous les domaines inclus)
           </label>
           <input
             name="frameworkQuota"

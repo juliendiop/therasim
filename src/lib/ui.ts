@@ -26,6 +26,12 @@ export const KIND_LABEL: Record<string, string> = {
   miniscene: "Mini-scène guidée",
 };
 
+/** Libellé du quota de domaines d'un forfait (null = illimité). Source unique. */
+export function planQuotaLabel(quota: number | null): string {
+  if (quota == null) return "tous les domaines inclus";
+  return `${quota} domaine${quota > 1 ? "s" : ""} au choix`;
+}
+
 /** Date lisible en Europe/Paris (le serveur tourne en UTC). */
 export function fmtDate(d: Date | string | null | undefined): string {
   if (!d) return "—";

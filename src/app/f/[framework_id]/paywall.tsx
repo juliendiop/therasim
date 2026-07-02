@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Check, Lock, Sparkles, Ticket } from "lucide-rea
 import { prisma } from "@/lib/prisma";
 import { isStripeConfigured } from "@/lib/stripe";
 import { subscriptionChoiceStatus } from "@/lib/entitlements";
-import { TYPE_LABEL } from "@/lib/ui";
+import { TYPE_LABEL, planQuotaLabel } from "@/lib/ui";
 import {
   activateFrameworkChoiceAction,
   checkoutFrameworkAction,
@@ -185,9 +185,7 @@ export default async function FrameworkPaywall({
                   <span>
                     {p.label}
                     <span className="block text-xs text-[var(--muted)]">
-                      {p.frameworkQuota == null
-                        ? "tout le catalogue"
-                        : `${p.frameworkQuota} domaine${p.frameworkQuota > 1 ? "s" : ""} au choix`}
+                      {planQuotaLabel(p.frameworkQuota)}
                       {" · "}
                       {p.monthlyCredits} crédits/mois
                     </span>

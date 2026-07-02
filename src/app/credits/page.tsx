@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { CREDIT_PACKS, creditSettings, syncWallet } from "@/lib/credits";
 import { canBuyIndividualOffers } from "@/lib/entitlements";
 import { isStripeConfigured } from "@/lib/stripe";
+import { planQuotaLabel } from "@/lib/ui";
 import { checkoutPackAction, checkoutPlanAction, manageBillingAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -174,11 +175,7 @@ export default async function CreditsPage({
                 </div>
                 <div className="mt-1 flex-1 text-xs text-[var(--muted)]">
                   {p.monthlyCredits} crédits chaque mois ·{" "}
-                  <b>
-                    {p.frameworkQuota == null
-                      ? "tout le catalogue de domaines"
-                      : `${p.frameworkQuota} domaine${p.frameworkQuota > 1 ? "s" : ""} au choix`}
-                  </b>
+                  <b>{planQuotaLabel(p.frameworkQuota)}</b>
                 </div>
                 <form action={checkoutPlanAction} className="mt-3">
                   <input type="hidden" name="planId" value={p.id} />
