@@ -710,6 +710,29 @@ le paywall en cliquant dessus (incitation à débloquer).
 ### État en fin de session (quinquies)
 - Build OK, types OK. Non testé de bout en bout (nécessite db:push + Prices Stripe).
 
+### Suite de session (même jour, octies) : quota de domaines au choix (retour porteur)
+- Retour porteur sur la V1 freemium : la sélection de domaines par forfait (toggles en
+  admin) était **trop complexe à administrer**. Remplacée par sa proposition, meilleure :
+  **chaque forfait donne droit à N domaines AU CHOIX de l'abonné** (`SubscriptionPlan.
+  frameworkQuota`, vide = tout le catalogue — ex. Essentiel 1, Praticien 3, Intensif tout).
+- **Où se fait le choix ?** Ni à l'inscription, ni via un écran imposé : l'abonné clique un
+  domaine verrouillé → le paywall affiche « Inclus dans votre forfait X — il vous reste N
+  choix » → bouton « Débloquer ce domaine » (sans paiement, consomme un choix).
+- **Anti-abus** : choix **définitifs tant qu'on est abonné** (pas d'échange, sinon un
+  forfait 1 domaine = tout le catalogue en alternant). Stockés dans `UserFrameworkAccess`
+  avec `source='subscription_choice'` : valides seulement si l'abonnement est actif,
+  conservés en base (se réactivent si l'abonné revient).
+- Table `PlanFramework` supprimée (créée le jour même, jamais utilisée en prod).
+  `entitlements.ts` : `subscriptionChoiceStatus()` + `activateSubscriptionChoice()`.
+  `/credits` : forfaits affichent « N domaines au choix » + « X/N choisis » pour l'abonné.
+  Admin : simple champ numérique par forfait (création + mise à jour).
+- 🔴 **Action requise** : `npm run db:push` (ajoute `framework_quota`, supprime
+  `plan_frameworks`), puis renseigner le quota de chaque forfait dans `/admin/facturation`.
+
+### État en fin de session (sexies)
+- Build OK, types OK. Reste au porteur : db:push, quotas des forfaits, Prices one-time
+  des référentiels à l'unité, puis test complet en compte apprenant.
+
 ---
 
 <!-- Modèle pour la prochaine session :

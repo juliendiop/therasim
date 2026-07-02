@@ -29,6 +29,7 @@ export default async function FrameworkPage({
     return (
       <FrameworkPaywall
         frameworkId={framework_id}
+        userId={user.id}
         success={success}
         canceled={canceled}
         error={error}

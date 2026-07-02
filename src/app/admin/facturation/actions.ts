@@ -18,7 +18,7 @@ export async function savePackPriceIds(formData: FormData) {
   revalidatePath("/admin/facturation");
 }
 
-// Crée un nouveau forfait d'abonnement (nom/prix/crédits définis par l'admin —
+// Crée un nouveau forfait d'abonnement (nom/prix/crédits/quota définis par l'admin —
 // jamais en dur côté code). Le Price ID Stripe peut être ajouté après coup.
 export async function createPlan(formData: FormData) {
   await requireSuperAdmin();
@@ -27,10 +27,14 @@ export async function createPlan(formData: FormData) {
   const monthlyCredits = parseInt(String(formData.get("monthlyCredits") ?? ""), 10);
   const priceEur = parseFloat(String(formData.get("priceEur") ?? ""));
   const stripePriceId = String(formData.get("stripePriceId") ?? "").trim();
+  // Quota de domaines au choix de l'abonné. Vide = tout le catalogue.
+  const quotaRaw = String(formData.get("frameworkQuota") ?? "").trim();
+  const quota = quotaRaw === "" ? null : parseInt(quotaRaw, 10);
 
   if (!key || !label) return;
   if (!Number.isFinite(monthlyCredits) || monthlyCredits < 1) return;
   if (!Number.isFinite(priceEur) || priceEur < 0) return;
+  if (quota !== null && (!Number.isFinite(quota) || quota < 1)) return;
 
   const count = await prisma.subscriptionPlan.count();
   await prisma.subscriptionPlan.create({
@@ -38,6 +42,7 @@ export async function createPlan(formData: FormData) {
       key,
       label,
       monthlyCredits,
+      frameworkQuota: quota,
       priceEurCents: Math.round(priceEur * 100),
       stripePriceId: stripePriceId || null,
       ordre: count,
@@ -56,35 +61,18 @@ export async function togglePlanActive(formData: FormData) {
   revalidatePath("/admin/facturation");
 }
 
-// Met à jour le Price ID Stripe d'un forfait existant (créé côté Stripe après coup).
+// Met à jour un forfait existant : Price ID Stripe + quota de domaines au choix.
 export async function updatePlanPriceId(formData: FormData) {
   await requireSuperAdmin();
   const id = String(formData.get("id") ?? "");
   const stripePriceId = String(formData.get("stripePriceId") ?? "").trim();
+  const quotaRaw = String(formData.get("frameworkQuota") ?? "").trim();
+  const quota = quotaRaw === "" ? null : parseInt(quotaRaw, 10);
+  if (quota !== null && (!Number.isFinite(quota) || quota < 1)) return;
   await prisma.subscriptionPlan.update({
     where: { id },
-    data: { stripePriceId: stripePriceId || null },
+    data: { stripePriceId: stripePriceId || null, frameworkQuota: quota },
   });
-  revalidatePath("/admin/facturation");
-}
-
-// Ajoute/retire un référentiel d'un forfait (même pattern que togglePackFramework).
-export async function togglePlanFramework(formData: FormData) {
-  await requireSuperAdmin();
-  const planId = String(formData.get("planId") ?? "");
-  const frameworkId = String(formData.get("frameworkId") ?? "");
-  if (!planId || !frameworkId) return;
-
-  const existing = await prisma.planFramework.findUnique({
-    where: { planId_frameworkId: { planId, frameworkId } },
-  });
-  if (existing) {
-    await prisma.planFramework.delete({
-      where: { planId_frameworkId: { planId, frameworkId } },
-    });
-  } else {
-    await prisma.planFramework.create({ data: { planId, frameworkId } });
-  }
   revalidatePath("/admin/facturation");
 }
 

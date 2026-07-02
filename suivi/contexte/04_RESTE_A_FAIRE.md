@@ -25,17 +25,20 @@ des forfaits d'abonnement récurrents (« les deux », confirmé).
 ## ⭐ Freemium — contenu lié aux paiements — ✅ V1 FAITE (2 juillet)
 
 Demande porteur : lier achats/abonnements aux référentiels + utiliser les compétences comme
-incitatif. Modèle décidé : gratuits configurables (défaut EM) · forfaits = sélection de
-référentiels chacun · achat à l'unité possible avec ou sans abonnement · vente par
-référentiel (pas par compétence — contrainte moteur) · B2B non touché.
+incitatif. Modèle décidé (ajusté après retour porteur) : gratuits configurables (défaut EM)
+· chaque forfait = **quota de N domaines au choix de l'abonné** (vide = tout ; choix
+définitifs tant qu'abonné, déblocage en cliquant un domaine verrouillé) · achat à l'unité
+possible avec ou sans abonnement · vente par référentiel (pas par compétence — contrainte
+moteur) · B2B non touché.
 - ✅ Accès par utilisateur (`userCanAccess`), gardes sur tous les parcours apprenant,
-  paywall `/f/[id]`, catalogue avec tuiles verrouillées, « À découvrir » sur l'accueil,
-  admin facturation étendu (domaines/forfait, prix à l'unité, gratuits).
-- 🔴 **Action requise du porteur** : `npm run db:push` (3 nouvelles tables) ; dans
-  `/admin/facturation` : cocher les gratuits, cocher les domaines de chaque forfait
-  (Essentiel/Praticien/Intensif), créer un Price **one-time** Stripe par référentiel vendu à
-  l'unité et coller prix + Price ID. Tester : compte apprenant → catalogue → domaine
-  verrouillé → paywall → achat test → déblocage (après webhook).
+  paywall `/f/[id]` (avec bouton « Débloquer avec mon abonnement — X choix restants »),
+  catalogue avec tuiles verrouillées, « À découvrir » sur l'accueil, admin facturation
+  étendu (quota/forfait, prix à l'unité, gratuits).
+- 🔴 **Action requise du porteur** : `npm run db:push` ; dans `/admin/facturation` :
+  cocher les gratuits, renseigner le **quota** de chaque forfait (ex. Essentiel 1,
+  Praticien 3, Intensif vide=tout), créer un Price **one-time** Stripe par référentiel
+  vendu à l'unité et coller prix + Price ID. Tester : compte apprenant → catalogue →
+  domaine verrouillé → paywall → déblocage par choix d'abonnement ET par achat test.
 - ⚠️ Reste (option) : octroi manuel d'un référentiel à un utilisateur par l'admin (la table
   `UserFrameworkAccess` le prévoit, `source='admin'`, pas encore d'UI) ; prorata/upgrade
   de forfait ; email de confirmation d'achat maison (Stripe envoie déjà un reçu).

@@ -1,20 +1,27 @@
 // Vitrine d'un référentiel verrouillé (freemium B2C) : liste des compétences
-// (l'incitatif), achat à l'unité (Stripe) et forfaits qui l'incluent.
-// Server Component — rendu par la page référentiel quand l'utilisateur n'a pas accès.
+// (l'incitatif), déblocage via le quota d'abonnement, achat à l'unité (Stripe),
+// ou souscription. Server Component — rendu par la page référentiel quand
+// l'utilisateur n'a pas accès.
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Lock, Sparkles, Ticket } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { isStripeConfigured } from "@/lib/stripe";
+import { subscriptionChoiceStatus } from "@/lib/entitlements";
 import { TYPE_LABEL } from "@/lib/ui";
-import { checkoutFrameworkAction } from "@/app/credits/actions";
+import {
+  activateFrameworkChoiceAction,
+  checkoutFrameworkAction,
+} from "@/app/credits/actions";
 
 export default async function FrameworkPaywall({
   frameworkId,
+  userId,
   success,
   canceled,
   error,
 }: {
   frameworkId: string;
+  userId: string;
   success?: string;
   canceled?: string;
   error?: string;
@@ -22,7 +29,7 @@ export default async function FrameworkPaywall({
   const framework = await prisma.framework.findUnique({ where: { id: frameworkId } });
   if (!framework) return null;
 
-  const [competencies, categories, offer, planLinks] = await Promise.all([
+  const [competencies, categories, offer, plans, choiceStatus] = await Promise.all([
     prisma.competency.findMany({
       where: { gridId: framework.gridId },
       orderBy: { ordre: "asc" },
@@ -32,18 +39,19 @@ export default async function FrameworkPaywall({
       orderBy: { ordre: "asc" },
     }),
     prisma.frameworkOffer.findUnique({ where: { frameworkId } }),
-    prisma.planFramework.findMany({ where: { frameworkId } }),
+    prisma.subscriptionPlan.findMany({ where: { active: true }, orderBy: { ordre: "asc" } }),
+    subscriptionChoiceStatus(userId),
   ]);
-  const plans =
-    planLinks.length > 0
-      ? await prisma.subscriptionPlan.findMany({
-          where: { id: { in: planLinks.map((l) => l.planId) }, active: true },
-          orderBy: { ordre: "asc" },
-        })
-      : [];
   const stripeReady = isStripeConfigured();
   const buyable = Boolean(offer?.active && offer.stripePriceId && stripeReady);
   const catNom = new Map(categories.map((c) => [c.code, c.nom]));
+  // Abonné avec quota limité et des choix restants -> déblocage sans paiement.
+  const canUseChoice = Boolean(
+    choiceStatus && choiceStatus.quota != null && (choiceStatus.remaining ?? 0) > 0,
+  );
+  const quotaReached = Boolean(
+    choiceStatus && choiceStatus.quota != null && (choiceStatus.remaining ?? 0) <= 0,
+  );
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -83,6 +91,36 @@ export default async function FrameworkPaywall({
         )}
       </div>
 
+      {/* Abonné avec des choix restants : déblocage en un clic, mis en avant */}
+      {canUseChoice && choiceStatus && (
+        <div className="mt-5 flex flex-col items-start gap-3 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-5 sm:flex-row sm:items-center">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 font-semibold">
+              <Ticket className="h-4 w-4 text-[var(--accent)]" />
+              Inclus dans votre forfait {choiceStatus.planLabel}
+            </div>
+            <p className="mt-0.5 text-sm text-[var(--muted)]">
+              Il vous reste {choiceStatus.remaining} domaine{(choiceStatus.remaining ?? 0) > 1 ? "s" : ""} à
+              choisir sur {choiceStatus.quota}. Le choix est définitif tant que vous êtes
+              abonné.
+            </p>
+          </div>
+          <form action={activateFrameworkChoiceAction}>
+            <input type="hidden" name="frameworkId" value={framework.id} />
+            <button className="rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]">
+              Débloquer ce domaine
+            </button>
+          </form>
+        </div>
+      )}
+      {quotaReached && choiceStatus && (
+        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Votre forfait {choiceStatus.planLabel} inclut {choiceStatus.quota} domaine
+          {(choiceStatus.quota ?? 0) > 1 ? "s" : ""} au choix — quota atteint. Passez à un
+          forfait supérieur ou débloquez ce domaine à l&apos;unité ci-dessous.
+        </div>
+      )}
+
       {/* L'incitatif : les compétences qu'on va apprendre */}
       <section className="mt-6">
         <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
@@ -104,12 +142,12 @@ export default async function FrameworkPaywall({
         </div>
       </section>
 
-      {/* Débloquer */}
+      {/* Débloquer (paiement) */}
       <section className="mt-6 grid gap-3 sm:grid-cols-2">
         {/* Achat à l'unité */}
         {offer?.active && (
           <div className="card-soft flex flex-col p-5">
-            <div className="text-sm font-semibold">Débloquer ce domaine</div>
+            <div className="text-sm font-semibold">Débloquer ce domaine à l&apos;unité</div>
             <div className="mt-1 text-2xl font-bold">
               {(offer.priceEurCents / 100).toFixed(2).replace(".00", "")} €
               <span className="text-xs font-normal text-[var(--muted)]"> · une fois, accès à vie</span>
@@ -135,15 +173,26 @@ export default async function FrameworkPaywall({
           </div>
         )}
 
-        {/* Via un forfait */}
-        {plans.length > 0 && (
+        {/* Via un forfait (pour les non-abonnés, ou pour monter en gamme) */}
+        {plans.length > 0 && !canUseChoice && (
           <div className="card-soft flex flex-col p-5">
-            <div className="text-sm font-semibold">Inclus dans les forfaits</div>
+            <div className="text-sm font-semibold">
+              {choiceStatus ? "Passer à un forfait supérieur" : "Avec un abonnement"}
+            </div>
             <ul className="mt-2 flex-1 space-y-1.5 text-sm">
               {plans.map((p) => (
-                <li key={p.id} className="flex items-center justify-between">
-                  <span>{p.label}</span>
-                  <span className="font-semibold">
+                <li key={p.id} className="flex items-center justify-between gap-2">
+                  <span>
+                    {p.label}
+                    <span className="block text-xs text-[var(--muted)]">
+                      {p.frameworkQuota == null
+                        ? "tout le catalogue"
+                        : `${p.frameworkQuota} domaine${p.frameworkQuota > 1 ? "s" : ""} au choix`}
+                      {" · "}
+                      {p.monthlyCredits} crédits/mois
+                    </span>
+                  </span>
+                  <span className="shrink-0 font-semibold">
                     {(p.priceEurCents / 100).toFixed(2).replace(".00", "")} €
                     <span className="text-xs font-normal text-[var(--muted)]">/mois</span>
                   </span>
@@ -159,8 +208,8 @@ export default async function FrameworkPaywall({
           </div>
         )}
 
-        {/* Aucune option de déblocage configurée */}
-        {!offer?.active && plans.length === 0 && (
+        {/* Aucune option configurée */}
+        {!offer?.active && plans.length === 0 && !canUseChoice && (
           <div className="card-soft p-5 text-sm text-[var(--muted)] sm:col-span-2">
             Ce domaine sera bientôt disponible à l&apos;achat. Revenez prochainement !
           </div>

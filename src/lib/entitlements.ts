@@ -89,31 +89,99 @@ export async function userFrameworkAccess(user: UserLike): Promise<FrameworkAcce
     return { unlocked: tenantIds, locked: new Set() };
   }
 
-  const [free, subscription, purchases] = await Promise.all([
+  const [free, subscription, accessRows] = await Promise.all([
     freeFrameworkIds(),
     prisma.userSubscription.findUnique({ where: { userId: user.id } }),
     prisma.userFrameworkAccess.findMany({ where: { userId: user.id } }),
   ]);
 
-  // Référentiels du forfait, si abonnement actif (un abo résilié en fin de
-  // période reste 'active' jusqu'à son terme — comportement voulu).
-  const planFrameworks = new Set<string>();
-  if (subscription && subscription.status === "active") {
-    const links = await prisma.planFramework.findMany({
-      where: { planId: subscription.planId },
-    });
-    for (const l of links) planFrameworks.add(l.frameworkId);
-  }
+  // Accès à vie (achat à l'unité, octroi admin) : toujours valides.
+  const owned = new Set(
+    accessRows.filter((r) => r.source !== "subscription_choice").map((r) => r.frameworkId),
+  );
+  // Choix consommés sur le quota du forfait : valides seulement si l'abonnement
+  // est actif (un abo résilié en fin de période reste 'active' jusqu'à son terme).
+  const choices = new Set(
+    accessRows.filter((r) => r.source === "subscription_choice").map((r) => r.frameworkId),
+  );
 
-  const owned = new Set(purchases.map((p) => p.frameworkId));
+  let subUnlocked = new Set<string>();
+  if (subscription && subscription.status === "active") {
+    const plan = await prisma.subscriptionPlan.findUnique({
+      where: { id: subscription.planId },
+    });
+    if (plan) {
+      // Quota null = tout le catalogue ; sinon, les domaines choisis par l'abonné.
+      subUnlocked = plan.frameworkQuota == null ? new Set(tenantIds) : choices;
+    }
+  }
 
   const unlocked = new Set<string>();
   const locked = new Set<string>();
   for (const id of tenantIds) {
-    if (free.has(id) || planFrameworks.has(id) || owned.has(id)) unlocked.add(id);
+    if (free.has(id) || owned.has(id) || subUnlocked.has(id)) unlocked.add(id);
     else locked.add(id);
   }
   return { unlocked, locked };
+}
+
+/** État du quota de choix de l'abonné (null si pas d'abonnement actif). */
+export async function subscriptionChoiceStatus(userId: string): Promise<{
+  planLabel: string;
+  quota: number | null; // null = tout le catalogue (rien à choisir)
+  used: number;
+  remaining: number | null;
+} | null> {
+  const subscription = await prisma.userSubscription.findUnique({ where: { userId } });
+  if (!subscription || subscription.status !== "active") return null;
+  const plan = await prisma.subscriptionPlan.findUnique({
+    where: { id: subscription.planId },
+  });
+  if (!plan) return null;
+  const used = await prisma.userFrameworkAccess.count({
+    where: { userId, source: "subscription_choice" },
+  });
+  return {
+    planLabel: plan.label,
+    quota: plan.frameworkQuota,
+    used,
+    remaining: plan.frameworkQuota == null ? null : Math.max(0, plan.frameworkQuota - used),
+  };
+}
+
+/**
+ * Consomme un choix du quota d'abonnement pour débloquer un référentiel.
+ * Choix DÉFINITIF tant qu'on est abonné (pas d'échange — anti-abus).
+ */
+export async function activateSubscriptionChoice(
+  user: UserLike,
+  frameworkId: string,
+): Promise<{ ok: boolean; message: string }> {
+  const tenantIds = await effectiveFrameworkIds(user.tenantId);
+  if (!tenantIds.has(frameworkId)) {
+    return { ok: false, message: "Ce domaine n'est pas disponible." };
+  }
+  const framework = await prisma.framework.findUnique({ where: { id: frameworkId } });
+  if (!framework || framework.statut !== "publie") {
+    return { ok: false, message: "Ce domaine n'est pas disponible." };
+  }
+
+  const status = await subscriptionChoiceStatus(user.id);
+  if (!status) return { ok: false, message: "Aucun abonnement actif." };
+  if (status.quota == null) return { ok: true, message: "Déjà inclus dans votre forfait." };
+  if (status.remaining !== null && status.remaining <= 0) {
+    return {
+      ok: false,
+      message: `Votre forfait ${status.planLabel} inclut ${status.quota} domaine${status.quota > 1 ? "s" : ""} — quota atteint. Passez à un forfait supérieur ou achetez ce domaine à l'unité.`,
+    };
+  }
+
+  await prisma.userFrameworkAccess.upsert({
+    where: { userId_frameworkId: { userId: user.id, frameworkId } },
+    update: {}, // déjà débloqué (achat ou choix antérieur) : rien à faire
+    create: { userId: user.id, frameworkId, source: "subscription_choice" },
+  });
+  return { ok: true, message: "Domaine débloqué !" };
 }
 
 /** Vrai si CET utilisateur peut utiliser ce référentiel (publié + débloqué pour lui). */

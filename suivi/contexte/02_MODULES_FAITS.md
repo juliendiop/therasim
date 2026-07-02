@@ -285,11 +285,17 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 
 ## 33. Freemium — accès aux référentiels lié aux paiements (2 juillet)
 **État : ✅ Fait (V1)** — ⚠️ nécessite `npm run db:push` + config dans `/admin/facturation`
-- **Modèle économique** (décidé avec le porteur) : à l'inscription B2C, seuls les
-  référentiels **gratuits** (config admin, défaut : EM) sont utilisables. Les autres restent
-  **visibles mais verrouillés** (vitrine incitative). Déblocage par : **forfait
-  d'abonnement** (chaque forfait inclut SA sélection de référentiels, cochée en admin) OU
-  **achat à l'unité** (paiement unique Stripe, accès à vie, avec ou sans abonnement).
+- **Modèle économique** (décidé avec le porteur, ajusté après son retour) : à l'inscription
+  B2C, seuls les référentiels **gratuits** (config admin, défaut : EM) sont utilisables.
+  Les autres restent **visibles mais verrouillés** (vitrine incitative). Déblocage par :
+  **quota d'abonnement** — chaque forfait donne droit à N domaines **au choix de l'abonné**
+  (vide = tout le catalogue) ; l'abonné débloque lui-même en cliquant sur un domaine
+  verrouillé (« il vous reste X choix ») ; choix **définitifs tant qu'on est abonné**
+  (anti-abus : pas d'échange, sinon un forfait 1 domaine donnerait tout en alternant) —
+  OU **achat à l'unité** (paiement unique Stripe, accès à vie, avec ou sans abonnement).
+  La 1ère version « sélection de domaines par forfait, cochée en admin » a été remplacée
+  (jugée trop complexe à administrer par le porteur) par ce quota, plus simple et plus
+  vendeur.
 - **Unité de vente = référentiel** (pas la compétence individuelle — le moteur entier
   fonctionne par référentiel : carte, routage, drills).
 - **B2B intact** : tenants whitelabel et rôles encadrants (admin/formateur) non filtrés —
@@ -302,9 +308,12 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   **paywall** `/f/[id]` (liste complète des compétences = l'incitatif, prix à l'unité,
   forfaits qui l'incluent), section « À découvrir » sur l'accueil, domaines inclus affichés
   par forfait sur `/credits`.
-- **Admin `/admin/facturation`** (étendu) : domaines inclus par forfait (toggles), prix +
-  Price ID + actif par référentiel (achat à l'unité), cases « gratuits à l'inscription ».
-- Modèles : `PlanFramework`, `FrameworkOffer`, `UserFrameworkAccess`. Webhook : la branche
+- **Admin `/admin/facturation`** (étendu) : quota de domaines par forfait (simple champ
+  numérique, vide = tout), prix + Price ID + actif par référentiel (achat à l'unité),
+  cases « gratuits à l'inscription ».
+- Modèles : `SubscriptionPlan.frameworkQuota`, `FrameworkOffer`, `UserFrameworkAccess`
+  (source `purchase`/`admin` = à vie ; `subscription_choice` = valide si abo actif, conservé
+  en base → se réactive si l'abonné revient). Webhook : la branche
   `metadata.type === 'framework'` de `checkout.session.completed` crée l'accès à vie.
 - ⚠️ Au déploiement, les référentiels non-gratuits se verrouillent immédiatement pour les
   apprenants B2C existants (comportement freemium voulu) — configurer les gratuits/forfaits/

@@ -50,27 +50,12 @@ export default async function CreditsPage({
       (await prisma.subscriptionPlan.findUnique({ where: { id: subscription.planId } }))
     : null;
   const hasActiveSubscription = subscription && subscription.status !== "canceled";
-
-  // Référentiels inclus dans chaque forfait (l'argument de vente du contenu).
-  const planLinks =
-    plans.length > 0
-      ? await prisma.planFramework.findMany({
-          where: { planId: { in: plans.map((p) => p.id) } },
-        })
-      : [];
-  const linkedFrameworkIds = [...new Set(planLinks.map((l) => l.frameworkId))];
-  const linkedFrameworks =
-    linkedFrameworkIds.length > 0
-      ? await prisma.framework.findMany({ where: { id: { in: linkedFrameworkIds } } })
-      : [];
-  const fwNomById = new Map(linkedFrameworks.map((f) => [f.id, f.nom]));
-  const frameworksByPlan = new Map<string, string[]>();
-  for (const l of planLinks) {
-    const arr = frameworksByPlan.get(l.planId) ?? [];
-    const nom = fwNomById.get(l.frameworkId);
-    if (nom) arr.push(nom);
-    frameworksByPlan.set(l.planId, arr);
-  }
+  // Quota de domaines du forfait actif (affichage « X/N choisis »).
+  const usedChoices = hasActiveSubscription
+    ? await prisma.userFrameworkAccess.count({
+        where: { userId: user.id, source: "subscription_choice" },
+      })
+    : 0;
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -150,6 +135,13 @@ export default async function CreditsPage({
                   })}
                 </p>
               )}
+              {activePlan && activePlan.frameworkQuota != null && (
+                <p className="mt-0.5 text-xs text-[var(--muted)]">
+                  Domaines choisis : {usedChoices}/{activePlan.frameworkQuota}
+                  {usedChoices < activePlan.frameworkQuota &&
+                    " — débloquez-en depuis le catalogue."}
+                </p>
+              )}
             </div>
             <form action={manageBillingAction}>
               <button className="rounded-lg border border-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-white">
@@ -177,14 +169,14 @@ export default async function CreditsPage({
                   {(p.priceEurCents / 100).toFixed(2).replace(".00", "")} €
                   <span className="text-xs font-normal text-[var(--muted)]">/mois</span>
                 </div>
-                <div className="mt-1 text-xs text-[var(--muted)]">
-                  {p.monthlyCredits} crédits chaque mois
+                <div className="mt-1 flex-1 text-xs text-[var(--muted)]">
+                  {p.monthlyCredits} crédits chaque mois ·{" "}
+                  <b>
+                    {p.frameworkQuota == null
+                      ? "tout le catalogue de domaines"
+                      : `${p.frameworkQuota} domaine${p.frameworkQuota > 1 ? "s" : ""} au choix`}
+                  </b>
                 </div>
-                {(frameworksByPlan.get(p.id) ?? []).length > 0 && (
-                  <div className="mt-1 flex-1 text-xs text-[var(--muted)]">
-                    Domaines inclus : <b>{frameworksByPlan.get(p.id)!.join(" · ")}</b>
-                  </div>
-                )}
                 <form action={checkoutPlanAction} className="mt-3">
                   <input type="hidden" name="planId" value={p.id} />
                   <button

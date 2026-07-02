@@ -101,6 +101,10 @@ model SubscriptionPlan {
   key            String   @unique
   label          String
   monthlyCredits Int      @map("monthly_credits")
+  // Nombre de domaines (référentiels) que l'abonné peut DÉBLOQUER À SON CHOIX.
+  // null = tout le catalogue. Les choix sont définitifs tant qu'on est abonné
+  // (ajout possible jusqu'au quota, pas d'échange — anti-abus).
+  frameworkQuota Int?     @map("framework_quota")
   priceEurCents  Int      @map("price_eur_cents") // affichage seul — Stripe fait foi pour la facturation
   stripePriceId  String?  @map("stripe_price_id") // Price ID récurrent (Dashboard Stripe)
   active         Boolean  @default(true)
@@ -126,15 +130,6 @@ model UserSubscription {
   @@map("user_subscriptions")
 }
 
-// Référentiels inclus dans un forfait d'abonnement (cochés par le super-admin).
-model PlanFramework {
-  planId      String @map("plan_id") @db.Uuid
-  frameworkId String @map("framework_id")
-
-  @@id([planId, frameworkId])
-  @@map("plan_frameworks")
-}
-
 // Offre d'achat à l'unité d'un référentiel (paiement unique, accès à vie).
 model FrameworkOffer {
   frameworkId   String  @id @map("framework_id")
@@ -145,13 +140,15 @@ model FrameworkOffer {
   @@map("framework_offers")
 }
 
-// Accès individuel à un référentiel (achat à l'unité, ou octroi admin).
-// Ne concerne que le tenant public (B2C) — les tenants B2B passent par les
-// packs de contenu au niveau plateforme (TenantPack).
+// Accès individuel à un référentiel. Ne concerne que le tenant public (B2C) —
+// les tenants B2B passent par les packs de contenu au niveau plateforme.
+// 'purchase'/'admin' = accès à vie ; 'subscription_choice' = choix consommé sur
+// le quota du forfait, valide uniquement tant que l'abonnement est actif
+// (conservé en base : se réactive si l'abonné revient).
 model UserFrameworkAccess {
   userId      String   @map("user_id") @db.Uuid
   frameworkId String   @map("framework_id")
-  source      String // 'purchase' | 'admin'
+  source      String // 'purchase' | 'admin' | 'subscription_choice'
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@id([userId, frameworkId])

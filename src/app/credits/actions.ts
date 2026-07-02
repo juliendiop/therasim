@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
+import { activateSubscriptionChoice } from "@/lib/entitlements";
 import {
   createBillingPortalSession,
   createCreditsCheckout,
@@ -60,6 +61,19 @@ export async function checkoutFrameworkAction(formData: FormData) {
     redirect(`/f/${frameworkId}?error=${encodeURIComponent(errorMessage(e))}`);
   }
   redirect(url);
+}
+
+/** Consomme un choix du quota d'abonnement pour débloquer un domaine (sans paiement). */
+export async function activateFrameworkChoiceAction(formData: FormData) {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+  const frameworkId = String(formData.get("frameworkId") ?? "");
+
+  const result = await activateSubscriptionChoice(user, frameworkId);
+  if (!result.ok) {
+    redirect(`/f/${frameworkId}?error=${encodeURIComponent(result.message)}`);
+  }
+  redirect(`/f/${frameworkId}`);
 }
 
 /** Ouvre le portail Stripe (résiliation, moyen de paiement) pour un abonné existant. */

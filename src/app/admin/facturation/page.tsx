@@ -10,24 +10,21 @@ import {
   saveFrameworkOffer,
   saveFreeFrameworks,
   togglePlanActive,
-  togglePlanFramework,
   updatePlanPriceId,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function FacturationPage() {
-  const [plans, packPriceIds, frameworks, planLinks, offers, freeIds] = await Promise.all([
+  const [plans, packPriceIds, frameworks, offers, freeIds] = await Promise.all([
     prisma.subscriptionPlan.findMany({ orderBy: { ordre: "asc" } }),
     Promise.all(CREDIT_PACKS.map((p) => getConfig(`stripe.price.pack.${p.id}`))),
     prisma.framework.findMany({ where: { statut: "publie" }, orderBy: { nom: "asc" } }),
-    prisma.planFramework.findMany(),
     prisma.frameworkOffer.findMany(),
     freeFrameworkIds(),
   ]);
   const keyConfigured = isStripeConfigured();
   const webhookConfigured = Boolean(process.env.STRIPE_WEBHOOK_SECRET);
-  const planFrameworkSet = new Set(planLinks.map((l) => `${l.planId}:${l.frameworkId}`));
   const offerByFramework = new Map(offers.map((o) => [o.frameworkId, o]));
 
   return (
@@ -125,7 +122,11 @@ export default async function FacturationPage() {
                   <span className="text-xs text-[var(--muted)]">({plan.key})</span>
                   <div className="text-xs text-[var(--muted)]">
                     {(plan.priceEurCents / 100).toFixed(2)} € / mois · {plan.monthlyCredits}{" "}
-                    crédits/mois {!plan.active && "· inactif"}
+                    crédits/mois ·{" "}
+                    {plan.frameworkQuota == null
+                      ? "tout le catalogue"
+                      : `${plan.frameworkQuota} domaine(s) au choix`}{" "}
+                    {!plan.active && "· inactif"}
                   </div>
                 </div>
                 <form action={togglePlanActive}>
@@ -135,46 +136,29 @@ export default async function FacturationPage() {
                   </button>
                 </form>
               </div>
-              <form action={updatePlanPriceId} className="mt-2 flex gap-2">
+              <form action={updatePlanPriceId} className="mt-2 flex flex-wrap items-center gap-2">
                 <input type="hidden" name="id" value={plan.id} />
                 <input
                   name="stripePriceId"
                   defaultValue={plan.stripePriceId ?? ""}
                   placeholder="price_... (récurrent)"
-                  className="flex-1 rounded-lg border border-[var(--border)] p-2 text-xs font-mono"
+                  className="min-w-40 flex-1 rounded-lg border border-[var(--border)] p-2 text-xs font-mono"
                 />
+                <label className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+                  Domaines au choix
+                  <input
+                    name="frameworkQuota"
+                    type="number"
+                    min={1}
+                    defaultValue={plan.frameworkQuota ?? ""}
+                    placeholder="tout"
+                    className="w-16 rounded-lg border border-[var(--border)] p-2 text-xs"
+                  />
+                </label>
                 <button className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium hover:border-[var(--accent)]">
                   Mettre à jour
                 </button>
               </form>
-              {/* Référentiels inclus dans ce forfait */}
-              <div className="mt-3 border-t border-[var(--border)] pt-2">
-                <div className="text-[11px] font-medium uppercase tracking-wide text-[var(--muted)]">
-                  Domaines inclus dans ce forfait
-                </div>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {frameworks.map((f) => {
-                    const included = planFrameworkSet.has(`${plan.id}:${f.id}`);
-                    return (
-                      <form key={f.id} action={togglePlanFramework}>
-                        <input type="hidden" name="planId" value={plan.id} />
-                        <input type="hidden" name="frameworkId" value={f.id} />
-                        <button
-                          className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-                            included
-                              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                              : "border-[var(--border)] text-[var(--muted)] hover:border-[var(--accent)]"
-                          }`}
-                          title={included ? "Cliquer pour retirer" : "Cliquer pour inclure"}
-                        >
-                          {included ? "✓ " : "+ "}
-                          {f.nom}
-                        </button>
-                      </form>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
           ))}
         </div>
@@ -200,6 +184,22 @@ export default async function FacturationPage() {
         <div>
           <label className="text-xs font-medium">Prix (€ / mois)</label>
           <input name="priceEur" type="number" min={0} step="0.01" required className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm" />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs font-medium">
+            Domaines au choix de l&apos;abonné (vide = tout le catalogue)
+          </label>
+          <input
+            name="frameworkQuota"
+            type="number"
+            min={1}
+            placeholder="ex. 1 pour Essentiel, 3 pour Praticien, vide pour Intensif"
+            className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm"
+          />
+          <p className="mt-1 text-[11px] text-[var(--muted)]">
+            L&apos;abonné débloque lui-même les domaines qui l&apos;intéressent, dans la
+            limite de ce quota. Choix définitifs tant qu&apos;il est abonné (pas d&apos;échange).
+          </p>
         </div>
         <div className="sm:col-span-2">
           <label className="text-xs font-medium">Price ID Stripe (optionnel — peut être ajouté après coup)</label>
