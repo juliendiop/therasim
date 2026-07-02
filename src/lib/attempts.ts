@@ -3,7 +3,7 @@
 // qui alimente `user_competency_state`. Source de vérité unique.
 
 import { prisma } from "./prisma";
-import { updateMastery } from "./mastery";
+import { isMilestone, palier, updateMastery, type Palier } from "./mastery";
 import type { Prisma } from "@prisma/client";
 
 export type RecordAttemptInput = {
@@ -17,7 +17,19 @@ export type RecordAttemptInput = {
   raw?: Prisma.InputJsonValue;
 };
 
-export async function recordAttempt(input: RecordAttemptInput) {
+export type RecordAttemptResult = {
+  state: Prisma.UserCompetencyStateGetPayload<object>;
+  palierBefore: Palier;
+  palierAfter: Palier;
+  milestone: boolean;
+};
+
+export async function recordAttempt(input: RecordAttemptInput): Promise<{
+  state: Prisma.UserCompetencyStateGetPayload<object>;
+  palierBefore: Palier;
+  palierAfter: Palier;
+  milestone: boolean;
+}> {
   const { userId, tenantId, frameworkId, competencyId, source, sourceRef, score, raw } =
     input;
 
@@ -44,6 +56,8 @@ export async function recordAttempt(input: RecordAttemptInput) {
 
   const newMastery = updateMastery(prev?.mastery ?? null, score);
   const now = new Date();
+  const palierBefore = palier(prev?.mastery ?? null);
+  const palierAfter = palier(newMastery);
 
   const state = await prisma.userCompetencyState.upsert({
     where: {
@@ -65,5 +79,10 @@ export async function recordAttempt(input: RecordAttemptInput) {
     },
   });
 
-  return state;
+  return {
+    state,
+    palierBefore,
+    palierAfter,
+    milestone: isMilestone(palierBefore, palierAfter),
+  };
 }

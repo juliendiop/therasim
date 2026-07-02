@@ -5,7 +5,7 @@
 
 import { prisma } from "./prisma";
 import { llmChat, llmChatStream, type ChatMsg } from "./llm";
-import { normalizeNote } from "./mastery";
+import { normalizeNote, PALIER_LABEL } from "./mastery";
 import { recordAttempt } from "./attempts";
 
 const FALLBACK_OPENER = "Bonjour… je ne sais pas trop par où commencer, en fait.";
@@ -180,14 +180,24 @@ type DebriefScore = {
   evidence: string;
   non_evalue: boolean;
 };
+export type LevelUp = { competency_id: string; nom: string; palier: string };
 export type Debrief = {
   scores: DebriefScore[];
   narrative: string;
   moments: { quote: string; comment: string }[];
+  level_ups?: LevelUp[];
 };
 
-/** Termine la simulation : débrief sommatif + écriture des Attempt dans la carte. */
-export async function endSimulation(sessionId: string) {
+/**
+ * Termine la simulation : débrief sommatif + écriture des Attempt dans la carte.
+ * `selfAssessment` (optionnel) = auto-évaluation de l'apprenant AVANT de voir la
+ * note IA — { competency_code: note 1..5 }. Stockée à part (jamais mêlée au
+ * débrief IA), simplement rejouée par le client pour la comparaison.
+ */
+export async function endSimulation(
+  sessionId: string,
+  selfAssessment?: Record<string, number>,
+) {
   const { session, scenario, framework, messages } = await loadContext(sessionId);
   if (session.statut === "terminee" && session.debrief) {
     return session.debrief as unknown as Debrief;
@@ -243,12 +253,16 @@ export async function endSimulation(sessionId: string) {
   };
 
   // Écrit un Attempt par compétence évaluée -> alimente la carte (spec §4.2 / §5.5).
+  // Collecte au passage les franchissements de palier notables (solide/maîtrisé), à
+  // fêter côté client.
+  const nomByCode = new Map(competencies.map((c) => [c.code, c.nom]));
   const validCodes = new Set(competencies.map((c) => c.code));
+  const levelUps: LevelUp[] = [];
   for (const s of debrief.scores) {
     if (s.non_evalue || !validCodes.has(s.competency_id)) continue;
     // Note IA absente/non numérique : on ignore plutôt que de corrompre la carte.
     if (!Number.isFinite(Number(s.note))) continue;
-    await recordAttempt({
+    const result = await recordAttempt({
       userId: session.userId,
       tenantId: session.tenantId,
       frameworkId: session.frameworkId,
@@ -258,7 +272,15 @@ export async function endSimulation(sessionId: string) {
       score: normalizeNote(s.note),
       raw: { note: s.note, justification: s.justification, evidence: s.evidence },
     });
+    if (result.milestone) {
+      levelUps.push({
+        competency_id: s.competency_id,
+        nom: nomByCode.get(s.competency_id) ?? s.competency_id,
+        palier: PALIER_LABEL[result.palierAfter],
+      });
+    }
   }
+  if (levelUps.length > 0) debrief.level_ups = levelUps;
 
   await prisma.simSession.update({
     where: { id: session.id },
@@ -266,6 +288,10 @@ export async function endSimulation(sessionId: string) {
       statut: "terminee",
       endedAt: new Date(),
       debrief: debrief as unknown as object,
+      selfAssessment:
+        selfAssessment && Object.keys(selfAssessment).length > 0
+          ? (selfAssessment as unknown as object)
+          : undefined,
     },
   });
 

@@ -1,18 +1,22 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, User2 } from "lucide-react";
+import { ArrowLeft, Sparkles, Trophy } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { canSupervise } from "@/lib/roles";
 import { getLearnerInTenant, listNotes } from "@/lib/supervision";
 import type { Debrief } from "@/lib/simulator";
+import { matchMoments } from "@/lib/moment-match";
+import { patientDisplayName } from "@/lib/patient";
+import PatientAvatar from "@/app/_components/patient-avatar";
 import { KIND_LABEL, fmtDateTime } from "@/lib/ui";
 import { addNoteAction } from "../../../actions";
 
 export const dynamic = "force-dynamic";
 
 // Relecture (lecture seule) d'une mise en situation d'un apprenant : transcript
-// complet + débrief. Pas d'interaction possible — la session appartient à l'apprenant.
+// complet + débrief, moments clés surlignés en contexte (replay annoté). Pas
+// d'interaction possible — la session appartient à l'apprenant.
 export default async function SupervisionSimPage({
   params,
 }: {
@@ -34,8 +38,16 @@ export default async function SupervisionSimPage({
     prisma.simMessage.findMany({ where: { sessionId: simId }, orderBy: { turn: "asc" } }),
     listNotes(user.tenantId, learner.id),
   ]);
+  const competencies = framework
+    ? await prisma.competency.findMany({ where: { gridId: framework.gridId } })
+    : [];
+  const nomByCode = new Map(competencies.map((c) => [c.code, c.nom]));
   const debrief = session.debrief as unknown as Debrief | null;
   const notesForSession = notes.filter((n) => n.sessionId === simId);
+  const patientName = patientDisplayName(scenario?.titre ?? "Entretien");
+  const avatarSeed = scenario?.titre ?? simId;
+  const moments = debrief ? matchMoments(messages, debrief.moments) : null;
+  const unmatchedMoments = moments?.unmatched ?? debrief?.moments ?? [];
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -46,38 +58,56 @@ export default async function SupervisionSimPage({
         <ArrowLeft className="h-4 w-4" /> {learner.email}
       </Link>
 
-      <div className="mt-3">
-        <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]">
-          {KIND_LABEL[session.kind] ?? session.kind}
-        </span>
-        <h1 className="mt-1.5 text-lg font-semibold">{scenario?.titre ?? "Entretien"}</h1>
-        <p className="text-xs text-[var(--muted)]">
-          {framework?.nom} · {fmtDateTime(session.createdAt)}
-          {session.statut === "en_cours" && " · en cours"}
-        </p>
+      <div className="mt-3 flex items-center gap-3">
+        <PatientAvatar name={patientName} seed={avatarSeed} size="lg" />
+        <div>
+          <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]">
+            {KIND_LABEL[session.kind] ?? session.kind}
+          </span>
+          <h1 className="mt-1.5 text-lg font-semibold">{scenario?.titre ?? "Entretien"}</h1>
+          <p className="text-xs text-[var(--muted)]">
+            {framework?.nom} · {fmtDateTime(session.createdAt)}
+            {session.statut === "en_cours" && " · en cours"}
+          </p>
+        </div>
       </div>
 
-      {/* Transcript (lecture seule) */}
+      {/* Transcript (lecture seule) — moments clés surlignés en contexte */}
       <div className="mt-4 space-y-3">
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`flex ${m.role === "apprenant" ? "justify-end" : "justify-start"}`}
-          >
+        {messages.map((m, i) => (
+          <div key={m.id}>
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
-                m.role === "apprenant"
-                  ? "bg-[var(--accent)] text-white"
-                  : "border border-[var(--border)] bg-white"
-              }`}
+              className={`flex items-end gap-2 ${m.role === "apprenant" ? "justify-end" : "justify-start"}`}
             >
               {m.role === "patient" && (
-                <div className="mb-0.5 flex items-center gap-1 text-[11px] font-medium text-[var(--muted)]">
-                  <User2 className="h-3 w-3" /> Patient
-                </div>
+                <PatientAvatar name={patientName} seed={avatarSeed} size="sm" />
               )}
-              {m.content}
+              <div
+                className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
+                  m.role === "apprenant"
+                    ? "bg-[var(--accent)] text-white"
+                    : "border border-[var(--border)] bg-white"
+                } ${moments?.byIndex.has(i) ? "ring-2 ring-[var(--ochre)] ring-offset-1" : ""}`}
+              >
+                {m.role === "patient" && (
+                  <div className="mb-0.5 text-[11px] font-medium text-[var(--muted)]">
+                    {patientName}
+                  </div>
+                )}
+                {m.content}
+              </div>
             </div>
+            {moments?.byIndex.get(i)?.map((moment, j) => (
+              <div
+                key={j}
+                className={`mt-1 flex ${m.role === "apprenant" ? "justify-end" : "justify-start ml-10"}`}
+              >
+                <div className="flex max-w-[80%] items-start gap-1.5 rounded-lg border border-[var(--ochre-soft)] bg-[var(--ochre-soft)] px-3 py-1.5 text-xs text-[var(--ink-soft)]">
+                  <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-[var(--ochre)]" />
+                  {moment.comment}
+                </div>
+              </div>
+            ))}
           </div>
         ))}
         {messages.length === 0 && (
@@ -91,6 +121,23 @@ export default async function SupervisionSimPage({
       {debrief && (
         <div className="mt-8 border-t border-[var(--border)] pt-6">
           <h2 className="text-lg font-semibold">Débrief</h2>
+
+          {debrief.level_ups && debrief.level_ups.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {debrief.level_ups.map((lu) => (
+                <div
+                  key={lu.competency_id}
+                  className="flex items-center gap-2.5 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-3 text-sm"
+                >
+                  <Trophy className="h-5 w-5 shrink-0 text-[var(--accent)]" />
+                  <span>
+                    <b>{lu.nom}</b> — palier <b>{lu.palier}</b> atteint sur cet entretien.
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {debrief.narrative && (
             <p className="mt-2 rounded-xl border border-[var(--border)] bg-white p-4 text-sm">
               {debrief.narrative}
@@ -107,7 +154,9 @@ export default async function SupervisionSimPage({
                     className="rounded-lg border border-[var(--border)] bg-white p-3 text-sm"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">{s.competency_id}</span>
+                      <span className="font-medium">
+                        {nomByCode.get(s.competency_id) ?? s.competency_id}
+                      </span>
                       <span className="font-semibold">{s.note}/5</span>
                     </div>
                     {s.justification && (
@@ -117,10 +166,10 @@ export default async function SupervisionSimPage({
                 ))}
             </div>
           )}
-          {debrief.moments.length > 0 && (
+          {unmatchedMoments.length > 0 && (
             <div className="mt-4 space-y-2">
-              <h3 className="text-sm font-semibold">Moments clés</h3>
-              {debrief.moments.map((m, i) => (
+              <h3 className="text-sm font-semibold">Autres moments clés</h3>
+              {unmatchedMoments.map((m, i) => (
                 <div key={i} className="rounded-lg bg-gray-50 p-3 text-sm">
                   <p className="italic">« {m.quote} »</p>
                   <p className="mt-1 text-xs text-[var(--muted)]">{m.comment}</p>

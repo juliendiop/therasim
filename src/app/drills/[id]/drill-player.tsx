@@ -10,6 +10,7 @@ import {
   MessageCircle,
   RotateCcw,
   Send,
+  Trophy,
   XCircle,
 } from "lucide-react";
 import type { PublicDrill } from "@/lib/drill-view";
@@ -25,6 +26,7 @@ type Feedback = {
   suggested_better_response?: string;
   modele_reponse: string;
   patient_reaction?: string | null;
+  level_up?: { competence: string; palier: string } | null;
 };
 
 export default function DrillPlayer({
@@ -151,6 +153,15 @@ export default function DrillPlayer({
       {/* Feedback */}
       {feedback && (
         <div className="mt-5 space-y-4">
+          {feedback.level_up && (
+            <div className="ts-level-up flex items-center gap-2.5 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-4 text-sm">
+              <Trophy className="h-5 w-5 shrink-0 text-[var(--accent)]" />
+              <span>
+                <b>{feedback.level_up.competence}</b> — palier{" "}
+                <b>{feedback.level_up.palier}</b> atteint !
+              </span>
+            </div>
+          )}
           {!feedback.non_evalue && (
             <div
               className={`flex items-start gap-3 rounded-xl border p-4 ${

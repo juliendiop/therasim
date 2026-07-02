@@ -132,6 +132,47 @@ formulaire de demande de devis ajouté côté landing).
 - ✅ `npm run db:push` fait (2 juillet, contre Neon prod) — table `supervisor_notes` créée,
   fonctionnalité pleinement opérationnelle.
 
+## ⭐ Auto-évaluation avant débrief + replay annoté — ✅ V1 FAITE (2 juillet)
+
+Chantier 4 de l'analyse du 2 juillet.
+- **Auto-évaluation** : avant d'afficher la note IA, l'apprenant estime sa mobilisation de
+  chaque compétence évaluée (note 1-5, une par compétence). Étape affichée après la
+  confirmation de fin d'entretien/mini-scène, avant l'appel au débrief IA. Skippable
+  (« Passer cette étape »). Le débrief affiche ensuite « vous : X/5 · IA : Y/5 » par
+  compétence. Stockée à part (`SimSession.selfAssessment`, jamais mêlée au débrief IA).
+- **Replay annoté** : les « moments clés » du débrief sont désormais rattachés au message
+  du transcript qui leur correspond (correspondance approximative par recouvrement de mots,
+  tolère la paraphrase) et **surlignés en contexte** (anneau ocre + commentaire juste en
+  dessous), au lieu d'une liste séparée hors contexte. Les moments non retrouvés restent
+  listés à part sous « Autres moments clés ». Appliqué à la fois côté apprenant
+  (`/sim/[id]`) et côté formateur (`/supervision/[id]/sim/[simId]`).
+- Bonus au passage : le nom des compétences dans le débrief était affiché en code brut
+  (`reflets` au lieu de « Reflets ») — corrigé partout via résolution code→nom.
+- Fichiers : `src/lib/moment-match.ts`, `src/app/sim/[id]/sim-chat.tsx`, `src/app/sim/[id]/page.tsx`,
+  `src/app/api/sim/[id]/end/route.ts`, `src/lib/simulator.ts` (`endSimulation` accepte
+  `selfAssessment`), `src/app/supervision/[id]/sim/[simId]/page.tsx`.
+- 🔴 **Action requise du porteur** : `npm run db:push` (nouveau champ `SimSession.selfAssessment`).
+- ⚠️ Reste (option) : afficher l'écart self/IA de façon plus visuelle (pas juste du texte) ;
+  historiser la progression de la justesse de l'auto-évaluation dans le temps.
+
+## ⭐ Visages des patients + célébration des paliers — ✅ V1 FAITE (2 juillet)
+
+Chantier 5 de l'analyse du 2 juillet.
+- **Avatars patients** : monogramme coloré déterministe (nom + couleur dérivés du titre du
+  scénario — aucune génération d'image, aucun champ ajouté en base). Affiché dans le chat de
+  simulation (en-tête + bulles), l'historique, l'accueil (dernières mises en situation) et
+  la supervision formateur (liste + transcript). Fichiers : `src/lib/patient.ts`,
+  `src/app/_components/patient-avatar.tsx`.
+- **Célébration des paliers** : quand un essai (drill ou compétence d'un débrief de
+  simulation) fait franchir un palier **solide** ou **maîtrisé** (pas le premier essai
+  non_pratique→faible, trop fréquent pour rester festif), une bannière animée (rebond +
+  halo) apparaît avec le nom de la compétence et le palier atteint. Détection centralisée :
+  `attempts.ts` (`recordAttempt` renvoie désormais `{state, palierBefore, palierAfter,
+  milestone}`), `mastery.ts` (`isMilestone`). Affiché dans `drill-player.tsx` (essai) et
+  `sim-chat.tsx` / la page supervision (débrief, un ou plusieurs paliers par entretien).
+- ⚠️ Reste (option) : appliquer l'avatar aussi à la démo publique (`demo-drill.tsx`) ; portrait
+  illustré (au lieu du monogramme) si budget design plus tard.
+
 ## ⭐ Prochaine étape — PDF → session de formation (demande 11 juin)
 - Importer le **PDF d'un support / programme** de formation et le transformer en **une session**
   (étude de cas) dans l'app : extraction du contenu → mapping vers compétences/référentiels →

@@ -3,6 +3,8 @@ import { ArrowRight, History, MessagesSquare } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { listSimHistory } from "@/lib/sim-history";
 import { KIND_LABEL, fmtDateTime } from "@/lib/ui";
+import { patientDisplayName } from "@/lib/patient";
+import PatientAvatar from "@/app/_components/patient-avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,10 @@ export default async function HistoriquePage() {
               href={`/sim/${s.id}`}
               className="group flex items-center gap-4 rounded-xl border border-[var(--border)] bg-white p-4 transition hover:border-[var(--accent)] hover:shadow-sm"
             >
+              <PatientAvatar
+                name={patientDisplayName(s.scenarioTitre)}
+                seed={s.scenarioTitre}
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 font-medium text-[var(--accent)]">

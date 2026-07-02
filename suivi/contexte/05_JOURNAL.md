@@ -502,18 +502,61 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
 - Build OK, types OK, `db:push` fait. Supervision et export CSV non encore testés en
   conditions réelles (nécessite un compte formateur/tenant_admin + des apprenants actifs).
 
+### Suite de session (même jour, quater) : les 2 derniers chantiers de l'analyse du 2 juillet
+Les 2 chantiers restants (choisis par le porteur : « c'est parti pour les 2 » — pas de
+priorisation demandée, traités ensemble) :
+
+**Auto-évaluation avant débrief + replay annoté**
+- Nouvelle étape entre la confirmation de fin d'entretien/mini-scène et l'appel au débrief IA :
+  l'apprenant note sa mobilisation de chaque compétence évaluée (1-5), skippable. Le débrief
+  affiche ensuite « vous : X/5 · IA : Y/5 » par compétence. Stocké à part
+  (`SimSession.selfAssessment`), jamais mêlé au débrief IA lui-même.
+- Les « moments clés » du débrief sont désormais **rattachés au message du transcript**
+  correspondant (`src/lib/moment-match.ts` — recouvrement de mots, tolère la paraphrase) et
+  surlignés en contexte (anneau ocre + commentaire sous la bulle), au lieu d'une liste séparée
+  après coup. Fallback en liste (« Autres moments clés ») pour les non-rattachés. Appliqué à
+  la fois côté apprenant (`/sim/[id]`) et côté formateur (`/supervision/[id]/sim/[simId]`).
+- Bonus corrigé au passage : le débrief affichait le **code brut** de la compétence
+  (`reflets`) au lieu de son nom (« Reflets ») — résolu partout.
+- Fichiers : `src/lib/moment-match.ts`, `src/lib/simulator.ts` (`endSimulation` accepte
+  `selfAssessment`), `src/app/api/sim/[id]/end/route.ts`, `src/app/sim/[id]/page.tsx`,
+  `src/app/sim/[id]/sim-chat.tsx`, `src/app/supervision/[id]/sim/[simId]/page.tsx`.
+
+**Visages des patients + célébration des paliers**
+- Avatars monogrammes colorés déterministes (dérivés du **titre du scénario** — aucune
+  génération d'image, aucun champ ajouté en base) : `src/lib/patient.ts` +
+  `src/app/_components/patient-avatar.tsx` (1er dossier partagé hors des routes, convention
+  Next `_components`). Intégrés au chat de simulation (en-tête + bulles), à l'historique, à
+  l'accueil, et à la supervision formateur (liste + transcript).
+- Célébration : bannière animée (`.ts-level-up` dans `globals.css`) quand un essai fait
+  franchir un palier **solide** ou **maîtrisé** — pas le premier essai (non_pratique→faible),
+  volontairement pas fêté (trop fréquent). Détection centralisée : `mastery.ts` (nouveau
+  `isMilestone`/`palierRank`), `attempts.ts` (`recordAttempt` renvoie désormais
+  `{state, palierBefore, palierAfter, milestone}` — **changement de signature**, mais tous
+  les appelants existants ignoraient déjà la valeur de retour, donc rétrocompatible).
+  Affiché dans `drill-player.tsx` (un essai) et le débrief de simulation (un ou plusieurs
+  paliers par entretien, `simulator.ts` calcule `debrief.level_ups`).
+- Fichiers additionnels : `src/app/api/drills/[id]/attempt/route.ts` (payload `level_up`),
+  `src/app/drills/[id]/drill-player.tsx`.
+
+### 🔴 Action requise du porteur avant que l'auto-évaluation fonctionne
+- **`npm run db:push`** — nouveau champ `SimSession.selfAssessment` (Json?). Sans ça, la fin
+  d'un entretien/mini-scène plantera à l'écriture (le reste — avatars, célébration,
+  replay annoté sur les anciennes sessions déjà en base — fonctionne sans cette étape).
+
+### État en fin de session (ter)
+- Build OK (`npm run build`, TypeScript inclus), `npx tsc --noEmit` OK. Non testé en
+  conditions réelles (nécessite `db:push` + une session complète pour voir auto-évaluation,
+  replay annoté et célébration en vrai).
+
 ### Prochaine étape suggérée
-- Tester `/supervision` en conditions réelles (compte formateur/tenant_admin, ajout d'une
-  note, export CSV d'une session live).
-- Chantiers restants de l'analyse du 2 juillet, non commencés :
-  - **Auto-évaluation avant débrief + replay annoté** (estimation de l'apprenant comparée à
-    l'IA avant affichage de la note ; relecture du transcript avec moments clés surlignés en
-    contexte plutôt qu'en liste séparée).
-  - **Visages des patients + célébration des paliers** (avatars/portraits dans le chat et le
-    débrief ; animation + badge quand un palier de maîtrise est franchi).
-- Dans `/supervision`, restent : assignations (« faites cet exercice d'ici vendredi »),
-  attestation de pratique, export PDF/CSV du suivi individuel d'un apprenant (aujourd'hui
-  seul l'export CSV des sessions live existe).
+- Faire `npm run db:push`, puis jouer un entretien complet de bout en bout pour valider :
+  auto-évaluation → débrief avec comparaison → moments clés surlignés dans le fil → (si palier
+  franchi) bannière de célébration.
+- Dans `/supervision`, restent : assignations, attestation de pratique, export PDF/CSV du
+  suivi individuel d'un apprenant.
+- Visages des patients : reste en option la démo publique (`demo-drill.tsx`), et un portrait
+  illustré (au lieu du monogramme) si budget design plus tard.
 - Tester le streaming du chat de simulation en conditions réelles (toujours en attente).
 - Réparer `npm run lint` (config ESLint cassée, préexistante — toujours en attente).
 - Vérifier que `contact@meleta.app` reçoit bien les demandes de devis (formulaire ajouté

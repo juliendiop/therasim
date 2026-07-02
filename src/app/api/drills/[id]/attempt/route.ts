@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { tenantCanAccess } from "@/lib/entitlements";
-import { recordAttempt } from "@/lib/attempts";
+import { recordAttempt, type RecordAttemptResult } from "@/lib/attempts";
 import { parseOptions } from "@/lib/drill-view";
-import { normalizeNote } from "@/lib/mastery";
+import { normalizeNote, PALIER_LABEL } from "@/lib/mastery";
 import {
   EvaluatorNotConfiguredError,
   evaluateMonoCompetence,
@@ -39,7 +39,7 @@ export async function POST(
     const chosen = options[idx];
     const score = chosen.score; // déjà dans [0,1]
 
-    await recordAttempt({
+    const result = await recordAttempt({
       userId: user.id,
       tenantId: user.tenantId,
       frameworkId: drill.frameworkId,
@@ -57,6 +57,7 @@ export async function POST(
       feedback: chosen.feedback,
       modele_reponse: drill.modeleReponse,
       patient_reaction: chosen.is_best ? drill.patientReactionSiBon : null,
+      level_up: await levelUpPayload(result, drill.frameworkId, drill.competencyId),
     });
   }
 
@@ -92,7 +93,7 @@ export async function POST(
     }
 
     const score = normalizeNote(evaluation.score);
-    await recordAttempt({
+    const result = await recordAttempt({
       userId: user.id,
       tenantId: user.tenantId,
       frameworkId: drill.frameworkId,
@@ -118,6 +119,7 @@ export async function POST(
       suggested_better_response: evaluation.suggested_better_response,
       modele_reponse: drill.modeleReponse,
       patient_reaction: evaluation.score >= 4 ? drill.patientReactionSiBon : null,
+      level_up: await levelUpPayload(result, drill.frameworkId, drill.competencyId, competency?.nom),
     });
   } catch (err) {
     if (err instanceof EvaluatorNotConfiguredError) {
@@ -138,4 +140,23 @@ export async function POST(
 async function gridIdOf(frameworkId: string): Promise<string> {
   const f = await prisma.framework.findUnique({ where: { id: frameworkId } });
   return f?.gridId ?? "";
+}
+
+/** Payload de célébration si l'essai a fait franchir un palier notable (solide/maîtrisé). */
+async function levelUpPayload(
+  result: RecordAttemptResult,
+  frameworkId: string,
+  competencyId: string,
+  nomHint?: string | null,
+): Promise<{ competence: string; palier: string } | null> {
+  if (!result.milestone) return null;
+  const nom =
+    nomHint ??
+    (
+      await prisma.competency.findFirst({
+        where: { gridId: await gridIdOf(frameworkId), code: competencyId },
+      })
+    )?.nom ??
+    competencyId;
+  return { competence: nom, palier: PALIER_LABEL[result.palierAfter] };
 }

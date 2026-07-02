@@ -250,6 +250,7 @@ model SimSession {
   focus       Json? // mini-scène : codes des 2 compétences ciblées
   statut      String    @default("en_cours") // 'en_cours' | 'terminee'
   debrief     Json? // { scores:[{competency_id,note,justification,evidence}], narrative, moments:[{quote,comment}] }
+  selfAssessment Json? @map("self_assessment") // { [competency_code]: note 1..5 } — auto-évaluation avant débrief
   createdAt   DateTime  @default(now()) @map("created_at")
   endedAt     DateTime? @map("ended_at")
 

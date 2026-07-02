@@ -1,12 +1,16 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Flag, Lightbulb, Send, Target, User2 } from "lucide-react";
+import { ArrowLeft, Flag, Lightbulb, Send, Sparkles, Target, Trophy } from "lucide-react";
 import type { Debrief } from "@/lib/simulator";
+import { matchMoments } from "@/lib/moment-match";
+import { patientDisplayName } from "@/lib/patient";
+import PatientAvatar from "@/app/_components/patient-avatar";
 
 type Msg = { role: string; content: string };
+type Competency = { code: string; nom: string };
 
 export default function SimChat({
   sessionId,
@@ -17,8 +21,10 @@ export default function SimChat({
   kind,
   maxTurns,
   focusNoms,
+  competencies,
   initialMessages,
   initialDebrief,
+  initialSelfAssessment,
 }: {
   sessionId: string;
   frameworkId: string;
@@ -28,8 +34,10 @@ export default function SimChat({
   kind: string;
   maxTurns: number | null;
   focusNoms: string[];
+  competencies: Competency[];
   initialMessages: Msg[];
   initialDebrief: Debrief | null;
+  initialSelfAssessment: Record<string, number> | null;
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
@@ -43,12 +51,27 @@ export default function SimChat({
   // Réponse du patient en cours de réception ("" = il « réfléchit » encore).
   const [pending, setPending] = useState<string | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [awaitingSelfAssessment, setAwaitingSelfAssessment] = useState(false);
+  const [selfAssessment, setSelfAssessment] = useState<Record<string, number>>(
+    initialSelfAssessment ?? {},
+  );
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const isMini = kind === "miniscene";
   const turns = messages.filter((m) => m.role === "apprenant").length;
   const capReached = maxTurns != null && turns >= maxTurns;
+  const patientName = patientDisplayName(titre);
+  const nomByCode = useMemo(
+    () => new Map(competencies.map((c) => [c.code, c.nom])),
+    [competencies],
+  );
+
+  // Replay annoté : rattache chaque moment clé du débrief au message correspondant.
+  const moments = useMemo(
+    () => (debrief ? matchMoments(messages, debrief.moments) : null),
+    [debrief, messages],
+  );
 
   async function askHint() {
     if (busy) return;
@@ -130,23 +153,29 @@ export default function SimChat({
     }
   }
 
-  async function terminer() {
+  async function terminer(assessment: Record<string, number>) {
     if (busy || ending) return;
     if (turns === 0) {
       setError("Échangez au moins une fois avec le patient avant de terminer la mise en situation.");
       return;
     }
     setConfirmEnd(false);
+    setAwaitingSelfAssessment(false);
     setEnding(true);
     setError(null);
     try {
-      const res = await fetch(`/api/sim/${sessionId}/end`, { method: "POST" });
+      const res = await fetch(`/api/sim/${sessionId}/end`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selfAssessment: assessment }),
+      });
       const data = await res.json();
       if (!res.ok) {
         setError(data.message ?? data.error ?? "Erreur");
         return;
       }
       setDebrief(data.debrief as Debrief);
+      setSelfAssessment(assessment);
       setEnded(true);
       scrollDown();
     } catch {
@@ -156,14 +185,15 @@ export default function SimChat({
     }
   }
 
-  // Fin naturelle de mini-scène : plus rien à confirmer. Sinon, 2 temps.
+  // Fin naturelle de mini-scène : on passe directement à l'auto-évaluation.
+  // Sinon, confirmation d'abord (le débrief est définitif).
   function onEndClick() {
     if (busy || ending) return;
     if (turns === 0) {
       setError("Échangez au moins une fois avec le patient avant de terminer la mise en situation.");
       return;
     }
-    if (capReached) void terminer();
+    if (capReached || competencies.length === 0) setAwaitingSelfAssessment(true);
     else setConfirmEnd(true);
   }
 
@@ -177,12 +207,15 @@ export default function SimChat({
           <ArrowLeft className="h-4 w-4" /> Mon historique
         </Link>
       )}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">{titre}</h1>
-          {contexte && <p className="mt-0.5 text-xs text-[var(--muted)]">{contexte}</p>}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <PatientAvatar name={patientName} seed={titre} size="lg" />
+          <div>
+            <h1 className="text-lg font-semibold">{titre}</h1>
+            {contexte && <p className="mt-0.5 text-xs text-[var(--muted)]">{contexte}</p>}
+          </div>
         </div>
-        {!ended && (
+        {!ended && !awaitingSelfAssessment && (
           <button
             onClick={onEndClick}
             disabled={busy || ending}
@@ -211,33 +244,50 @@ export default function SimChat({
       {/* Conversation */}
       <div className="mt-4 space-y-3">
         {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`flex ${m.role === "apprenant" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={i}>
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
-                m.role === "apprenant"
-                  ? "bg-[var(--accent)] text-white"
-                  : "border border-[var(--border)] bg-white"
-              }`}
+              className={`flex items-end gap-2 ${m.role === "apprenant" ? "justify-end" : "justify-start"}`}
             >
               {m.role === "patient" && (
-                <div className="mb-0.5 flex items-center gap-1 text-[11px] font-medium text-[var(--muted)]">
-                  <User2 className="h-3 w-3" /> Patient
-                </div>
+                <PatientAvatar name={patientName} seed={titre} size="sm" />
               )}
-              {m.content}
+              <div
+                className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
+                  m.role === "apprenant"
+                    ? "bg-[var(--accent)] text-white"
+                    : "border border-[var(--border)] bg-white"
+                } ${moments?.byIndex.has(i) ? "ring-2 ring-[var(--ochre)] ring-offset-1" : ""}`}
+              >
+                {m.role === "patient" && (
+                  <div className="mb-0.5 text-[11px] font-medium text-[var(--muted)]">
+                    {patientName}
+                  </div>
+                )}
+                {m.content}
+              </div>
             </div>
+            {/* Replay annoté : le(s) moment(s) clé(s) du débrief, en contexte. */}
+            {moments?.byIndex.get(i)?.map((moment, j) => (
+              <div
+                key={j}
+                className={`mt-1 flex ${m.role === "apprenant" ? "justify-end" : "justify-start ml-10"}`}
+              >
+                <div className="flex max-w-[80%] items-start gap-1.5 rounded-lg border border-[var(--ochre-soft)] bg-[var(--ochre-soft)] px-3 py-1.5 text-xs text-[var(--ink-soft)]">
+                  <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-[var(--ochre)]" />
+                  {moment.comment}
+                </div>
+              </div>
+            ))}
           </div>
         ))}
 
         {/* Réponse du patient en cours : « réfléchit… » puis texte au fil de l'eau */}
         {pending !== null && (
-          <div className="flex justify-start">
+          <div className="flex items-end justify-start gap-2">
+            <PatientAvatar name={patientName} seed={titre} size="sm" />
             <div className="max-w-[80%] rounded-2xl border border-[var(--border)] bg-white px-4 py-2 text-sm">
-              <div className="mb-0.5 flex items-center gap-1 text-[11px] font-medium text-[var(--muted)]">
-                <User2 className="h-3 w-3" /> Patient
+              <div className="mb-0.5 text-[11px] font-medium text-[var(--muted)]">
+                {patientName}
               </div>
               {pending === "" ? (
                 <span className="inline-flex items-center gap-1 py-1" aria-label="Le patient réfléchit…">
@@ -265,7 +315,7 @@ export default function SimChat({
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
       {/* Confirmation avant de clôturer (le débrief est définitif) */}
-      {confirmEnd && !ended && (
+      {confirmEnd && !ended && !awaitingSelfAssessment && (
         <div className="mt-4 flex flex-col gap-2 rounded-lg border border-[var(--border)] bg-white p-3 text-sm sm:flex-row sm:items-center">
           <span className="flex-1">
             Terminer {isMini ? "la mini-scène" : "l'entretien"} et recevoir le débrief&nbsp;?
@@ -273,7 +323,10 @@ export default function SimChat({
           </span>
           <div className="flex gap-2">
             <button
-              onClick={terminer}
+              onClick={() => {
+                setConfirmEnd(false);
+                setAwaitingSelfAssessment(true);
+              }}
               className="rounded-lg bg-[var(--accent)] px-3 py-1.5 font-medium text-white hover:bg-[var(--accent-hover)]"
             >
               Oui, terminer
@@ -288,15 +341,27 @@ export default function SimChat({
         </div>
       )}
 
+      {/* Auto-évaluation AVANT de voir la note IA */}
+      {awaitingSelfAssessment && !ended && (
+        <SelfAssessmentForm
+          competencies={competencies}
+          value={selfAssessment}
+          onChange={setSelfAssessment}
+          onSubmit={() => terminer(selfAssessment)}
+          onSkip={() => terminer({})}
+          busy={ending}
+        />
+      )}
+
       {/* Fin de mini-scène atteinte */}
-      {!ended && capReached && (
+      {!ended && !awaitingSelfAssessment && capReached && (
         <p className="mt-4 rounded-lg border border-[var(--border)] bg-gray-50 p-3 text-center text-sm text-[var(--muted)]">
           Fin de la mise en situation. Cliquez sur <b>Terminer</b> pour recevoir votre débrief.
         </p>
       )}
 
       {/* Saisie */}
-      {!ended && !capReached && (
+      {!ended && !awaitingSelfAssessment && !capReached && (
         <div className="mt-4 flex items-end gap-2">
           <textarea
             ref={inputRef}
@@ -335,7 +400,7 @@ export default function SimChat({
           </div>
         </div>
       )}
-      {!ended && !isMini && (
+      {!ended && !awaitingSelfAssessment && !isMini && (
         <p className="mt-2 text-center text-xs text-[var(--muted)]">
           {turns} tour(s)
           {turns >= 15 ? " — pensez à clôturer l'entretien." : ""}
@@ -343,7 +408,86 @@ export default function SimChat({
       )}
 
       {/* Débrief */}
-      {debrief && <DebriefView debrief={debrief} frameworkId={frameworkId} router={router} />}
+      {debrief && (
+        <DebriefView
+          debrief={debrief}
+          frameworkId={frameworkId}
+          router={router}
+          nomByCode={nomByCode}
+          selfAssessment={selfAssessment}
+          unmatchedMoments={moments?.unmatched ?? debrief.moments}
+        />
+      )}
+    </div>
+  );
+}
+
+function SelfAssessmentForm({
+  competencies,
+  value,
+  onChange,
+  onSubmit,
+  onSkip,
+  busy,
+}: {
+  competencies: Competency[];
+  value: Record<string, number>;
+  onChange: (v: Record<string, number>) => void;
+  onSubmit: () => void;
+  onSkip: () => void;
+  busy: boolean;
+}) {
+  return (
+    <div className="mt-4 animate-in rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-4">
+      <h2 className="text-sm font-semibold text-[var(--accent)]">
+        Avant de voir votre débrief…
+      </h2>
+      <p className="mt-0.5 text-sm text-[var(--ink-soft)]">
+        Comment estimez-vous avoir mobilisé chaque compétence, sur cet entretien&nbsp;?
+      </p>
+      <div className="mt-3 space-y-2.5">
+        {competencies.map((c) => (
+          <div
+            key={c.code}
+            className="flex flex-col gap-1.5 rounded-lg bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <span className="text-sm font-medium">{c.nom}</span>
+            <div className="flex gap-1.5">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => onChange({ ...value, [c.code]: n })}
+                  aria-label={`${n}/5`}
+                  className={`h-8 w-8 rounded-full text-xs font-semibold transition ${
+                    value[c.code] === n
+                      ? "bg-[var(--accent)] text-white"
+                      : "border border-[var(--border)] text-[var(--muted)] hover:border-[var(--accent)]"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <button
+          onClick={onSubmit}
+          disabled={busy}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+        >
+          {busy ? "Analyse…" : "Voir mon débrief"}
+        </button>
+        <button
+          onClick={onSkip}
+          disabled={busy}
+          className="rounded-lg px-4 py-2.5 text-sm font-medium text-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-50"
+        >
+          Passer cette étape
+        </button>
+      </div>
     </div>
   );
 }
@@ -352,15 +496,39 @@ function DebriefView({
   debrief,
   frameworkId,
   router,
+  nomByCode,
+  selfAssessment,
+  unmatchedMoments,
 }: {
   debrief: Debrief;
   frameworkId: string;
   router: ReturnType<typeof useRouter>;
+  nomByCode: Map<string, string>;
+  selfAssessment: Record<string, number>;
+  unmatchedMoments: { quote: string; comment: string }[];
 }) {
   const scored = debrief.scores.filter((s) => !s.non_evalue);
+  const hasSelfAssessment = Object.keys(selfAssessment).length > 0;
   return (
     <div className="mt-8 border-t border-[var(--border)] pt-6">
       <h2 className="text-lg font-semibold">Débrief</h2>
+
+      {/* Célébration : palier(s) franchi(s) sur cet entretien */}
+      {debrief.level_ups && debrief.level_ups.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {debrief.level_ups.map((lu) => (
+            <div
+              key={lu.competency_id}
+              className="ts-level-up flex items-center gap-2.5 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-3 text-sm"
+            >
+              <Trophy className="h-5 w-5 shrink-0 text-[var(--accent)]" />
+              <span>
+                <b>{lu.nom}</b> — palier <b>{lu.palier}</b> atteint !
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {debrief.narrative && (
         <p className="mt-2 rounded-xl border border-[var(--border)] bg-white p-4 text-sm">
@@ -372,29 +540,41 @@ function DebriefView({
         <div className="mt-4">
           <h3 className="text-sm font-semibold">Évaluation par compétence</h3>
           <div className="mt-2 space-y-2">
-            {scored.map((s) => (
-              <div
-                key={s.competency_id}
-                className="rounded-lg border border-[var(--border)] bg-white p-3 text-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{s.competency_id}</span>
-                  <span className="font-semibold">{s.note}/5</span>
+            {scored.map((s) => {
+              const self = selfAssessment[s.competency_id];
+              return (
+                <div
+                  key={s.competency_id}
+                  className="rounded-lg border border-[var(--border)] bg-white p-3 text-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">
+                      {nomByCode.get(s.competency_id) ?? s.competency_id}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      {hasSelfAssessment && (
+                        <span className="text-xs text-[var(--muted)]">
+                          vous : {self ? `${self}/5` : "—"} ·
+                        </span>
+                      )}
+                      <span className="font-semibold">{s.note}/5</span>
+                    </span>
+                  </div>
+                  {s.justification && (
+                    <p className="mt-1 text-xs text-[var(--muted)]">{s.justification}</p>
+                  )}
                 </div>
-                {s.justification && (
-                  <p className="mt-1 text-xs text-[var(--muted)]">{s.justification}</p>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {debrief.moments.length > 0 && (
+      {unmatchedMoments.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold">Moments clés</h3>
+          <h3 className="text-sm font-semibold">Autres moments clés</h3>
           <div className="mt-2 space-y-2">
-            {debrief.moments.map((m, i) => (
+            {unmatchedMoments.map((m, i) => (
               <div key={i} className="rounded-lg bg-gray-50 p-3 text-sm">
                 <p className="italic">« {m.quote} »</p>
                 <p className="mt-1 text-xs text-[var(--muted)]">{m.comment}</p>

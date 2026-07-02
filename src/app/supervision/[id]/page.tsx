@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, MessageSquarePlus, MessagesSquare } from "lucide-react";
+import { ArrowLeft, MessageSquarePlus } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { canSupervise } from "@/lib/roles";
 import { getLearnerInTenant, listNotes } from "@/lib/supervision";
 import { buildOverview } from "@/lib/progress";
 import { listSimHistory } from "@/lib/sim-history";
 import { KIND_LABEL, TYPE_LABEL, fmtDate, fmtDateTime, pct } from "@/lib/ui";
+import { patientDisplayName } from "@/lib/patient";
+import PatientAvatar from "@/app/_components/patient-avatar";
 import { addNoteAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -93,7 +95,7 @@ export default async function SupervisionLearnerPage({
                 href={`/supervision/${learner.id}/sim/${s.id}`}
                 className="group flex items-center gap-4 rounded-xl border border-[var(--border)] bg-white p-3.5 transition hover:border-[var(--accent)] hover:shadow-sm"
               >
-                <MessagesSquare className="h-4 w-4 shrink-0 text-[var(--muted)]" />
+                <PatientAvatar name={patientDisplayName(s.scenarioTitre)} seed={s.scenarioTitre} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className="font-medium text-[var(--accent)]">

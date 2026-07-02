@@ -37,6 +37,21 @@ export const PALIER_LABEL: Record<Palier, string> = {
   maitrise: "maîtrisé",
 };
 
+const PALIER_ORDER: Palier[] = ["non_pratique", "faible", "emergent", "solide", "maitrise"];
+
+export function palierRank(p: Palier): number {
+  return PALIER_ORDER.indexOf(p);
+}
+
+/**
+ * Un franchissement de palier mérite-t-il d'être fêté ? On ne célèbre que
+ * l'entrée dans « solide » ou « maîtrisé » (via une vraie progression) — pas
+ * le premier essai (non_pratique -> faible), trop fréquent pour rester festif.
+ */
+export function isMilestone(prev: Palier, next: Palier): boolean {
+  return palierRank(next) > palierRank(prev) && (next === "solide" || next === "maitrise");
+}
+
 export type Couverture = "jamais" | "effleuree" | "pratiquee" | "bien_couverte";
 
 /** Couverture dérivée du nombre d'essais (spec §5.3). */

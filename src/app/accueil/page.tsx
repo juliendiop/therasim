@@ -13,6 +13,8 @@ import {
 import { requireUser } from "@/lib/auth";
 import { buildDashboard } from "@/lib/dashboard";
 import { KIND_LABEL, fmtDate, pct } from "@/lib/ui";
+import { patientDisplayName } from "@/lib/patient";
+import PatientAvatar from "@/app/_components/patient-avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -220,8 +222,15 @@ export default async function AccueilPage() {
                       </span>
                       <span className="text-[var(--muted)]">{fmtDate(s.createdAt)}</span>
                     </div>
-                    <div className="mt-1.5 line-clamp-1 text-sm font-semibold group-hover:text-[var(--accent)]">
-                      {s.scenarioTitre}
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <PatientAvatar
+                        name={patientDisplayName(s.scenarioTitre)}
+                        seed={s.scenarioTitre}
+                        size="sm"
+                      />
+                      <div className="line-clamp-1 text-sm font-semibold group-hover:text-[var(--accent)]">
+                        {s.scenarioTitre}
+                      </div>
                     </div>
                     <div className="mt-1 text-xs text-[var(--muted)]">
                       {s.frameworkNom} · {s.tours} tour{s.tours > 1 ? "s" : ""}

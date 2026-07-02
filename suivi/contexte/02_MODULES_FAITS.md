@@ -222,6 +222,29 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   `src/app/api/live/[id]/export/`, `canSupervise()` dans `src/lib/roles.ts`,
   modèle `SupervisorNote` dans `prisma/schema.prisma`.
 
+## 30. Auto-évaluation avant débrief + replay annoté (2 juillet)
+**État : ✅ Fait (V1)** — ⚠️ nécessite `npm run db:push` (nouveau champ `SimSession.selfAssessment`)
+- Avant la note IA, l'apprenant s'auto-évalue (1-5) sur chaque compétence évaluée ; débrief
+  affiche « vous : X/5 · IA : Y/5 ». Skippable. Stocké séparément du débrief.
+- « Moments clés » rattachés au message du transcript correspondant (recouvrement de mots,
+  tolère la paraphrase) et surlignés en contexte, au lieu d'une liste hors contexte. Fallback
+  liste pour les non-rattachés. Appliqué côté apprenant ET côté supervision formateur.
+- Bonus : les noms de compétences dans le débrief (code brut affiché avant) sont résolus.
+- Fichiers : `src/lib/moment-match.ts`, `src/app/sim/[id]/sim-chat.tsx`, `src/app/sim/[id]/page.tsx`,
+  `src/lib/simulator.ts`, `src/app/api/sim/[id]/end/route.ts`,
+  `src/app/supervision/[id]/sim/[simId]/page.tsx`.
+
+## 31. Avatars patients + célébration des paliers (2 juillet)
+**État : ✅ Fait (V1)**
+- Avatars monogrammes colorés déterministes (dérivés du titre du scénario, zéro donnée
+  ajoutée) dans le chat de simulation, l'historique, l'accueil et la supervision.
+- Bannière de célébration animée quand un essai fait franchir un palier **solide/maîtrisé**
+  (drill ou compétence d'un débrief) — pas le premier essai (non_pratique→faible).
+- Fichiers : `src/lib/patient.ts`, `src/app/_components/patient-avatar.tsx`,
+  `src/lib/mastery.ts` (`isMilestone`), `src/lib/attempts.ts` (`recordAttempt` renvoie le
+  franchissement), `src/app/drills/[id]/drill-player.tsx`, `src/app/sim/[id]/sim-chat.tsx`,
+  `src/app/api/drills/[id]/attempt/route.ts`, `src/app/globals.css` (`.ts-level-up`).
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,
