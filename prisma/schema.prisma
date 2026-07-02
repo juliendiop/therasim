@@ -126,6 +126,38 @@ model UserSubscription {
   @@map("user_subscriptions")
 }
 
+// Référentiels inclus dans un forfait d'abonnement (cochés par le super-admin).
+model PlanFramework {
+  planId      String @map("plan_id") @db.Uuid
+  frameworkId String @map("framework_id")
+
+  @@id([planId, frameworkId])
+  @@map("plan_frameworks")
+}
+
+// Offre d'achat à l'unité d'un référentiel (paiement unique, accès à vie).
+model FrameworkOffer {
+  frameworkId   String  @id @map("framework_id")
+  priceEurCents Int     @map("price_eur_cents") // affichage seul — Stripe fait foi
+  stripePriceId String? @map("stripe_price_id") // Price ID one-time (Dashboard Stripe)
+  active        Boolean @default(true)
+
+  @@map("framework_offers")
+}
+
+// Accès individuel à un référentiel (achat à l'unité, ou octroi admin).
+// Ne concerne que le tenant public (B2C) — les tenants B2B passent par les
+// packs de contenu au niveau plateforme (TenantPack).
+model UserFrameworkAccess {
+  userId      String   @map("user_id") @db.Uuid
+  frameworkId String   @map("framework_id")
+  source      String // 'purchase' | 'admin'
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@id([userId, frameworkId])
+  @@map("user_framework_access")
+}
+
 // Idempotence des webhooks Stripe : un event ne doit être traité qu'une fois
 // (Stripe garantit "at least once", jamais "exactly once").
 model StripeEvent {

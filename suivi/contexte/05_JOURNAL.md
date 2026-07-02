@@ -657,6 +657,59 @@ dans les `.d.ts` du paquet installé plutôt que suppose :
 - Reste du backlog inchangé : streaming en conditions réelles, `npm run lint`, boîte
   `contact@meleta.app`, chantiers `/supervision` (assignations, attestations).
 
+### Suite de session (même jour, septies) : freemium — contenu lié aux paiements
+
+Question du porteur : « quand un visiteur s'inscrit, à quoi a-t-il accès ? comment lier
+achats/abonnements aux référentiels ? utiliser les compétences comme incitatif ? »
+Constat : jusqu'ici TOUT le contenu était ouvert aux inscrits B2C (tous les packs de contenu
+accordés au tenant public par le seed) ; seuls les crédits d'usage IA étaient payants.
+
+**Modèle décidé avec le porteur** (AskUserQuestion) : « Freemium + achat à l'unité », avec
+forfaits à sélection de référentiels (Essentiel 15 € / Praticien 35 € / Intensif 69 € — les
+noms/prix restent à créer par lui dans l'admin) :
+- Gratuits à l'inscription : configurables (défaut EM), clé `freemium.free.frameworks`.
+- Chaque forfait inclut SA sélection de référentiels (toggles en admin) + crédits mensuels.
+- Achat à l'unité : paiement unique Stripe, accès à vie, avec ou sans abonnement.
+- **Vente par référentiel, pas par compétence** (contrainte moteur : carte/routage/drills
+  fonctionnent par référentiel) — précisé au porteur qui parlait de « compétences ».
+- B2B non touché : tenants whitelabel + rôles encadrants jamais filtrés.
+
+**Implémenté** :
+- Modèles `PlanFramework`, `FrameworkOffer` (prix/PriceID/actif par référentiel),
+  `UserFrameworkAccess` (achats à vie, prévu aussi pour l'octroi admin `source='admin'`).
+- `entitlements.ts` : `userFrameworkAccess(user)` → `{unlocked, locked}` (borné par le
+  plafond tenant) ; `userCanAccess()`. Gardes remplacées sur TOUS les parcours apprenant
+  (drills page/GET/attempt, entraînement, sim actions, simulation, page référentiel,
+  drill-suivant API) — un contenu verrouillé redirige vers `/f/[id]` qui affiche le paywall.
+- Paywall `/f/[id]` (`paywall.tsx`) : liste complète des compétences (l'incitatif), carte
+  d'achat à l'unité (checkout Stripe), forfaits incluant ce domaine, bannières
+  succès/annulation (le succès renvoie vers `/f/[id]?success=framework`).
+- Catalogue : sections « Vos domaines » / « À débloquer » (tuiles pointillées ocre, cadenas,
+  aperçu 3 compétences). Accueil : section « À découvrir » (3 max). `/credits` : chaque
+  forfait affiche ses domaines inclus.
+- Admin `/admin/facturation` étendu : toggles domaines par forfait, offres à l'unité
+  par référentiel, cases « gratuits à l'inscription ».
+- Webhook : branche `metadata.type === 'framework'` dans `handleCheckoutCompleted` →
+  upsert `UserFrameworkAccess`. Les packs de crédits gardent leur branche (compat :
+  détection par `metadata.credits`).
+
+### ⚠️ Effet de bord assumé au déploiement
+Les référentiels non-gratuits (ACT, Anamnèse, Ménopause par défaut) se **verrouillent
+immédiatement** pour les apprenants B2C existants — c'est le comportement freemium voulu.
+Un apprenant ayant déjà pratiqué un domaine verrouillé garde sa progression et retombe sur
+le paywall en cliquant dessus (incitation à débloquer).
+
+### 🔴 Action requise du porteur
+1. `npm run db:push` (3 nouvelles tables + rien à seeder).
+2. `/admin/facturation` : cocher les gratuits (défaut EM déjà actif sans config), cocher
+   les domaines inclus dans chaque forfait, renseigner prix + Price ID **one-time** Stripe
+   pour chaque référentiel vendu à l'unité (Prices à créer dans le Dashboard).
+3. Tester en compte apprenant : catalogue → domaine verrouillé → paywall → achat carte
+   test → recharger après le webhook → domaine débloqué.
+
+### État en fin de session (quinquies)
+- Build OK, types OK. Non testé de bout en bout (nécessite db:push + Prices Stripe).
+
 ---
 
 <!-- Modèle pour la prochaine session :

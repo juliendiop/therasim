@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Play } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { tenantCanAccess } from "@/lib/entitlements";
+import { userCanAccess } from "@/lib/entitlements";
 import { isEvaluatorConfigured } from "@/lib/evaluator";
 import { startSimulationAction } from "@/app/sim/actions";
 
@@ -16,7 +17,8 @@ export default async function SimulationStart({
 }) {
   const { framework_id } = await params;
   const user = await requireUser();
-  if (!(await tenantCanAccess(user.tenantId, framework_id))) notFound();
+  // Verrouillé pour cet utilisateur -> la page référentiel affiche le paywall.
+  if (!(await userCanAccess(user, framework_id))) redirect(`/f/${framework_id}`);
 
   const [framework, scenarios] = await Promise.all([
     prisma.framework.findUnique({ where: { id: framework_id } }),

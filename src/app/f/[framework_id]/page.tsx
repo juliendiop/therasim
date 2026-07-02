@@ -2,24 +2,39 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Coins, Dumbbell, Layers, MessagesSquare, RotateCcw } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { tenantCanAccess } from "@/lib/entitlements";
+import { tenantCanAccess, userCanAccess } from "@/lib/entitlements";
 import { creditSettings } from "@/lib/credits";
 import { startMiniSceneAction } from "@/app/sim/actions";
 import { buildFrameworkDetail } from "@/lib/progress";
 import { palier } from "@/lib/mastery";
 import { PALIER_COLOR, TYPE_LABEL, pct } from "@/lib/ui";
+import FrameworkPaywall from "./paywall";
 
 export const dynamic = "force-dynamic";
 
 export default async function FrameworkPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ framework_id: string }>;
+  searchParams: Promise<{ success?: string; canceled?: string; error?: string }>;
 }) {
   const { framework_id } = await params;
+  const { success, canceled, error } = await searchParams;
   const user = await requireUser();
-  // Garde d'accès : le tenant doit avoir ce référentiel dans ses droits.
+  // Garde d'accès : le tenant doit avoir ce référentiel dans ses droits (plafond).
   if (!(await tenantCanAccess(user.tenantId, framework_id))) notFound();
+  // Verrouillé pour CET utilisateur (freemium B2C) -> vitrine incitative.
+  if (!(await userCanAccess(user, framework_id))) {
+    return (
+      <FrameworkPaywall
+        frameworkId={framework_id}
+        success={success}
+        canceled={canceled}
+        error={error}
+      />
+    );
+  }
   const detail = await buildFrameworkDetail(user.id, framework_id);
   if (!detail) notFound();
   const credits = await creditSettings();

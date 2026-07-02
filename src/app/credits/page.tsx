@@ -51,6 +51,27 @@ export default async function CreditsPage({
     : null;
   const hasActiveSubscription = subscription && subscription.status !== "canceled";
 
+  // Référentiels inclus dans chaque forfait (l'argument de vente du contenu).
+  const planLinks =
+    plans.length > 0
+      ? await prisma.planFramework.findMany({
+          where: { planId: { in: plans.map((p) => p.id) } },
+        })
+      : [];
+  const linkedFrameworkIds = [...new Set(planLinks.map((l) => l.frameworkId))];
+  const linkedFrameworks =
+    linkedFrameworkIds.length > 0
+      ? await prisma.framework.findMany({ where: { id: { in: linkedFrameworkIds } } })
+      : [];
+  const fwNomById = new Map(linkedFrameworks.map((f) => [f.id, f.nom]));
+  const frameworksByPlan = new Map<string, string[]>();
+  for (const l of planLinks) {
+    const arr = frameworksByPlan.get(l.planId) ?? [];
+    const nom = fwNomById.get(l.frameworkId);
+    if (nom) arr.push(nom);
+    frameworksByPlan.set(l.planId, arr);
+  }
+
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex items-center gap-2">
@@ -159,6 +180,11 @@ export default async function CreditsPage({
                 <div className="mt-1 text-xs text-[var(--muted)]">
                   {p.monthlyCredits} crédits chaque mois
                 </div>
+                {(frameworksByPlan.get(p.id) ?? []).length > 0 && (
+                  <div className="mt-1 flex-1 text-xs text-[var(--muted)]">
+                    Domaines inclus : <b>{frameworksByPlan.get(p.id)!.join(" · ")}</b>
+                  </div>
+                )}
                 <form action={checkoutPlanAction} className="mt-3">
                   <input type="hidden" name="planId" value={p.id} />
                   <button

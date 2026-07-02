@@ -69,6 +69,33 @@ export async function createSubscriptionCheckout(
   return session.url;
 }
 
+/** Session de paiement UNIQUE pour débloquer un référentiel à vie. Renvoie l'URL Stripe. */
+export async function createFrameworkCheckout(
+  userId: string,
+  frameworkId: string,
+  baseUrl: string,
+): Promise<string> {
+  const offer = await prisma.frameworkOffer.findUnique({ where: { frameworkId } });
+  if (!offer || !offer.active) throw new Error("Ce référentiel n'est pas en vente à l'unité.");
+  if (!offer.stripePriceId) {
+    throw new Error(
+      "Ce référentiel n'a pas encore de Price ID Stripe configuré (voir /admin/facturation).",
+    );
+  }
+
+  const customerId = await ensureStripeCustomer(userId);
+  const session = await stripeClient().checkout.sessions.create({
+    mode: "payment",
+    customer: customerId,
+    line_items: [{ price: offer.stripePriceId, quantity: 1 }],
+    success_url: `${baseUrl}/f/${frameworkId}?success=framework`,
+    cancel_url: `${baseUrl}/f/${frameworkId}?canceled=1`,
+    metadata: { type: "framework", userId, frameworkId },
+  });
+  if (!session.url) throw new Error("Stripe n'a pas renvoyé d'URL de paiement.");
+  return session.url;
+}
+
 /** Portail Stripe (résiliation, moyen de paiement) pour un abonné existant. */
 export async function createBillingPortalSession(
   userId: string,
@@ -128,6 +155,18 @@ export async function handleCheckoutCompleted(event: Stripe.Event): Promise<void
   if (!userId) return;
 
   if (session.mode === "payment") {
+    // Déblocage d'un référentiel à l'unité (accès à vie).
+    if (session.metadata?.type === "framework" && session.metadata.frameworkId) {
+      await prisma.userFrameworkAccess.upsert({
+        where: {
+          userId_frameworkId: { userId, frameworkId: session.metadata.frameworkId },
+        },
+        update: {},
+        create: { userId, frameworkId: session.metadata.frameworkId, source: "purchase" },
+      });
+      return;
+    }
+    // Pack de crédits.
     const credits = Number(session.metadata?.credits ?? 0);
     if (credits > 0) {
       await grant(userId, credits, "purchase", {

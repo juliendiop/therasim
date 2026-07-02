@@ -1,16 +1,46 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Lock } from "lucide-react";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { buildOverview } from "@/lib/progress";
+import { userFrameworkAccess } from "@/lib/entitlements";
 import { TYPE_LABEL, pct } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";
 
 // Vue d'ensemble : une tuile par référentiel accordé au tenant (spec §5.6).
 // JAMAIS de moyenne globale entre référentiels (règle d'or §2.4).
+// Freemium B2C : les référentiels verrouillés restent VISIBLES (vitrine
+// incitative — nom, compétences, cadenas) et mènent au paywall /f/[id].
 export default async function CataloguePage() {
   const user = await requireUser();
-  const { frameworks } = await buildOverview(user.id, user.tenantId);
+  const [{ frameworks }, access] = await Promise.all([
+    buildOverview(user.id, user.tenantId),
+    userFrameworkAccess(user),
+  ]);
+
+  const unlocked = frameworks.filter((f) => access.unlocked.has(f.id));
+  const lockedIds = frameworks.filter((f) => access.locked.has(f.id)).map((f) => f.id);
+
+  // Aperçu des compétences pour les référentiels verrouillés (l'incitatif).
+  const lockedFrameworks =
+    lockedIds.length > 0
+      ? await prisma.framework.findMany({ where: { id: { in: lockedIds } } })
+      : [];
+  const lockedGridIds = [...new Set(lockedFrameworks.map((f) => f.gridId))];
+  const lockedComps =
+    lockedGridIds.length > 0
+      ? await prisma.competency.findMany({
+          where: { gridId: { in: lockedGridIds } },
+          orderBy: { ordre: "asc" },
+        })
+      : [];
+  const compsByGrid = new Map<string, string[]>();
+  for (const c of lockedComps) {
+    const arr = compsByGrid.get(c.gridId) ?? [];
+    arr.push(c.nom);
+    compsByGrid.set(c.gridId, arr);
+  }
 
   return (
     <div>
@@ -27,15 +57,15 @@ export default async function CataloguePage() {
         <Step n="3" titre="Visualisez vos progrès" desc="Vos forces et vos lacunes, mises à jour en temps réel." />
       </div>
 
-      <h2 className="mt-8 text-lg font-semibold">Choisissez un domaine</h2>
+      <h2 className="mt-8 text-lg font-semibold">Vos domaines</h2>
 
-      {frameworks.length === 0 ? (
+      {unlocked.length === 0 ? (
         <div className="mt-3 rounded-lg border border-dashed border-[var(--border)] bg-white p-8 text-center text-sm text-[var(--muted)]">
-          Aucun domaine n&apos;est encore disponible sur votre espace. Revenez bientôt !
+          Aucun domaine n&apos;est encore débloqué sur votre compte.
         </div>
       ) : (
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          {frameworks.map((f) => (
+          {unlocked.map((f) => (
             <Link
               key={f.id}
               href={`/f/${f.id}`}
@@ -73,6 +103,52 @@ export default async function CataloguePage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {/* Vitrine : domaines verrouillés (freemium) */}
+      {lockedFrameworks.length > 0 && (
+        <>
+          <h2 className="mt-10 flex items-center gap-2 text-lg font-semibold">
+            <Lock className="h-4 w-4 text-[var(--ochre)]" /> À débloquer
+          </h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            De nouvelles compétences à travailler — via un forfait ou à l&apos;unité.
+          </p>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            {lockedFrameworks.map((f) => {
+              const noms = compsByGrid.get(f.gridId) ?? [];
+              return (
+                <Link
+                  key={f.id}
+                  href={`/f/${f.id}`}
+                  className="group rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-tint)] p-5 transition hover:border-[var(--ochre)] hover:shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-full bg-[var(--ochre-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--ochre)]">
+                      {TYPE_LABEL[f.type] ?? f.type}
+                    </span>
+                    <Lock className="h-4 w-4 text-[var(--ochre)]" />
+                  </div>
+                  <h2 className="mt-3 text-lg font-semibold group-hover:text-[var(--ochre)]">
+                    {f.nom}
+                  </h2>
+                  {f.description && (
+                    <p className="mt-1 line-clamp-2 text-sm text-[var(--muted)]">
+                      {f.description}
+                    </p>
+                  )}
+                  <p className="mt-3 text-xs text-[var(--muted)]">
+                    <b>{noms.length} compétences</b>
+                    {noms.length > 0 && <> : {noms.slice(0, 3).join(" · ")}{noms.length > 3 ? "…" : ""}</>}
+                  </p>
+                  <div className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[var(--ochre)]">
+                    Découvrir <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );

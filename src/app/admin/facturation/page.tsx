@@ -1,26 +1,34 @@
-import { CreditCard, Plus } from "lucide-react";
+import { CreditCard, Gift, Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getConfig } from "@/lib/config";
 import { CREDIT_PACKS } from "@/lib/credits";
+import { freeFrameworkIds } from "@/lib/entitlements";
 import { isStripeConfigured } from "@/lib/stripe";
 import {
   createPlan,
   savePackPriceIds,
+  saveFrameworkOffer,
+  saveFreeFrameworks,
   togglePlanActive,
+  togglePlanFramework,
   updatePlanPriceId,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function FacturationPage() {
-  const [plans, packPriceIds] = await Promise.all([
+  const [plans, packPriceIds, frameworks, planLinks, offers, freeIds] = await Promise.all([
     prisma.subscriptionPlan.findMany({ orderBy: { ordre: "asc" } }),
-    Promise.all(
-      CREDIT_PACKS.map((p) => getConfig(`stripe.price.pack.${p.id}`)),
-    ),
+    Promise.all(CREDIT_PACKS.map((p) => getConfig(`stripe.price.pack.${p.id}`))),
+    prisma.framework.findMany({ where: { statut: "publie" }, orderBy: { nom: "asc" } }),
+    prisma.planFramework.findMany(),
+    prisma.frameworkOffer.findMany(),
+    freeFrameworkIds(),
   ]);
   const keyConfigured = isStripeConfigured();
   const webhookConfigured = Boolean(process.env.STRIPE_WEBHOOK_SECRET);
+  const planFrameworkSet = new Set(planLinks.map((l) => `${l.planId}:${l.frameworkId}`));
+  const offerByFramework = new Map(offers.map((o) => [o.frameworkId, o]));
 
   return (
     <div className="max-w-3xl">
@@ -139,6 +147,34 @@ export default async function FacturationPage() {
                   Mettre à jour
                 </button>
               </form>
+              {/* Référentiels inclus dans ce forfait */}
+              <div className="mt-3 border-t border-[var(--border)] pt-2">
+                <div className="text-[11px] font-medium uppercase tracking-wide text-[var(--muted)]">
+                  Domaines inclus dans ce forfait
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {frameworks.map((f) => {
+                    const included = planFrameworkSet.has(`${plan.id}:${f.id}`);
+                    return (
+                      <form key={f.id} action={togglePlanFramework}>
+                        <input type="hidden" name="planId" value={plan.id} />
+                        <input type="hidden" name="frameworkId" value={f.id} />
+                        <button
+                          className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                            included
+                              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                              : "border-[var(--border)] text-[var(--muted)] hover:border-[var(--accent)]"
+                          }`}
+                          title={included ? "Cliquer pour retirer" : "Cliquer pour inclure"}
+                        >
+                          {included ? "✓ " : "+ "}
+                          {f.nom}
+                        </button>
+                      </form>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -173,6 +209,89 @@ export default async function FacturationPage() {
           <Plus className="h-4 w-4" /> Créer le forfait
         </button>
       </form>
+
+      {/* Référentiels gratuits à l'inscription (freemium) */}
+      <h3 className="mt-8 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+        <Gift className="h-4 w-4" /> Gratuits à l&apos;inscription
+      </h3>
+      <p className="mt-1 text-xs text-[var(--muted)]">
+        Domaines accessibles à tout inscrit du site public, sans paiement. Les autres
+        apparaissent verrouillés (vitrine incitative) jusqu&apos;à abonnement ou achat.
+        Les plateformes clientes (B2B) ne sont pas concernées.
+      </p>
+      <form action={saveFreeFrameworks} className="mt-3 rounded-xl border border-[var(--border)] bg-white p-4">
+        <div className="flex flex-wrap gap-3">
+          {frameworks.map((f) => (
+            <label key={f.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="free"
+                value={f.id}
+                defaultChecked={freeIds.has(f.id)}
+                className="h-4 w-4 accent-[var(--accent)]"
+              />
+              {f.nom}
+            </label>
+          ))}
+        </div>
+        <button className="mt-3 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
+          Enregistrer les gratuits
+        </button>
+      </form>
+
+      {/* Achat à l'unité par référentiel */}
+      <h3 className="mt-8 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+        Référentiels à l&apos;unité (paiement unique, accès à vie)
+      </h3>
+      <p className="mt-1 text-xs text-[var(--muted)]">
+        Pour chaque domaine payant : prix affiché + Price ID Stripe (one-time). Un domaine
+        sans offre active n&apos;est achetable que via un forfait.
+      </p>
+      <div className="mt-3 space-y-2">
+        {frameworks.map((f) => {
+          const offer = offerByFramework.get(f.id);
+          return (
+            <form
+              key={f.id}
+              action={saveFrameworkOffer}
+              className="flex flex-col gap-2 rounded-xl border border-[var(--border)] bg-white p-4 sm:flex-row sm:items-center"
+            >
+              <input type="hidden" name="frameworkId" value={f.id} />
+              <div className="w-44 shrink-0 text-sm font-medium">{f.nom}</div>
+              <div className="flex items-center gap-1.5">
+                <input
+                  name="priceEur"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  defaultValue={offer ? (offer.priceEurCents / 100).toFixed(2) : ""}
+                  placeholder="49"
+                  className="w-24 rounded-lg border border-[var(--border)] p-2 text-sm"
+                />
+                <span className="text-xs text-[var(--muted)]">€</span>
+              </div>
+              <input
+                name="stripePriceId"
+                defaultValue={offer?.stripePriceId ?? ""}
+                placeholder="price_... (one-time)"
+                className="flex-1 rounded-lg border border-[var(--border)] p-2 text-xs font-mono"
+              />
+              <label className="flex shrink-0 items-center gap-1.5 text-xs">
+                <input
+                  type="checkbox"
+                  name="active"
+                  defaultChecked={offer?.active ?? true}
+                  className="h-4 w-4 accent-[var(--accent)]"
+                />
+                en vente
+              </label>
+              <button className="shrink-0 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium hover:border-[var(--accent)]">
+                Enregistrer
+              </button>
+            </form>
+          );
+        })}
+      </div>
     </div>
   );
 }

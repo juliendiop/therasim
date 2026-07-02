@@ -22,6 +22,24 @@ des forfaits d'abonnement récurrents (« les deux », confirmé).
   activer/désactiver), Stripe Tax (TVA automatique), forfait « accès illimité » sans
   décompte de crédits, facture téléchargeable dans l'app (Stripe envoie déjà un reçu email).
 
+## ⭐ Freemium — contenu lié aux paiements — ✅ V1 FAITE (2 juillet)
+
+Demande porteur : lier achats/abonnements aux référentiels + utiliser les compétences comme
+incitatif. Modèle décidé : gratuits configurables (défaut EM) · forfaits = sélection de
+référentiels chacun · achat à l'unité possible avec ou sans abonnement · vente par
+référentiel (pas par compétence — contrainte moteur) · B2B non touché.
+- ✅ Accès par utilisateur (`userCanAccess`), gardes sur tous les parcours apprenant,
+  paywall `/f/[id]`, catalogue avec tuiles verrouillées, « À découvrir » sur l'accueil,
+  admin facturation étendu (domaines/forfait, prix à l'unité, gratuits).
+- 🔴 **Action requise du porteur** : `npm run db:push` (3 nouvelles tables) ; dans
+  `/admin/facturation` : cocher les gratuits, cocher les domaines de chaque forfait
+  (Essentiel/Praticien/Intensif), créer un Price **one-time** Stripe par référentiel vendu à
+  l'unité et coller prix + Price ID. Tester : compte apprenant → catalogue → domaine
+  verrouillé → paywall → achat test → déblocage (après webhook).
+- ⚠️ Reste (option) : octroi manuel d'un référentiel à un utilisateur par l'admin (la table
+  `UserFrameworkAccess` le prévoit, `source='admin'`, pas encore d'UI) ; prorata/upgrade
+  de forfait ; email de confirmation d'achat maison (Stripe envoie déjà un reçu).
+
 ## 🔜 Immédiat (pour rendre l'app vivante)
 
 ### Brancher la base de données (porteur de projet)

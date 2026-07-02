@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
-import { tenantCanAccess } from "@/lib/entitlements";
+import { userCanAccess } from "@/lib/entitlements";
 import { startSimulation } from "@/lib/simulator";
 import { topPriorityCodes } from "@/lib/next-drill";
 import {
@@ -19,7 +19,7 @@ export async function startSimulationAction(formData: FormData) {
   if (!user) redirect("/login");
   const frameworkId = String(formData.get("frameworkId"));
   const scenarioId = String(formData.get("scenarioId"));
-  if (!(await tenantCanAccess(user.tenantId, frameworkId))) redirect("/catalogue");
+  if (!(await userCanAccess(user, frameworkId))) redirect(`/f/${frameworkId}`);
 
   // Débit du portefeuille (entretien simulé). Redirige si solde insuffisant.
   const s = await creditSettings();
@@ -53,7 +53,7 @@ export async function startMiniSceneAction(formData: FormData) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
   const frameworkId = String(formData.get("frameworkId"));
-  if (!(await tenantCanAccess(user.tenantId, frameworkId))) redirect("/catalogue");
+  if (!(await userCanAccess(user, frameworkId))) redirect(`/f/${frameworkId}`);
 
   const scenario = await prisma.scenario.findFirst({ where: { frameworkId } });
   if (!scenario) redirect(`/f/${frameworkId}`);

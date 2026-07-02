@@ -5,13 +5,16 @@ import {
   Dumbbell,
   Flame,
   History,
+  Lock,
   MessagesSquare,
   Play,
   RotateCcw,
   Sparkles,
 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { buildDashboard } from "@/lib/dashboard";
+import { userFrameworkAccess } from "@/lib/entitlements";
 import { KIND_LABEL, fmtDate, pct } from "@/lib/ui";
 import { patientDisplayName } from "@/lib/patient";
 import PatientAvatar from "@/app/_components/patient-avatar";
@@ -23,7 +26,19 @@ export const dynamic = "force-dynamic";
 // activité de la semaine, dernières mises en situation.
 export default async function AccueilPage() {
   const user = await requireUser();
-  const d = await buildDashboard(user.id, user.tenantId);
+  const [d, access] = await Promise.all([
+    buildDashboard(user.id, user.tenantId),
+    userFrameworkAccess(user),
+  ]);
+
+  // « À découvrir » : domaines verrouillés (freemium) suggérés en fin de page.
+  const decouvrir =
+    access.locked.size > 0
+      ? await prisma.framework.findMany({
+          where: { id: { in: [...access.locked] }, statut: "publie" },
+          take: 3,
+        })
+      : [];
 
   const premierePratique = !d.reprendre && !d.ongoingSim && d.recentSims.length === 0;
 
@@ -246,6 +261,37 @@ export default async function AccueilPage() {
             )}
           </section>
         </>
+      )}
+
+      {/* À découvrir : domaines verrouillés (vitrine incitative freemium) */}
+      {decouvrir.length > 0 && (
+        <section className="mt-8">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+            <Lock className="h-4 w-4 text-[var(--ochre)]" /> À découvrir
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {decouvrir.map((f) => (
+              <Link
+                key={f.id}
+                href={`/f/${f.id}`}
+                className="group rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-tint)] p-4 transition hover:border-[var(--ochre)] hover:shadow-sm"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-[var(--ochre)]">Nouveau domaine</span>
+                  <Lock className="h-3.5 w-3.5 text-[var(--ochre)]" />
+                </div>
+                <div className="mt-1.5 text-sm font-semibold group-hover:text-[var(--ochre)]">
+                  {f.nom}
+                </div>
+                {f.description && (
+                  <p className="mt-0.5 line-clamp-2 text-xs text-[var(--muted)]">
+                    {f.description}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

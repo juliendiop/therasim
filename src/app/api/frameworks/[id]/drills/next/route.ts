@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { tenantCanAccess } from "@/lib/entitlements";
+import { userCanAccess } from "@/lib/entitlements";
 import { getNextDrill } from "@/lib/next-drill";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export async function GET(
   const competency = req.nextUrl.searchParams.get("competency") || undefined;
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "non authentifié" }, { status: 401 });
-  if (!(await tenantCanAccess(user.tenantId, id)))
+  if (!(await userCanAccess(user, id)))
     return NextResponse.json({ error: "accès refusé" }, { status: 403 });
 
   const result = await getNextDrill(user.id, id, competency);

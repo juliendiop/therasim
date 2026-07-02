@@ -283,6 +283,33 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 - Hors scope V1 : édition en place d'un forfait existant (créer + activer/désactiver
   seulement), Stripe Tax, forfait « accès illimité » sans décompte de crédits.
 
+## 33. Freemium — accès aux référentiels lié aux paiements (2 juillet)
+**État : ✅ Fait (V1)** — ⚠️ nécessite `npm run db:push` + config dans `/admin/facturation`
+- **Modèle économique** (décidé avec le porteur) : à l'inscription B2C, seuls les
+  référentiels **gratuits** (config admin, défaut : EM) sont utilisables. Les autres restent
+  **visibles mais verrouillés** (vitrine incitative). Déblocage par : **forfait
+  d'abonnement** (chaque forfait inclut SA sélection de référentiels, cochée en admin) OU
+  **achat à l'unité** (paiement unique Stripe, accès à vie, avec ou sans abonnement).
+- **Unité de vente = référentiel** (pas la compétence individuelle — le moteur entier
+  fonctionne par référentiel : carte, routage, drills).
+- **B2B intact** : tenants whitelabel et rôles encadrants (admin/formateur) non filtrés —
+  l'école paie au niveau plateforme (TenantPack), ses membres ont tout son catalogue.
+- Accès : `userFrameworkAccess(user)` / `userCanAccess(user, fwId)` dans
+  `src/lib/entitlements.ts` (toujours borné par le plafond tenant). Gardes remplacées sur
+  tous les parcours apprenant : drills (page + GET + attempt), entraînement, sim actions,
+  simulation, page référentiel, drill suivant (API).
+- **Vitrine** : tuiles verrouillées dans le catalogue (cadenas + aperçu des compétences),
+  **paywall** `/f/[id]` (liste complète des compétences = l'incitatif, prix à l'unité,
+  forfaits qui l'incluent), section « À découvrir » sur l'accueil, domaines inclus affichés
+  par forfait sur `/credits`.
+- **Admin `/admin/facturation`** (étendu) : domaines inclus par forfait (toggles), prix +
+  Price ID + actif par référentiel (achat à l'unité), cases « gratuits à l'inscription ».
+- Modèles : `PlanFramework`, `FrameworkOffer`, `UserFrameworkAccess`. Webhook : la branche
+  `metadata.type === 'framework'` de `checkout.session.completed` crée l'accès à vie.
+- ⚠️ Au déploiement, les référentiels non-gratuits se verrouillent immédiatement pour les
+  apprenants B2C existants (comportement freemium voulu) — configurer les gratuits/forfaits/
+  offres dans `/admin/facturation` et créer les Prices one-time Stripe correspondants.
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,

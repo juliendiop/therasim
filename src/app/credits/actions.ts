@@ -6,6 +6,7 @@ import { appBaseUrlFromRequest } from "@/lib/base-url";
 import {
   createBillingPortalSession,
   createCreditsCheckout,
+  createFrameworkCheckout,
   createSubscriptionCheckout,
 } from "@/lib/billing";
 
@@ -41,6 +42,22 @@ export async function checkoutPlanAction(formData: FormData) {
     url = await createSubscriptionCheckout(user.id, planId, baseUrl);
   } catch (e) {
     redirect(`/credits?error=${encodeURIComponent(errorMessage(e))}`);
+  }
+  redirect(url);
+}
+
+/** Lance un paiement unique pour débloquer un référentiel à vie. */
+export async function checkoutFrameworkAction(formData: FormData) {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+  const frameworkId = String(formData.get("frameworkId") ?? "");
+  const baseUrl = await appBaseUrlFromRequest();
+
+  let url: string;
+  try {
+    url = await createFrameworkCheckout(user.id, frameworkId, baseUrl);
+  } catch (e) {
+    redirect(`/f/${frameworkId}?error=${encodeURIComponent(errorMessage(e))}`);
   }
   redirect(url);
 }

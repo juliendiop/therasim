@@ -5,6 +5,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { setConfig } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 import { CREDIT_PACKS } from "@/lib/credits";
+import { FREE_FRAMEWORKS_CONFIG_KEY } from "@/lib/entitlements";
 
 // Price ID Stripe (paiement unique) de chaque pack de crédits — stocké en app_config,
 // même mécanisme que la config des modèles LLM (voir src/lib/config.ts).
@@ -64,5 +65,51 @@ export async function updatePlanPriceId(formData: FormData) {
     where: { id },
     data: { stripePriceId: stripePriceId || null },
   });
+  revalidatePath("/admin/facturation");
+}
+
+// Ajoute/retire un référentiel d'un forfait (même pattern que togglePackFramework).
+export async function togglePlanFramework(formData: FormData) {
+  await requireSuperAdmin();
+  const planId = String(formData.get("planId") ?? "");
+  const frameworkId = String(formData.get("frameworkId") ?? "");
+  if (!planId || !frameworkId) return;
+
+  const existing = await prisma.planFramework.findUnique({
+    where: { planId_frameworkId: { planId, frameworkId } },
+  });
+  if (existing) {
+    await prisma.planFramework.delete({
+      where: { planId_frameworkId: { planId, frameworkId } },
+    });
+  } else {
+    await prisma.planFramework.create({ data: { planId, frameworkId } });
+  }
+  revalidatePath("/admin/facturation");
+}
+
+// Enregistre l'offre à l'unité d'un référentiel (prix affiché + Price ID + actif).
+export async function saveFrameworkOffer(formData: FormData) {
+  await requireSuperAdmin();
+  const frameworkId = String(formData.get("frameworkId") ?? "");
+  const priceEur = parseFloat(String(formData.get("priceEur") ?? ""));
+  const stripePriceId = String(formData.get("stripePriceId") ?? "").trim();
+  const active = formData.get("active") === "on";
+  if (!frameworkId || !Number.isFinite(priceEur) || priceEur < 0) return;
+
+  const priceEurCents = Math.round(priceEur * 100);
+  await prisma.frameworkOffer.upsert({
+    where: { frameworkId },
+    update: { priceEurCents, stripePriceId: stripePriceId || null, active },
+    create: { frameworkId, priceEurCents, stripePriceId: stripePriceId || null, active },
+  });
+  revalidatePath("/admin/facturation");
+}
+
+// Enregistre la liste des référentiels GRATUITS à l'inscription (CSV en app_config).
+export async function saveFreeFrameworks(formData: FormData) {
+  await requireSuperAdmin();
+  const ids = formData.getAll("free").map(String).filter(Boolean);
+  await setConfig(FREE_FRAMEWORKS_CONFIG_KEY, ids.join(","));
   revalidatePath("/admin/facturation");
 }

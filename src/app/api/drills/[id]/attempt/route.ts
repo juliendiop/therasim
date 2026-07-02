@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
-import { tenantCanAccess } from "@/lib/entitlements";
+import { userCanAccess } from "@/lib/entitlements";
 import { recordAttempt, type RecordAttemptResult } from "@/lib/attempts";
 import { parseOptions } from "@/lib/drill-view";
 import { normalizeNote, PALIER_LABEL } from "@/lib/mastery";
@@ -25,7 +25,7 @@ export async function POST(
 
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "non authentifié" }, { status: 401 });
-  if (!(await tenantCanAccess(user.tenantId, drill.frameworkId)))
+  if (!(await userCanAccess(user, drill.frameworkId)))
     return NextResponse.json({ error: "accès refusé" }, { status: 403 });
   const body = await req.json().catch(() => ({}));
 

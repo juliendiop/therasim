@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { tenantCanAccess } from "@/lib/entitlements";
+import { userCanAccess } from "@/lib/entitlements";
 import { getNextDrill } from "@/lib/next-drill";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +16,9 @@ export async function GET(
   const exclude = req.nextUrl.searchParams.get("not") || undefined;
   const user = await getSessionUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.nextUrl.origin));
-  if (!(await tenantCanAccess(user.tenantId, framework_id)))
-    return NextResponse.redirect(new URL("/catalogue", req.nextUrl.origin));
+  // Verrouillé pour cet utilisateur -> la page référentiel affiche le paywall.
+  if (!(await userCanAccess(user, framework_id)))
+    return NextResponse.redirect(new URL(`/f/${framework_id}`, req.nextUrl.origin));
 
   const result = await getNextDrill(user.id, framework_id, competency, exclude);
   // Si on s'entraîne sur une compétence précise, on garde le "focus" pour rester dessus.

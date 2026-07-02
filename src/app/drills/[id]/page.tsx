@@ -1,7 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { tenantCanAccess } from "@/lib/entitlements";
+import { userCanAccess } from "@/lib/entitlements";
 import { publicDrill } from "@/lib/drill-view";
 import DrillPlayer from "./drill-player";
 
@@ -19,8 +19,8 @@ export default async function DrillPage({
   const user = await requireUser();
   const drill = await prisma.drill.findUnique({ where: { id } });
   if (!drill) notFound();
-  // Le tenant doit avoir accès au référentiel du drill.
-  if (!(await tenantCanAccess(user.tenantId, drill.frameworkId))) notFound();
+  // L'utilisateur doit avoir débloqué le référentiel du drill (paywall sinon).
+  if (!(await userCanAccess(user, drill.frameworkId))) redirect(`/f/${drill.frameworkId}`);
 
   // key={id} : force la réinitialisation du lecteur quand on passe à l'exercice suivant.
   // On ne passe au client QUE la vue publique (aucun corrigé).
