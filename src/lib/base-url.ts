@@ -35,21 +35,17 @@ export function appBaseUrl(requestOrigin?: string): string {
 }
 
 /**
- * Ramène une URL de déploiement Vercel vers l'alias stable du projet.
- * Les URLs générées par déploiement (ex. therasim-28zp0srwk-mon-equipe-projects
- * .vercel.app, ou therasim-git-main-....vercel.app) sont protégées par
- * l'authentification Vercel : un lien envoyé par email vers ces adresses affiche
- * un mur de connexion Vercel aux destinataires. L'alias projet.vercel.app, lui,
- * est public.
+ * Ramène une URL de déploiement Vercel vers l'alias stable du projet, en
+ * retirant UNIQUEMENT le hash de déploiement (le suffixe d'équipe est conservé) :
+ *   therasim-28zp0srwk-mon-equipe-projects.vercel.app
+ *     -> therasim-mon-equipe-projects.vercel.app
+ * Un lien email doit survivre aux redéploiements : l'URL de déploiement change à
+ * chaque push, l'alias stable non. (Le hash Vercel fait 9 caractères alphanumériques.)
  */
 function stableVercelHost(host: string): string {
   if (!host.endsWith(".vercel.app")) return host;
-  // URL de branche : <projet>-git-<branche>-<equipe>.vercel.app
-  const git = host.match(/^(.+?)-git-[a-z0-9-]+\.vercel\.app$/);
-  if (git) return `${git[1]}.vercel.app`;
-  // URL de déploiement unique : <projet>-<hash>-<equipe>.vercel.app
-  const dep = host.match(/^(.+?)-[a-z0-9]{7,}-[a-z0-9-]+\.vercel\.app$/);
-  if (dep) return `${dep[1]}.vercel.app`;
+  const dep = host.match(/^(.+)-[a-z0-9]{9}-(.+)\.vercel\.app$/);
+  if (dep) return `${dep[1]}-${dep[2]}.vercel.app`;
   return host;
 }
 
