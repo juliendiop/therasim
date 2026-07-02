@@ -762,11 +762,17 @@ le paywall en cliquant dessus (incitation à débloquer).
 - 🔴 **Action requise** : `npm run db:push` (colonne `allow_individual_offers`), puis
   activer l'opt-in sur ses plateformes dans `/admin/tenants/[id]`.
 
+### ✅ `npm run db:push` fait (2 juillet, contre Neon prod)
+- `framework_quota` (quota des forfaits) + `allow_individual_offers` (opt-in plateformes)
+  créés. Tout le code freemium/quota/opt-in est opérationnel côté base.
+
 ### État en fin de session (sexies)
-- Build OK, types OK. Reste au porteur : db:push (2 changements de schéma cumulés :
-  `framework_quota` + `allow_individual_offers`), quotas des forfaits, opt-in sur ses
-  plateformes, Prices one-time des référentiels à l'unité, puis test complet en compte
-  apprenant (B2C et B2B opt-in).
+- Build OK, types OK, db:push fait. Reste au porteur (config, pas de code) :
+  1. `/admin/facturation` : renseigner le **quota** de chaque forfait (Essentiel 1,
+     Praticien 3, Intensif vide = tout) + prix/Price ID one-time des référentiels à l'unité.
+  2. `/admin/tenants/[id]` : activer « Offres individuelles » sur ses propres plateformes.
+  3. Test complet en compte apprenant (B2C et B2B opt-in) : vitrine → déblocage par choix
+     d'abonnement ET par achat à l'unité (carte test).
 
 ---
 
