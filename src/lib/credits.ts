@@ -15,7 +15,8 @@ export const CREDIT_DEFAULTS = {
   costSimulation: 2,
 };
 
-// Packs proposés à l'achat (prix indicatifs — le paiement réel arrive en Phase 2).
+// Packs proposés à l'achat (paiement unique via Stripe Checkout — voir src/lib/billing.ts).
+// Le Price ID Stripe de chaque pack se configure dans /admin/facturation.
 export const CREDIT_PACKS = [
   { id: "s", credits: 20, priceEur: 19 },
   { id: "m", credits: 50, priceEur: 39 },

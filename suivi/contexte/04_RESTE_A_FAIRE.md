@@ -3,6 +3,23 @@
 Ordre indicatif. Le détail fonctionnel est dans la spec
 (`Conception/spec-v2-entrainement-progression (1).md`).
 
+## ⭐ Paiements Stripe — ✅ V1 FAITE côté code (2 juillet), setup manuel requis
+
+Demande porteur : rendre réel le paiement des packs de crédits (déjà dans l'UI) + ajouter
+des forfaits d'abonnement récurrents (« les deux », confirmé).
+- ✅ Checkout Stripe hébergé (packs = paiement unique, forfaits = abonnement mensuel),
+  webhook avec vérification de signature + idempotence, portail Stripe pour la résiliation,
+  `/admin/facturation` pour configurer les Price ID et créer/activer des forfaits.
+- 🔴 **Action requise du porteur** (détail pas-à-pas dans `00_DEMARRAGE.md` § Activer les
+  paiements) : compte Stripe + clé API, création des Prices dans le Dashboard, Price ID
+  collés dans `/admin/facturation`, enregistrement du webhook + son secret, activation du
+  Customer Portal, `npm run db:push`. **Non testé de bout en bout** (je n'ai pas de compte
+  Stripe) — la validation finale (paiement carte test → crédits accordés → gestion
+  abonnement) revient au porteur.
+- ⚠️ Reste (option, hors scope V1) : édition en place d'un forfait (aujourd'hui : créer +
+  activer/désactiver), Stripe Tax (TVA automatique), forfait « accès illimité » sans
+  décompte de crédits, facture téléchargeable dans l'app (Stripe envoie déjà un reçu email).
+
 ## 🔜 Immédiat (pour rendre l'app vivante)
 
 ### Brancher la base de données (porteur de projet)

@@ -1,12 +1,9 @@
-import Link from "next/link";
-import { Coins, History, Sparkles } from "lucide-react";
+import { Coins, History, RefreshCw, Sparkles } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  CREDIT_PACKS,
-  creditSettings,
-  syncWallet,
-} from "@/lib/credits";
+import { CREDIT_PACKS, creditSettings, syncWallet } from "@/lib/credits";
+import { isStripeConfigured } from "@/lib/stripe";
+import { checkoutPackAction, checkoutPlanAction, manageBillingAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,17 +15,26 @@ const REASON_LABEL: Record<string, string> = {
   refund: "Remboursement",
   admin_grant: "Crédits offerts",
   purchase: "Achat de crédits",
+  subscription_renewal: "Renouvellement d'abonnement",
+};
+
+const SUBSCRIPTION_STATUS_LABEL: Record<string, string> = {
+  active: "actif",
+  past_due: "paiement en retard",
+  canceled: "résilié",
+  incomplete: "en attente de paiement",
 };
 
 export default async function CreditsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ need?: string; soon?: string }>;
+  searchParams: Promise<{ need?: string; success?: string; canceled?: string; error?: string }>;
 }) {
   const user = await requireUser();
-  const { need, soon } = await searchParams;
+  const { need, success, canceled, error } = await searchParams;
+  const stripeReady = isStripeConfigured();
 
-  const [balance, settings, history] = await Promise.all([
+  const [balance, settings, history, plans, subscription] = await Promise.all([
     syncWallet(user.id),
     creditSettings(),
     prisma.creditLedger.findMany({
@@ -36,7 +42,14 @@ export default async function CreditsPage({
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
+    prisma.subscriptionPlan.findMany({ where: { active: true }, orderBy: { ordre: "asc" } }),
+    prisma.userSubscription.findUnique({ where: { userId: user.id } }),
   ]);
+  const activePlan = subscription
+    ? plans.find((p) => p.id === subscription.planId) ??
+      (await prisma.subscriptionPlan.findUnique({ where: { id: subscription.planId } }))
+    : null;
+  const hasActiveSubscription = subscription && subscription.status !== "canceled";
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -52,7 +65,23 @@ export default async function CreditsPage({
           solde pour continuer à vous entraîner.
         </div>
       )}
-      {soon && (
+      {success && (
+        <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+          Paiement confirmé ✓ {success === "plan" ? "Votre abonnement" : "Vos crédits"} seront
+          actifs dans quelques instants (le temps que Stripe nous confirme la transaction).
+        </div>
+      )}
+      {canceled && (
+        <div className="mt-4 rounded-xl border border-[var(--border)] bg-gray-50 p-4 text-sm text-[var(--muted)]">
+          Paiement annulé — rien n&apos;a été débité.
+        </div>
+      )}
+      {error && (
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+      {!stripeReady && (
         <div className="mt-4 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-4 text-sm">
           Le paiement en ligne arrive très bientôt. En attendant, votre administrateur peut
           créditer votre compte — n&apos;hésitez pas à le contacter.
@@ -81,7 +110,71 @@ export default async function CreditsPage({
         Vous recevez {settings.monthly} crédits gratuits chaque mois.
       </p>
 
-      {/* Packs */}
+      {/* Abonnement en cours */}
+      {hasActiveSubscription && (
+        <div className="mt-6 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-semibold">
+                Abonnement {activePlan?.label ?? ""} —{" "}
+                {SUBSCRIPTION_STATUS_LABEL[subscription!.status] ?? subscription!.status}
+              </div>
+              {subscription!.currentPeriodEnd && (
+                <p className="mt-0.5 text-xs text-[var(--muted)]">
+                  {subscription!.cancelAtPeriodEnd
+                    ? "Résiliation programmée au "
+                    : "Prochain renouvellement le "}
+                  {subscription!.currentPeriodEnd.toLocaleDateString("fr-FR", {
+                    timeZone: "Europe/Paris",
+                  })}
+                </p>
+              )}
+            </div>
+            <form action={manageBillingAction}>
+              <button className="rounded-lg border border-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-white">
+                Gérer mon abonnement
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Forfaits d'abonnement */}
+      {plans.length > 0 && !hasActiveSubscription && (
+        <>
+          <h2 className="mt-7 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+            <RefreshCw className="h-3.5 w-3.5" /> S&apos;abonner
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {plans.map((p) => (
+              <div
+                key={p.id}
+                className="flex flex-col rounded-xl border border-[var(--border)] bg-white p-4"
+              >
+                <div className="font-semibold">{p.label}</div>
+                <div className="mt-1 text-2xl font-bold">
+                  {(p.priceEurCents / 100).toFixed(2).replace(".00", "")} €
+                  <span className="text-xs font-normal text-[var(--muted)]">/mois</span>
+                </div>
+                <div className="mt-1 text-xs text-[var(--muted)]">
+                  {p.monthlyCredits} crédits chaque mois
+                </div>
+                <form action={checkoutPlanAction} className="mt-3">
+                  <input type="hidden" name="planId" value={p.id} />
+                  <button
+                    disabled={!stripeReady || !p.stripePriceId}
+                    className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                  >
+                    S&apos;abonner
+                  </button>
+                </form>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Packs de crédits (achat unique) */}
       <h2 className="mt-7 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
         Recharger
       </h2>
@@ -94,17 +187,20 @@ export default async function CreditsPage({
             <div className="text-2xl font-bold">{p.credits}</div>
             <div className="text-xs text-[var(--muted)]">crédits</div>
             <div className="mt-2 text-sm font-semibold">{p.priceEur} €</div>
-            <Link
-              href={`/credits?soon=${p.id}`}
-              className="mt-3 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
-            >
-              Acheter
-            </Link>
+            <form action={checkoutPackAction} className="mt-3">
+              <input type="hidden" name="packId" value={p.id} />
+              <button
+                disabled={!stripeReady}
+                className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+              >
+                Acheter
+              </button>
+            </form>
           </div>
         ))}
       </div>
       <p className="mt-2 text-center text-[11px] text-[var(--muted)]">
-        Prix indicatifs · paiement en ligne disponible prochainement.
+        Paiement sécurisé par Stripe.
       </p>
 
       {/* Historique */}

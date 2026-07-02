@@ -52,6 +52,8 @@ model User {
   // null = jamais initialisé (déclenche le pack de bienvenue au 1er accès) ;
   // sinon = date du dernier rafraîchissement (sert à la recharge mensuelle).
   creditsRefreshedAt DateTime? @map("credits_refreshed_at")
+  // Client Stripe (créé au premier achat/abonnement). Un seul par utilisateur.
+  stripeCustomerId   String?   @map("stripe_customer_id")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])
@@ -80,12 +82,58 @@ model CreditLedger {
   userId       String   @map("user_id") @db.Uuid
   delta        Int // +octroi / -consommation
   balanceAfter Int      @map("balance_after")
-  reason       String // 'welcome' | 'monthly' | 'consume_miniscene' | 'consume_simulation' | 'refund' | 'admin_grant' | 'purchase'
+  reason       String // 'welcome' | 'monthly' | 'consume_miniscene' | 'consume_simulation' | 'refund' | 'admin_grant' | 'purchase' | 'subscription_renewal'
   meta         Json?
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@map("credit_ledger")
+}
+
+// --- Paiements (Stripe) ----------------------------------------------------
+
+// Forfait d'abonnement mensuel, défini par le super-admin (aucun prix en dur
+// côté code — voir /admin/facturation). Un abonnement actif accorde
+// `monthlyCredits` à chaque renouvellement, EN PLUS de la recharge mensuelle
+// gratuite (deux mécanismes indépendants, voir credits.ts).
+model SubscriptionPlan {
+  id             String   @id @default(uuid()) @db.Uuid
+  key            String   @unique
+  label          String
+  monthlyCredits Int      @map("monthly_credits")
+  priceEurCents  Int      @map("price_eur_cents") // affichage seul — Stripe fait foi pour la facturation
+  stripePriceId  String?  @map("stripe_price_id") // Price ID récurrent (Dashboard Stripe)
+  active         Boolean  @default(true)
+  ordre          Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("subscription_plans")
+}
+
+// Abonnement actif d'un utilisateur (au plus un par utilisateur).
+model UserSubscription {
+  id                   String    @id @default(uuid()) @db.Uuid
+  userId               String    @unique @map("user_id") @db.Uuid
+  tenantId             String    @map("tenant_id") @db.Uuid
+  planId               String    @map("plan_id") @db.Uuid
+  stripeSubscriptionId String    @unique @map("stripe_subscription_id")
+  status               String // 'active' | 'past_due' | 'canceled' | 'incomplete'
+  currentPeriodEnd     DateTime? @map("current_period_end")
+  cancelAtPeriodEnd    Boolean   @default(false) @map("cancel_at_period_end")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@map("user_subscriptions")
+}
+
+// Idempotence des webhooks Stripe : un event ne doit être traité qu'une fois
+// (Stripe garantit "at least once", jamais "exactly once").
+model StripeEvent {
+  id        String   @id // evt_...
+  type      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("stripe_events")
 }
 
 // Jeton de connexion par lien magique (usage unique, expirable).

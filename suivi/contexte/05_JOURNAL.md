@@ -580,6 +580,80 @@ priorisation demandée, traités ensemble) :
 - Vérifier que `contact@meleta.app` reçoit bien les demandes de devis (formulaire ajouté
   par le porteur en parallèle de `/demande-demo`).
 
+### Suite de session (même jour, sexies) : intégration Stripe (packs + abonnements)
+
+Demande porteur : « connecter Stripe pour que les personnes puissent souscrire des
+forfaits ». Sujet touchant à de l'argent réel → clarifié avant codage (`AskUserQuestion`) :
+le porteur a confirmé vouloir **les deux** — packs de crédits ponctuels (déjà dans l'UI
+`/credits`, jusqu'ici stubbés `?soon=`) **et** abonnements mensuels récurrents. Vu la
+complexité (webhooks, argent réel, nouvelles clés externes), un **plan détaillé a été
+soumis et approuvé** avant toute écriture de code (voir
+`C:\Users\diop.julien\.claude\plans\steady-puzzling-castle.md`).
+
+**Décisions clés du plan** :
+- Checkout Stripe **hébergé** (redirection serveur → `session.url`), pas de Stripe.js/Elements
+  côté client — cohérent avec le style Server Actions + `redirect()` déjà utilisé partout
+  (`src/app/sim/actions.ts`).
+- **Aucun prix/nom de forfait inventé par moi** : les forfaits d'abonnement (nom, prix,
+  crédits/mois) sont **entièrement configurables par le super-admin** via une nouvelle page
+  `/admin/facturation` — même logique que `/admin/modeles` pour les modèles IA. Seuls les
+  3 packs de crédits existants restent en dur (`CREDIT_PACKS`, inchangés), avec juste leur
+  Price ID Stripe configurable au même endroit.
+- Un abonnement actif accorde ses crédits à **chaque renouvellement** (webhook
+  `invoice.paid`), **en plus** de la recharge mensuelle gratuite existante — deux mécanismes
+  indépendants (l'un accorde, l'autre remonte à un plancher), pas de conflit.
+
+**Implémenté** :
+- Schéma : `User.stripeCustomerId`, `SubscriptionPlan` (config admin), `UserSubscription`
+  (1 par user), `StripeEvent` (idempotence webhook).
+- `src/lib/stripe.ts` (client singleton + `ensureStripeCustomer`), `src/lib/billing.ts`
+  (création des sessions Checkout/Portail + les 4 handlers d'événements webhook).
+- `src/app/api/stripe/webhook/route.ts` : corps **brut** (`req.text()`, jamais `req.json()`
+  ici), vérification de signature (`stripe.webhooks.constructEvent`), idempotence
+  (`StripeEvent.create` en premier — violation d'unicité = déjà traité, on renvoie 200).
+  **Important** : crédits d'abonnement accordés **uniquement** sur `invoice.paid`, jamais sur
+  `checkout.session.completed` en mode `subscription` — Stripe émet une facture pour la 1ère
+  période dès la création, donc accorder sur les deux events aurait doublé le premier octroi.
+- `/credits` : boutons « Acheter » réels (Server Actions), nouvelle section « S'abonner »,
+  statut d'abonnement + bouton « Gérer mon abonnement » (portail Stripe) si déjà abonné,
+  bannières succès/annulation/erreur, repli « bientôt disponible » si Stripe non configuré.
+- `/admin/facturation` : statut des 2 clés (secrète + webhook), Price ID par pack, création
+  + activation/désactivation des forfaits, édition du Price ID d'un forfait existant après
+  coup (utile car le forfait est souvent créé avant le Price Stripe correspondant).
+
+**Pièges Stripe API rencontrés (SDK `stripe@22.3.0`, API récente)** — la documentation/les
+souvenirs d'API Stripe plus anciens sont **faux** pour cette version, vérifié directement
+dans les `.d.ts` du paquet installé plutôt que suppose :
+- `Subscription.current_period_end` n'existe plus au niveau racine → déplacé vers
+  `Subscription.items.data[0].current_period_end`. Géré défensivement (essaie l'ancien
+  emplacement via cast, puis le nouveau).
+- `Invoice.subscription` n'existe plus → déplacé vers
+  `Invoice.parent.subscription_details.subscription`.
+
+### 🔴 Action requise du porteur (setup Stripe, détaillé dans `00_DEMARRAGE.md`)
+1. Compte Stripe + clé secrète **test** → `STRIPE_SECRET_KEY`.
+2. Créer les Prices dans le Dashboard Stripe (3 one-time pour les packs, 1 recurring par
+   forfait souhaité) → coller les Price ID dans `/admin/facturation` (et y créer les
+   forfaits d'abonnement — aucun n'existe par défaut).
+3. Enregistrer le webhook `https://<domaine>/api/stripe/webhook` (événements :
+   `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`,
+   `customer.subscription.deleted`) → `STRIPE_WEBHOOK_SECRET`.
+4. Activer le Customer Portal Stripe (Réglages → Facturation).
+5. `npm run db:push` (nouveaux modèles + champ `User.stripeCustomerId`).
+6. Tester avec la carte `4242 4242 4242 4242` sur le site déployé.
+- ⚠️ **Je n'ai pas de compte Stripe : aucun test de bout en bout possible de mon côté.**
+  Seuls `npm run build` + `npx tsc --noEmit` valident la correction statique du code.
+
+### État en fin de session (quater)
+- Build OK, types OK. Fonctionnalité complète côté code, **non testée en conditions
+  réelles** — nécessite le setup manuel Stripe ci-dessus avant tout test possible.
+
+### Prochaine étape suggérée
+- Faire le setup Stripe (voir ci-dessus), puis tester un achat de pack ET une souscription
+  d'abonnement en mode test, vérifier l'octroi de crédits et le portail de résiliation.
+- Reste du backlog inchangé : streaming en conditions réelles, `npm run lint`, boîte
+  `contact@meleta.app`, chantiers `/supervision` (assignations, attestations).
+
 ---
 
 <!-- Modèle pour la prochaine session :

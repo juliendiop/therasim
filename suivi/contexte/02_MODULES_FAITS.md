@@ -252,6 +252,37 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   franchissement), `src/app/drills/[id]/drill-player.tsx`, `src/app/sim/[id]/sim-chat.tsx`,
   `src/app/api/drills/[id]/attempt/route.ts`, `src/app/globals.css` (`.ts-level-up`).
 
+## 32. Paiements Stripe — packs de crédits + abonnements (2 juillet)
+**État : ✅ Fait (V1)** — ⚠️ nécessite `npm run db:push` + setup Stripe manuel (voir `00_DEMARRAGE.md`)
+- **Packs de crédits** (`/credits`, déjà dans l'UI) : paiement unique via Stripe Checkout
+  hébergé. Boutons « Acheter » réels (étaient stubbés `?soon=`).
+- **Forfaits d'abonnement** (nouveau) : récurrent mensuel, **entièrement configurables par
+  le super-admin** (nom, prix, crédits accordés/mois, Price ID Stripe) via
+  `/admin/facturation` — aucun prix/nom en dur côté code. Un abonnement actif accorde ses
+  crédits à chaque renouvellement (webhook `invoice.paid`), en plus (pas à la place) de la
+  recharge mensuelle gratuite existante.
+- **Webhook** `/api/stripe/webhook` : corps brut + vérification de signature, idempotence
+  via table `StripeEvent` (Stripe garantit « au moins une fois », jamais « exactement une
+  fois »). Gère `checkout.session.completed`, `invoice.paid`,
+  `customer.subscription.updated`, `customer.subscription.deleted`. Les crédits d'un
+  abonnement sont accordés **uniquement** sur `invoice.paid` (jamais sur
+  `checkout.session.completed` en mode abonnement) pour éviter un double octroi au premier
+  paiement.
+- Portail Stripe (« Gérer mon abonnement ») pour la résiliation en self-service.
+- Fichiers : `src/lib/stripe.ts`, `src/lib/billing.ts`, `src/app/api/stripe/webhook/`,
+  `src/app/credits/actions.ts` + `page.tsx` (refonte), `src/app/admin/facturation/**`.
+  Modèles `SubscriptionPlan`/`UserSubscription`/`StripeEvent` + `User.stripeCustomerId`
+  (`prisma/schema.prisma`).
+- ⚠️ Piège Stripe API récente rencontré : `Subscription.current_period_end` a migré vers
+  `SubscriptionItem.current_period_end`, et `Invoice.subscription` vers
+  `Invoice.parent.subscription_details.subscription` — gérés défensivement dans
+  `billing.ts`.
+- ⚠️ **Setup manuel requis** (je ne peux pas le faire — pas de compte Stripe) : clé API,
+  création des Prices, enregistrement du webhook, activation du Customer Portal. Détail
+  complet dans `00_DEMARRAGE.md`. Non testé de bout en bout par manque d'accès Stripe.
+- Hors scope V1 : édition en place d'un forfait existant (créer + activer/désactiver
+  seulement), Stripe Tax, forfait « accès illimité » sans décompte de crédits.
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,

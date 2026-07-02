@@ -75,6 +75,38 @@ L'app **compile** mais a besoin d'une base de données pour tourner. Étapes :
   **console `/admin`**. Tout autre email crée un apprenant dans le tenant public (B2C).
 - Le secret de session `AUTH_SECRET` est déjà dans `.env` (régénérable, voir `.env.example`).
 
+## 💳 Activer les paiements (Stripe) — optionnel
+
+Sans ça, `/credits` affiche « paiement en ligne bientôt disponible » et reste utilisable
+(l'admin peut toujours créditer manuellement via `/admin/credits`). Pour activer les vrais
+paiements (packs de crédits + abonnements) :
+
+1. **Créer un compte Stripe** (ou utiliser l'existant) → récupérer la clé secrète **mode
+   test** sur https://dashboard.stripe.com/test/apikeys → `STRIPE_SECRET_KEY` dans `.env`
+   (et sur Vercel : Settings → Environment Variables, pour la prod).
+2. **Créer les Prices** dans le Dashboard Stripe (https://dashboard.stripe.com/test/products) :
+   - 3 Prices **ponctuels** (one-time) pour les packs de crédits (20/50/100 crédits —
+     montants visibles dans `src/lib/credits.ts` → `CREDIT_PACKS`).
+   - 1 Price **récurrent mensuel** par forfait d'abonnement souhaité (nom/prix/crédits
+     accordés : à toi de définir, aucun forfait n'est pré-créé dans le code).
+   - Coller chaque Price ID dans `/admin/facturation` (packs) et créer les forfaits
+     correspondants dans la même page (abonnements).
+3. **Enregistrer le webhook** : Dashboard Stripe → Developers → Webhooks → *Add endpoint* →
+   URL `https://<ton-domaine>/api/stripe/webhook` → événements à sélectionner :
+   `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`,
+   `customer.subscription.deleted` → copier le **signing secret** →
+   `STRIPE_WEBHOOK_SECRET` dans `.env`/Vercel.
+   ⚠️ Sans cette étape, les paiements réussissent côté Stripe mais **aucun crédit n'est
+   accordé** (c'est le webhook qui déclenche l'octroi).
+4. **Activer le Customer Portal** : Dashboard Stripe → Settings → Billing → Customer portal
+   → *Activate* (nécessaire pour le bouton « Gérer mon abonnement »).
+5. `npm run db:push` (nouveaux modèles `SubscriptionPlan`/`UserSubscription`/`StripeEvent`
+   + champ `User.stripeCustomerId`).
+6. **Tester** sur le site déployé avec la carte de test `4242 4242 4242 4242` (n'importe
+   quelle date future, n'importe quel CVC).
+7. Une fois validé : remplacer les clés `test` par les clés **live** pour passer en
+   production réelle.
+
 ## Commandes utiles
 
 ```bash

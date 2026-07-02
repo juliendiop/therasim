@@ -53,6 +53,7 @@ const CREDIT_REASON_LABEL: Record<string, string> = {
   refund: "Remboursement",
   admin_grant: "Crédits offerts",
   purchase: "Achat",
+  subscription_renewal: "Abonnement",
 };
 
 export type ActivityFilters = {
