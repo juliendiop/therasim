@@ -26,10 +26,8 @@ export const dynamic = "force-dynamic";
 // activité de la semaine, dernières mises en situation.
 export default async function AccueilPage() {
   const user = await requireUser();
-  const [d, access] = await Promise.all([
-    buildDashboard(user.id, user.tenantId),
-    userFrameworkAccess(user),
-  ]);
+  const access = await userFrameworkAccess(user);
+  const d = await buildDashboard(user.id, user.tenantId, access.unlocked);
 
   // « À découvrir » : domaines verrouillés (freemium) suggérés en fin de page.
   const decouvrir =

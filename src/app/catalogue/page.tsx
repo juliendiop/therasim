@@ -14,18 +14,20 @@ export const dynamic = "force-dynamic";
 // incitative — nom, compétences, cadenas) et mènent au paywall /f/[id].
 export default async function CataloguePage() {
   const user = await requireUser();
-  const [{ frameworks }, access] = await Promise.all([
-    buildOverview(user.id, user.tenantId),
-    userFrameworkAccess(user),
-  ]);
+  const access = await userFrameworkAccess(user);
+  // Tuiles avec progression = accès effectif de l'utilisateur (peut dépasser le
+  // catalogue de sa plateforme si l'opt-in « offres individuelles » est activé).
+  const { frameworks } = await buildOverview(user.id, user.tenantId, access.unlocked);
 
-  const unlocked = frameworks.filter((f) => access.unlocked.has(f.id));
-  const lockedIds = frameworks.filter((f) => access.locked.has(f.id)).map((f) => f.id);
+  const unlocked = frameworks;
 
   // Aperçu des compétences pour les référentiels verrouillés (l'incitatif).
   const lockedFrameworks =
-    lockedIds.length > 0
-      ? await prisma.framework.findMany({ where: { id: { in: lockedIds } } })
+    access.locked.size > 0
+      ? await prisma.framework.findMany({
+          where: { id: { in: [...access.locked] }, statut: "publie" },
+          orderBy: { nom: "asc" },
+        })
       : [];
   const lockedGridIds = [...new Set(lockedFrameworks.map((f) => f.gridId))];
   const lockedComps =

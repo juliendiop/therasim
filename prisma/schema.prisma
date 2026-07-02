@@ -34,6 +34,10 @@ model Tenant {
   brandName    String?  @map("brand_name")
   logoUrl      String?  @map("logo_url")
   colorPrimary String?  @map("color_primary")
+  // Opt-in (plateformes B2B) : autorise les MEMBRES à acheter individuellement
+  // (référentiels à l'unité + abonnements) au-delà du catalogue de la plateforme.
+  // Le catalogue de la plateforme reste débloqué d'office pour eux.
+  allowIndividualOffers Boolean @default(false) @map("allow_individual_offers")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("tenants")

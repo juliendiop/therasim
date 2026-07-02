@@ -43,8 +43,12 @@ export type DashboardData = {
 export async function buildDashboard(
   userId: string,
   tenantId: string,
+  // Domaines débloqués individuellement au-delà du catalogue de la plateforme
+  // (opt-in B2B « offres individuelles ») : à inclure dans les stats/reprise.
+  extraFrameworkIds?: Set<string>,
 ): Promise<DashboardData> {
   const ids = await effectiveFrameworkIds(tenantId);
+  if (extraFrameworkIds) for (const id of extraFrameworkIds) ids.add(id);
   const frameworks = await prisma.framework.findMany({
     where: { statut: "publie", id: { in: Array.from(ids) } },
   });

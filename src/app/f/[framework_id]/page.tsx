@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Coins, Dumbbell, Layers, MessagesSquare, RotateCcw } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { tenantCanAccess, userCanAccess } from "@/lib/entitlements";
+import { userFrameworkAccess } from "@/lib/entitlements";
 import { creditSettings } from "@/lib/credits";
 import { startMiniSceneAction } from "@/app/sim/actions";
 import { buildFrameworkDetail } from "@/lib/progress";
@@ -22,10 +23,16 @@ export default async function FrameworkPage({
   const { framework_id } = await params;
   const { success, canceled, error } = await searchParams;
   const user = await requireUser();
-  // Garde d'accès : le tenant doit avoir ce référentiel dans ses droits (plafond).
-  if (!(await tenantCanAccess(user.tenantId, framework_id))) notFound();
-  // Verrouillé pour CET utilisateur (freemium B2C) -> vitrine incitative.
-  if (!(await userCanAccess(user, framework_id))) {
+  // Garde d'accès : accès effectif de CET utilisateur (catalogue plateforme,
+  // freemium B2C, ou vitrine étendue si sa plateforme B2B a l'opt-in).
+  const [fw, access] = await Promise.all([
+    prisma.framework.findUnique({ where: { id: framework_id } }),
+    userFrameworkAccess(user),
+  ]);
+  if (!fw || fw.statut !== "publie") notFound();
+  if (!access.unlocked.has(framework_id)) {
+    // Verrouillé mais en vente -> vitrine incitative ; sinon hors périmètre.
+    if (!access.locked.has(framework_id)) notFound();
     return (
       <FrameworkPaywall
         frameworkId={framework_id}

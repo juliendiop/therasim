@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
-import { activateSubscriptionChoice, isFreemiumLearner } from "@/lib/entitlements";
+import { activateSubscriptionChoice, canBuyIndividualOffers } from "@/lib/entitlements";
 import {
   createBillingPortalSession,
   createCreditsCheckout,
@@ -35,11 +35,11 @@ export async function checkoutPackAction(formData: FormData) {
 export async function checkoutPlanAction(formData: FormData) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-  // Les membres des plateformes clientes ont déjà tout leur catalogue : leur
-  // vendre un abonnement « domaines au choix » serait trompeur.
-  if (!(await isFreemiumLearner(user))) {
+  // Membres B2B sans opt-in : leur plateforme leur donne déjà tout son catalogue,
+  // un abonnement « domaines au choix » serait trompeur.
+  if (!(await canBuyIndividualOffers(user))) {
     redirect(
-      `/credits?error=${encodeURIComponent("Les abonnements sont réservés au site public — votre plateforme vous donne déjà accès à son catalogue.")}`,
+      `/credits?error=${encodeURIComponent("Les abonnements ne sont pas disponibles sur votre plateforme — elle vous donne déjà accès à son catalogue.")}`,
     );
   }
   const planId = String(formData.get("planId") ?? "");

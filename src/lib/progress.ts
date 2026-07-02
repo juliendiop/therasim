@@ -85,9 +85,17 @@ function calcOverall(
   };
 }
 
-/** Vue d'ensemble : un profil par référentiel publié ET accordé au tenant (§5.6). */
-export async function buildOverview(userId: string, tenantId: string) {
-  const ids = await effectiveFrameworkIds(tenantId);
+/**
+ * Vue d'ensemble : un profil par référentiel publié ET accordé au tenant (§5.6).
+ * `frameworkIds` (optionnel) restreint/étend l'ensemble — utilisé par le catalogue
+ * pour montrer les tuiles de l'accès effectif de l'utilisateur (freemium, opt-in B2B).
+ */
+export async function buildOverview(
+  userId: string,
+  tenantId: string,
+  frameworkIds?: Set<string>,
+) {
+  const ids = frameworkIds ?? (await effectiveFrameworkIds(tenantId));
   const frameworks = await prisma.framework.findMany({
     where: { statut: "publie", id: { in: Array.from(ids) } },
     orderBy: { nom: "asc" },

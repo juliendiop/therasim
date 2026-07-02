@@ -2,7 +2,7 @@ import { Coins, History, RefreshCw, Sparkles } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CREDIT_PACKS, creditSettings, syncWallet } from "@/lib/credits";
-import { isFreemiumLearner } from "@/lib/entitlements";
+import { canBuyIndividualOffers } from "@/lib/entitlements";
 import { isStripeConfigured } from "@/lib/stripe";
 import { checkoutPackAction, checkoutPlanAction, manageBillingAction } from "./actions";
 
@@ -45,7 +45,7 @@ export default async function CreditsPage({
     }),
     prisma.subscriptionPlan.findMany({ where: { active: true }, orderBy: { ordre: "asc" } }),
     prisma.userSubscription.findUnique({ where: { userId: user.id } }),
-    isFreemiumLearner(user),
+    canBuyIndividualOffers(user),
   ]);
   const activePlan = subscription
     ? plans.find((p) => p.id === subscription.planId) ??

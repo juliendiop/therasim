@@ -5,6 +5,7 @@ import { effectiveFrameworkIds } from "@/lib/entitlements";
 import {
   renameTenant,
   setFrameworkOverride,
+  toggleIndividualOffers,
   toggleTenantPack,
   updateBranding,
 } from "../../actions";
@@ -179,6 +180,40 @@ export default async function TenantDetail({
           </table>
         </div>
       </section>
+
+      {/* Offres individuelles (opt-in) */}
+      {tenant.type !== "public" && (
+        <section>
+          <h3 className="text-sm font-semibold">Offres individuelles</h3>
+          <form
+            action={toggleIndividualOffers}
+            className="mt-2 flex items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3"
+          >
+            <input type="hidden" name="tenantId" value={id} />
+            <div className="text-sm">
+              <div className="font-medium">
+                Autoriser les membres à acheter au-delà du catalogue de la plateforme
+              </div>
+              <p className="mt-0.5 text-xs text-[var(--muted)]">
+                Activé : les apprenants voient le reste du catalogue public en vitrine
+                (verrouillé) et peuvent le débloquer à l&apos;unité ou via un abonnement.
+                Leur catalogue plateforme reste inclus d&apos;office. Désactivé : ils sont
+                limités au catalogue de la plateforme (par défaut — recommandé pour les
+                écoles clientes tierces).
+              </p>
+            </div>
+            <button
+              className={`ml-4 shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium ${
+                tenant.allowIndividualOffers
+                  ? "bg-green-50 text-green-700 hover:bg-green-100"
+                  : "border border-[var(--border)] hover:border-[var(--accent)]"
+              }`}
+            >
+              {tenant.allowIndividualOffers ? "✓ Activé" : "Activer"}
+            </button>
+          </form>
+        </section>
+      )}
 
       {/* Branding (marque blanche) */}
       <section>

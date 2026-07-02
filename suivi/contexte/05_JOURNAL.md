@@ -741,9 +741,32 @@ le paywall en cliquant dessus (incitation à débloquer).
   packs de crédits (valeur honnête : recharge d'usage IA) et le bouton « Gérer mon
   abonnement » reste visible pour quiconque aurait déjà un abonnement actif (résiliation).
 
+### Suite de session (même jour, decies) : opt-in « offres individuelles » par plateforme
+- Question porteur : « un apprenant de plateforme qui adore et veut plus de compétences,
+  comment fait-il ? » — révélation clé : **les plateformes B2B actuelles sont les siennes**
+  (« je suis moi-même l'école »), pas des clientes tierces → il VEUT leur ouvrir tout le
+  catalogue + les abonnements. Pas de conflit de canal ici, mais il en existera un le jour
+  où de vraies écoles clientes arriveront → solution retenue : **opt-in par plateforme**.
+- `Tenant.allowIndividualOffers` (défaut **false** = comportement protecteur actuel).
+  Toggle dans `/admin/tenants/[id]` (section « Offres individuelles », masquée pour le
+  tenant public). Activé : les apprenants de la plateforme voient le **catalogue public**
+  en vitrine (verrouillé), peuvent débloquer à l'unité, s'abonner et consommer leur quota —
+  leur catalogue école restant inclus d'office. Désactivé : limités au catalogue plateforme.
+- Mécanique : `userFrameworkAccess` introduit un « plafond de vente » (= catalogue du
+  tenant public) pour les apprenants B2C ET les apprenants B2B opt-in ;
+  `canBuyIndividualOffers()` remplace `isFreemiumLearner()` (gating abonnements) ;
+  `activateSubscriptionChoice` réutilise l'accès complet ; `/f/[id]` rend le paywall pour
+  un domaine hors catalogue plateforme (au lieu d'un 404) ; `buildOverview` accepte un
+  ensemble d'ids (tuiles catalogue = accès effectif) ; `buildDashboard` accepte les
+  domaines débloqués hors plateforme (stats/reprise).
+- 🔴 **Action requise** : `npm run db:push` (colonne `allow_individual_offers`), puis
+  activer l'opt-in sur ses plateformes dans `/admin/tenants/[id]`.
+
 ### État en fin de session (sexies)
-- Build OK, types OK. Reste au porteur : db:push, quotas des forfaits, Prices one-time
-  des référentiels à l'unité, puis test complet en compte apprenant.
+- Build OK, types OK. Reste au porteur : db:push (2 changements de schéma cumulés :
+  `framework_quota` + `allow_individual_offers`), quotas des forfaits, opt-in sur ses
+  plateformes, Prices one-time des référentiels à l'unité, puis test complet en compte
+  apprenant (B2C et B2B opt-in).
 
 ---
 

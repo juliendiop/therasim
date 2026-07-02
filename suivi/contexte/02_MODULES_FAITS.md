@@ -298,8 +298,14 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   vendeur.
 - **Unité de vente = référentiel** (pas la compétence individuelle — le moteur entier
   fonctionne par référentiel : carte, routage, drills).
-- **B2B intact** : tenants whitelabel et rôles encadrants (admin/formateur) non filtrés —
-  l'école paie au niveau plateforme (TenantPack), ses membres ont tout son catalogue.
+- **B2B** : tenants whitelabel et rôles encadrants (admin/formateur) non filtrés par
+  défaut — l'école paie au niveau plateforme (TenantPack), ses membres ont tout son
+  catalogue. **Opt-in « offres individuelles »** par plateforme
+  (`Tenant.allowIndividualOffers`, toggle dans `/admin/tenants/[id]`) : activé, les
+  apprenants de la plateforme voient le catalogue PUBLIC en vitrine et peuvent acheter à
+  l'unité / s'abonner (cas « l'école, c'est nous ») — leur catalogue école reste inclus
+  d'office. Les abonnements sont bloqués (UI + garde serveur `canBuyIndividualOffers`)
+  pour les membres B2B sans opt-in (promesse « domaines au choix » inconsommable sinon).
 - Accès : `userFrameworkAccess(user)` / `userCanAccess(user, fwId)` dans
   `src/lib/entitlements.ts` (toujours borné par le plafond tenant). Gardes remplacées sur
   tous les parcours apprenant : drills (page + GET + attempt), entraînement, sim actions,

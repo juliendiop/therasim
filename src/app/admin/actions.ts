@@ -53,6 +53,21 @@ export async function updateBranding(formData: FormData) {
   revalidatePath(`/admin/tenants/${tenantId}`);
 }
 
+// Active/désactive l'opt-in « offres individuelles » d'une plateforme B2B :
+// ses membres peuvent alors acheter (à l'unité + abonnements) au-delà du
+// catalogue de la plateforme (cas « l'école, c'est nous »).
+export async function toggleIndividualOffers(formData: FormData) {
+  await requireSuperAdmin();
+  const tenantId = String(formData.get("tenantId"));
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!tenant || tenant.type === "public") return; // sans objet pour le site public
+  await prisma.tenant.update({
+    where: { id: tenantId },
+    data: { allowIndividualOffers: !tenant.allowIndividualOffers },
+  });
+  revalidatePath(`/admin/tenants/${tenantId}`);
+}
+
 export async function createPack(formData: FormData) {
   await requireSuperAdmin();
   const nom = String(formData.get("nom") ?? "").trim();

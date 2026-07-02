@@ -69,15 +69,18 @@ export async function freeFrameworkIds(): Promise<Set<string>> {
 type UserLike = { id: string; tenantId: string; role: Role };
 
 /**
- * Vrai si l'utilisateur relève du freemium : apprenant du site public (B2C).
- * Les membres des plateformes clientes (B2B) ont déjà tout le catalogue de leur
- * plateforme — leur vendre un abonnement « domaines au choix » serait trompeur
- * (seuls les packs de crédits ont une valeur honnête pour eux).
+ * Vrai si l'utilisateur peut acheter des offres individuelles (abonnements,
+ * référentiels à l'unité) : apprenant du site public (B2C), OU apprenant d'une
+ * plateforme B2B dont l'opt-in « offres individuelles » est activé
+ * (`Tenant.allowIndividualOffers` — cas « l'école, c'est nous »).
+ * Sans opt-in, vendre un abonnement « domaines au choix » à un membre B2B serait
+ * trompeur : sa plateforme lui donne déjà tout son catalogue.
  */
-export async function isFreemiumLearner(user: UserLike): Promise<boolean> {
+export async function canBuyIndividualOffers(user: UserLike): Promise<boolean> {
   if (user.role !== "learner") return false;
   const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId } });
-  return Boolean(tenant && tenant.type === "public");
+  if (!tenant) return false;
+  return tenant.type === "public" || tenant.allowIndividualOffers;
 }
 
 export type FrameworkAccess = {
@@ -89,16 +92,28 @@ export type FrameworkAccess = {
 
 /**
  * Accès effectif d'un utilisateur, référentiel par référentiel.
- * Toujours borné par le plafond tenant (jamais d'accès hors catalogue du tenant).
+ * - Rôles encadrants et membres B2B sans opt-in : tout le catalogue de LEUR plateforme.
+ * - Apprenants B2C : le catalogue public, filtré freemium (gratuits/abonnement/achats).
+ * - Apprenants B2B avec opt-in « offres individuelles » : leur catalogue école toujours
+ *   débloqué + le reste du catalogue PUBLIC en vitrine (achetable/abonnable).
  */
 export async function userFrameworkAccess(user: UserLike): Promise<FrameworkAccess> {
   const tenantIds = await effectiveFrameworkIds(user.tenantId);
 
-  // B2B whitelabel : l'école paie au niveau plateforme -> pas de filtre individuel.
-  // Rôles encadrants (admin, formateur, super-admin) : accès complet à leur catalogue.
   const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId } });
-  if (!tenant || tenant.type !== "public" || user.role !== "learner") {
+  if (!tenant) return { unlocked: tenantIds, locked: new Set() };
+  const isPublic = tenant.type === "public";
+  if (user.role !== "learner" || (!isPublic && !tenant.allowIndividualOffers)) {
     return { unlocked: tenantIds, locked: new Set() };
+  }
+
+  // Plafond de vente individuelle = catalogue du site public (ce qui est commercialisé).
+  let saleIds: Set<string>;
+  if (isPublic) {
+    saleIds = tenantIds;
+  } else {
+    const pub = await prisma.tenant.findUnique({ where: { slug: "public" } });
+    saleIds = pub ? await effectiveFrameworkIds(pub.id) : new Set<string>();
   }
 
   const [free, subscription, accessRows] = await Promise.all([
@@ -123,14 +138,16 @@ export async function userFrameworkAccess(user: UserLike): Promise<FrameworkAcce
       where: { id: subscription.planId },
     });
     if (plan) {
-      // Quota null = tout le catalogue ; sinon, les domaines choisis par l'abonné.
-      subUnlocked = plan.frameworkQuota == null ? new Set(tenantIds) : choices;
+      // Quota null = tout le catalogue en vente ; sinon, les domaines choisis.
+      subUnlocked = plan.frameworkQuota == null ? new Set(saleIds) : choices;
     }
   }
 
-  const unlocked = new Set<string>();
+  // Membre B2B opt-in : son catalogue école est acquis d'office.
+  const unlocked = new Set<string>(isPublic ? [] : tenantIds);
   const locked = new Set<string>();
-  for (const id of tenantIds) {
+  for (const id of saleIds) {
+    if (unlocked.has(id)) continue;
     if (free.has(id) || owned.has(id) || subUnlocked.has(id)) unlocked.add(id);
     else locked.add(id);
   }
@@ -169,8 +186,12 @@ export async function activateSubscriptionChoice(
   user: UserLike,
   frameworkId: string,
 ): Promise<{ ok: boolean; message: string }> {
-  const tenantIds = await effectiveFrameworkIds(user.tenantId);
-  if (!tenantIds.has(frameworkId)) {
+  // Réutilise la logique d'accès complète (plafond de vente, opt-in B2B…).
+  const access = await userFrameworkAccess(user);
+  if (access.unlocked.has(frameworkId)) {
+    return { ok: true, message: "Ce domaine est déjà débloqué pour vous." };
+  }
+  if (!access.locked.has(frameworkId)) {
     return { ok: false, message: "Ce domaine n'est pas disponible." };
   }
   const framework = await prisma.framework.findUnique({ where: { id: frameworkId } });
