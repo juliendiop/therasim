@@ -494,18 +494,17 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
   bouton sur le tableau de bord `/sessions/[id]`.
 - Lien « Supervision » ajouté à la navigation (mêmes rôles que Formations/Sessions live).
 
-### 🔴 Action requise du porteur avant le prochain déploiement utile
-- **`npm run db:push`** (local ET/OU contre la base de prod Neon) pour créer la table
-  `supervisor_notes` — sans ça, `/supervision/[id]` plante à l'ajout d'une note (table absente).
-  Le reste de la fonctionnalité (liste apprenants, progression, historique, transcript) marche
-  sans cette table.
+### ✅ `npm run db:push` fait (2 juillet, contre Neon prod)
+- Table `supervisor_notes` créée. L'espace supervision formateur (liste apprenants,
+  progression, historique, transcript, **et notes**) est pleinement opérationnel.
 
 ### État en fin de session (bis)
-- Build OK, types OK. Supervision et export CSV non testés en conditions réelles (nécessite
-  des apprenants avec de l'activité + `db:push` fait).
+- Build OK, types OK, `db:push` fait. Supervision et export CSV non encore testés en
+  conditions réelles (nécessite un compte formateur/tenant_admin + des apprenants actifs).
 
 ### Prochaine étape suggérée
-- Faire `npm run db:push`, puis tester `/supervision` avec un compte formateur/tenant_admin.
+- Tester `/supervision` en conditions réelles (compte formateur/tenant_admin, ajout d'une
+  note, export CSV d'une session live).
 - Chantiers restants de l'analyse du 2 juillet, non commencés :
   - **Auto-évaluation avant débrief + replay annoté** (estimation de l'apprenant comparée à
     l'IA avant affichage de la note ; relecture du transcript avec moments clés surlignés en
@@ -517,11 +516,8 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
   seul l'export CSV des sessions live existe).
 - Tester le streaming du chat de simulation en conditions réelles (toujours en attente).
 - Réparer `npm run lint` (config ESLint cassée, préexistante — toujours en attente).
-
-### Prochaine étape suggérée
-- Tester le streaming sur un vrai entretien ; réparer la config ESLint ; créer/router la
-  boîte `contact@meleta.app` ; puis chantiers supervision formateur / auto-évaluation
-  avant débrief (cf. propositions du 2 juillet).
+- Vérifier que `contact@meleta.app` reçoit bien les demandes de devis (formulaire ajouté
+  par le porteur en parallèle de `/demande-demo`).
 
 ---
 

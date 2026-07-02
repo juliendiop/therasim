@@ -129,8 +129,8 @@ formulaire de demande de devis ajouté côté landing).
   (`prisma/schema.prisma`).
 - ⚠️ **Reste** : assignations (« faites cet exercice d'ici vendredi »), attestation de pratique,
   export PDF/CSV du suivi individuel (aujourd'hui : CSV sessions live uniquement).
-- 🔴 **Action requise du porteur avant que ça fonctionne** : `npm run db:push` (nouvelle table
-  `supervisor_notes`) — voir `00_DEMARRAGE.md`.
+- ✅ `npm run db:push` fait (2 juillet, contre Neon prod) — table `supervisor_notes` créée,
+  fonctionnalité pleinement opérationnelle.
 
 ## ⭐ Prochaine étape — PDF → session de formation (demande 11 juin)
 - Importer le **PDF d'un support / programme** de formation et le transformer en **une session**
