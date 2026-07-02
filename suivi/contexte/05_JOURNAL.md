@@ -774,6 +774,26 @@ le paywall en cliquant dessus (incitation à débloquer).
   3. Test complet en compte apprenant (B2C et B2B opt-in) : vitrine → déblocage par choix
      d'abonnement ET par achat à l'unité (carte test).
 
+### Suite de session (même jour, undecies) : onboarding / inscription B2C
+- Question porteur : promo prévue auprès de sa communauté de thérapeutes, mais « Créer un
+  compte » menait à `/login` (formulaire mot de passe de connexion, inutilisable pour un
+  nouveau venu). → Parcours d'inscription B2C dédié.
+- Schéma : `User.firstName` (prénom, accueil personnalisé) + `User.consentAt` (RGPD).
+  Exposé `firstName` dans `getSessionUser`/`CurrentUser`.
+- `/inscription` (page) + `/api/auth/register` (endpoint) : prénom optionnel, email, mot de
+  passe ≥8, **case de consentement RGPD obligatoire**. Accès immédiat (session ouverte),
+  ou magic link en alternative. Refuse un email déjà pris. Toujours tenant public + learner.
+- Accueil : greeting « Bonjour {prénom} », bannière `?bienvenue=1` « compte prêt 🎉 » avec
+  CTA direct vers l'entraînement du 1er domaine débloqué + rappel du parcours (3 étapes).
+- Tous les CTA d'inscription (landing ×3, démo ×1) repointés vers `/inscription` ; liens
+  croisés `/login` ↔ `/inscription`. Header « Se connecter » (visiteur) reste sur `/login`.
+- 🔴 **Action requise** : `npm run db:push` (colonnes `first_name`, `consent_at`).
+
+### État en fin de session (septies)
+- Build OK, types OK. Reste au porteur : `npm run db:push`, puis tester le parcours complet
+  landing → « Créer un compte » → /inscription → accueil de bienvenue.
+- Option backlog notée : page politique de confidentialité dédiée, double opt-in email.
+
 ---
 
 <!-- Modèle pour la prochaine session :

@@ -27,6 +27,7 @@ export type SessionPayload = {
 export type CurrentUser = {
   id: string;
   email: string;
+  firstName: string | null;
   role: Role;
   tenantId: string;
   impersonating: boolean;
@@ -90,6 +91,7 @@ export async function getSessionUser(): Promise<CurrentUser | null> {
   return {
     id: user.id,
     email: user.email,
+    firstName: user.firstName,
     role: s.role,
     tenantId: s.tenantId,
     impersonating: Boolean(s.imp),

@@ -43,6 +43,19 @@ moteur) · B2B non touché.
   `UserFrameworkAccess` le prévoit, `source='admin'`, pas encore d'UI) ; prorata/upgrade
   de forfait ; email de confirmation d'achat maison (Stripe envoie déjà un reçu).
 
+## ⭐ Onboarding / inscription B2C — ✅ V1 FAITE (2 juillet)
+
+Demande porteur (promo à sa communauté de thérapeutes). Avant : « Créer un compte » →
+`/login` (form connexion mot de passe, inutilisable pour un nouveau venu).
+- ✅ Page `/inscription` (prénom optionnel, email, mot de passe, consentement RGPD) + API
+  `/api/auth/register` (accès immédiat, tenant public, learner) ; magic link en alternative ;
+  accueil de bienvenue personnalisé (`?bienvenue=1`) avec CTA direct vers le 1er domaine ;
+  liens croisés `/login` ↔ `/inscription` ; tous les CTA landing/démo repointés.
+- 🔴 **Action requise du porteur** : `npm run db:push` (`first_name`, `consent_at`).
+- ⚠️ Reste (option) : **page politique de confidentialité** dédiée (RGPD — le consentement
+  pointe vers un texte inline) ; **double opt-in** (vérification d'email) ; RGPD complet
+  (export/suppression de compte, déjà au backlog transverse ci-dessous).
+
 ## 🔜 Immédiat (pour rendre l'app vivante)
 
 ### Brancher la base de données (porteur de projet)

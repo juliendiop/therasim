@@ -325,6 +325,30 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   apprenants B2C existants (comportement freemium voulu) — configurer les gratuits/forfaits/
   offres dans `/admin/facturation` et créer les Prices one-time Stripe correspondants.
 
+## 34. Onboarding / inscription B2C (2 juillet)
+**État : ✅ Fait (V1)** — ⚠️ nécessite `npm run db:push` (`User.firstName`, `User.consentAt`)
+- Avant : « Créer un compte » et « Se connecter » pointaient tous deux vers `/login`, qui
+  affiche par défaut un formulaire mot de passe **de connexion** — inutilisable pour un
+  nouveau venu (pas de mot de passe). Tue-conversion pour une campagne promo.
+- Nouvelle page **`/inscription`** (site public B2C) : prénom (optionnel, accueil
+  personnalisé), email, mot de passe (≥8) → accès **immédiat** (pas d'aller-retour email) ;
+  alternative « lien par email » (magic link) ; **case de consentement RGPD obligatoire**
+  (horodatée dans `consentAt`). Réassurance en tête (domaine offert, crédits, carte).
+- API `/api/auth/register` : refuse un email déjà pris (→ message « connectez-vous »), crée
+  un `learner` dans le tenant **public**, ouvre la session, redirige vers `/accueil?bienvenue=1`.
+- **Accueil de bienvenue** : greeting personnalisé (« Bonjour Marie 👋 »), bannière
+  « votre compte est prêt 🎉 » avec CTA **direct** vers l'entraînement du 1er domaine
+  débloqué (moins de clics = meilleure activation) + rappel du parcours en 3 étapes.
+- Liens croisés : `/login` ↔ `/inscription`. Tous les CTA d'inscription de la landing et
+  de la démo pointent désormais vers `/inscription`. Le bouton header « Se connecter »
+  (visiteur) reste sur `/login`.
+- Fichiers : `src/app/inscription/`, `src/app/api/auth/register/`, `src/app/login/page.tsx`,
+  `src/app/page.tsx`, `src/app/demo-drill.tsx`, `src/app/accueil/page.tsx`,
+  `src/lib/auth.ts` (`firstName` dans `CurrentUser`). Le journal d'activité affichait déjà
+  « Inscription » (dérivé de `User.createdAt`) — inchangé.
+- ⚠️ Reste (option) : page politique de confidentialité dédiée (le consentement pointe pour
+  l'instant vers un texte inline) ; vérification d'email (double opt-in).
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,

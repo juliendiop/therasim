@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Brain, LogIn, Mail } from "lucide-react";
 
@@ -263,6 +264,15 @@ export default function LoginPage() {
           </>
         )}
       </div>
+
+      {!sent && (
+        <p className="mt-4 text-center text-sm text-[var(--muted)]">
+          Pas encore de compte ?{" "}
+          <Link href="/inscription" className="font-medium text-[var(--accent)] hover:underline">
+            Créer un compte
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

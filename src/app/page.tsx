@@ -51,7 +51,7 @@ export default async function LandingPage() {
             <Dumbbell className="h-4 w-4" /> Essayer un exercice — gratuit, sans compte
           </a>
           <Link
-            href="/login"
+            href="/inscription"
             className="inline-flex items-center gap-2 rounded-lg border border-[var(--accent)] px-6 py-3 text-sm font-semibold text-[var(--accent)] transition hover:bg-[var(--accent-soft)]"
           >
             Créer un compte <ArrowRight className="h-4 w-4" />
@@ -185,7 +185,7 @@ export default async function LandingPage() {
             <Feature>Crédits de bienvenue offerts à l&apos;inscription</Feature>
           </ul>
           <Link
-            href="/login"
+            href="/inscription"
             className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-hover)]"
           >
             <Sparkles className="h-4 w-4" /> Commencer gratuitement
@@ -251,7 +251,7 @@ export default async function LandingPage() {
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
-            href="/login"
+            href="/inscription"
             className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-[var(--accent)] transition hover:bg-white/90"
           >
             <Sparkles className="h-4 w-4" /> Créer mon compte gratuit

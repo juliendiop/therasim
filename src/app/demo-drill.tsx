@@ -223,7 +223,7 @@ export default function DemoDrill() {
               <RotateCcw className="h-4 w-4" /> Essayer un autre exemple
             </button>
             <Link
-              href="/login"
+              href="/inscription"
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-hover)]"
             >
               <Sparkles className="h-4 w-4" /> Créer mon compte gratuit

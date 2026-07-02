@@ -49,8 +49,10 @@ model User {
   id           String   @id @default(uuid()) @db.Uuid
   tenantId     String   @map("tenant_id") @db.Uuid
   email        String   @unique
+  firstName    String?  @map("first_name") // prénom (inscription B2C) : accueil personnalisé
   role         String   @default("learner") // 'super_admin' | 'tenant_admin' | 'learner'
   passwordHash String?  @map("password_hash") // mot de passe optionnel (sinon lien magique)
+  consentAt    DateTime? @map("consent_at") // horodatage du consentement RGPD à l'inscription
   // Portefeuille de crédits IA (mini-scènes / entretiens). Drills QCM = gratuits.
   credits            Int       @default(0)
   // null = jamais initialisé (déclenche le pack de bienvenue au 1er accès) ;

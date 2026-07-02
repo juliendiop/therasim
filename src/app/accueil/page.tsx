@@ -24,7 +24,12 @@ export const dynamic = "force-dynamic";
 // Tableau de bord d'accueil : répond à « que faire aujourd'hui ? ».
 // Reprise en un clic (entretien en cours, dernier domaine), révisions dues,
 // activité de la semaine, dernières mises en situation.
-export default async function AccueilPage() {
+export default async function AccueilPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ bienvenue?: string }>;
+}) {
+  const { bienvenue } = await searchParams;
   const user = await requireUser();
   const access = await userFrameworkAccess(user);
   const d = await buildDashboard(user.id, user.tenantId, access.unlocked);
@@ -38,11 +43,21 @@ export default async function AccueilPage() {
         })
       : [];
 
+  // Domaine de démarrage (le 1er débloqué) : CTA direct « Commencer » à l'inscription.
+  const startFw =
+    access.unlocked.size > 0
+      ? await prisma.framework.findFirst({
+          where: { id: { in: [...access.unlocked] }, statut: "publie" },
+          orderBy: { nom: "asc" },
+        })
+      : null;
+
   const premierePratique = !d.reprendre && !d.ongoingSim && d.recentSims.length === 0;
+  const prenom = user.firstName ? ` ${user.firstName}` : "";
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Bonjour 👋</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Bonjour{prenom} 👋</h1>
       <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">
         Votre point de départ du jour : reprenez où vous en étiez, révisez ce qui
         s&apos;estompe, et suivez votre pratique de la semaine.
@@ -52,22 +67,35 @@ export default async function AccueilPage() {
         <div className="mt-6 rounded-lg border border-dashed border-[var(--border)] bg-white p-8 text-center text-sm text-[var(--muted)]">
           Aucun domaine n&apos;est encore disponible sur votre espace. Revenez bientôt !
         </div>
-      ) : premierePratique ? (
-        /* Première visite : un seul appel à l'action, clair. */
-        <div className="mt-6 flex flex-col items-start gap-3 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-6 sm:flex-row sm:items-center">
-          <div className="flex-1">
-            <h2 className="font-semibold">Bienvenue ! Faites votre premier pas.</h2>
-            <p className="mt-0.5 text-sm text-[var(--muted)]">
-              Choisissez un domaine à travailler — chaque essai alimente votre carte de
-              progression, dès le premier exercice.
-            </p>
+      ) : bienvenue || premierePratique ? (
+        /* Bienvenue / première visite : un seul appel à l'action, clair et direct. */
+        <div className="mt-6 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-6">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <h2 className="font-semibold">
+                {bienvenue
+                  ? `Bienvenue${prenom}, votre compte est prêt 🎉`
+                  : "Bienvenue ! Faites votre premier pas."}
+              </h2>
+              <p className="mt-0.5 text-sm text-[var(--muted)]">
+                {startFw
+                  ? `Commencez par « ${startFw.nom} » — chaque essai alimente votre carte de progression, dès le premier exercice.`
+                  : "Choisissez un domaine à travailler — chaque essai alimente votre carte de progression, dès le premier exercice."}
+              </p>
+            </div>
+            <Link
+              href={startFw ? `/f/${startFw.id}/entrainement` : "/catalogue"}
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
+            >
+              <Compass className="h-4 w-4" /> {startFw ? "Commencer maintenant" : "Choisir un domaine"}
+            </Link>
           </div>
-          <Link
-            href="/catalogue"
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
-          >
-            <Compass className="h-4 w-4" /> Choisir un domaine
-          </Link>
+          {/* Rappel du parcours, pour situer le nouvel inscrit */}
+          <div className="mt-4 grid gap-2 border-t border-[var(--accent-border)] pt-4 sm:grid-cols-3">
+            <MiniStep n="1" t="Exercices" d="Une compétence à la fois, feedback immédiat." />
+            <MiniStep n="2" t="Mises en situation" d="Un patient simulé par IA qui réagit." />
+            <MiniStep n="3" t="Progression" d="Vos forces et lacunes, en temps réel." />
+          </div>
         </div>
       ) : (
         <>
@@ -291,6 +319,20 @@ export default async function AccueilPage() {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+function MiniStep({ n, t, d }: { n: string; t: string; d: string }) {
+  return (
+    <div className="flex gap-2">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-semibold text-[var(--accent)]">
+        {n}
+      </span>
+      <div>
+        <div className="text-xs font-semibold">{t}</div>
+        <div className="text-[11px] text-[var(--muted)]">{d}</div>
+      </div>
     </div>
   );
 }
