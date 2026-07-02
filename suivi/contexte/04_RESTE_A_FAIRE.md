@@ -127,8 +127,10 @@ Demande porteur : pendant une formation, faire passer une **étude de cas** en d
 - ✅ La fin de simulation écrit des `Attempt` (source='simulation') → **unifié avec les drills
   dans la même carte**.
 - ✅ Spec MVP manquante → **cadrée avec le porteur** (voir journal session 2).
-- ⚠️ Reste : **calibration de l'évaluateur** (spec §6) avant usage sérieux ; reprise d'une
-  session en cours ; éventuel objectif pédagogique par cas ; historique des simulations passées.
+- ✅ (2 juillet) Reprise d'une session en cours + **historique des simulations** (`/historique`),
+  réponse du patient **streamée** ; tableau de bord d'accueil `/accueil`.
+- ⚠️ Reste : **calibration de l'évaluateur** (spec §6) avant usage sérieux ; éventuel objectif
+  pédagogique par cas ; **réparer `npm run lint`** (config ESLint cassée, préexistant).
 
 ## Phase 4 — nouveaux référentiels (le moat, spec §2.6)
 - Ajouter ACT, anamnèse, burnout… = **écrire du contenu** (grille + cas + drills +

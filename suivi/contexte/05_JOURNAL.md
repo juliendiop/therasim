@@ -419,6 +419,47 @@ Historique chronologique des sessions de travail. Ajouter une entrée à chaque 
 
 ---
 
+## Session — 2 juillet 2026 : accueil apprenant + historique + chat streamé
+
+### Ce qui a été fait
+- **Tableau de bord d'accueil `/accueil`** (`src/lib/dashboard.ts`, `src/app/accueil/page.tsx`) :
+  entretien/mini-scène **en cours à reprendre**, « reprendre là où j'en étais » (dernier
+  référentiel pratiqué + 2 priorités avec boutons S'entraîner), **à réviser** (>21 j, ciblage
+  par compétence), stats 7 jours (exercices / mises en situation / compétences), 3 dernières
+  simulations. `/` et les redirections post-login pointent vers `/accueil` (super_admin → `/admin`).
+- **Historique `/historique`** (`src/lib/sim-history.ts`, `src/app/historique/page.tsx`) :
+  toutes les SimSessions (cas, référentiel, date Europe/Paris, tours, note moyenne du débrief,
+  badge « en cours — reprendre »). Chaque ligne rouvre `/sim/[id]` (relecture conversation +
+  débrief). Lien retour « Mon historique » sur une session terminée.
+- **Chat de simulation streamé** : `mistralChatStream` (SSE) dans `src/lib/mistral.ts`,
+  `patientReplyStream` dans `src/lib/simulator.ts` (remplace `patientReply`), la route
+  `/api/sim/[id]/message` renvoie un flux text/plain (erreurs toujours en JSON — le client
+  les distingue par le Content-Type). La réplique du patient s'affiche **au fil de l'eau**.
+- **Confort du chat** (`sim-chat.tsx`) : indicateur « le patient réfléchit… » (points animés),
+  compteur **tour X/Y** vivant dans la bannière mini-scène, **confirmation en 2 temps** avant
+  Terminer (sautée à la fin naturelle d'une mini-scène), textarea auto-extensible ; en cas
+  d'erreur la réplique est **rendue dans le champ** pour réessayer.
+- Navigation : liens **Accueil / Domaines / Historique** dans l'en-tête, logo → `/accueil`.
+  Catalogue renommé « Domaines d'entraînement ».
+
+### Décisions / pièges
+- Streaming : le flux Mistral est **ouvert avant** d'écrire le tour en base → une erreur de
+  config (clé absente) remonte en 503 JSON sans tour fantôme. Si le flux s'interrompt en cours,
+  le texte déjà reçu est persisté (conversation cohérente au rechargement).
+- Dashboard : compteurs d'activité globaux OK, mais la maîtrise reste **par référentiel**
+  (règle d'or §2.4) — « reprendre » n'affiche que le dernier référentiel pratiqué.
+- ⚠️ `npm run lint` était **déjà cassé avant cette session** (crash de la config ESLint au
+  chargement — config circulaire) — à réparer. `npm run build` et `npx tsc --noEmit` passent.
+
+### État en fin de session
+- Build OK, types OK. Streaming non encore testé en conditions réelles avec la clé Mistral.
+
+### Prochaine étape suggérée
+- Tester le streaming sur un vrai entretien ; réparer la config ESLint ; puis chantiers
+  supervision formateur / auto-évaluation avant débrief (cf. propositions du 2 juillet).
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA

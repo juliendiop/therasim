@@ -162,6 +162,23 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 - `Formation` + `FormationModule` (un module couvre **plusieurs référentiels** + compétences).
   Session live **par module** ou **pour toute la formation**. Fichiers : `src/app/formations/`.
 
+## 25. Tableau de bord d'accueil + historique (2 juillet)
+**État : ✅ Fait**
+- `/accueil` (nouvelle page d'atterrissage) : entretien en cours à reprendre, dernier
+  référentiel pratiqué + priorités, compétences à réviser (>21 j), stats 7 jours,
+  dernières mises en situation. `/historique` : toutes les SimSessions (relecture du
+  débrief, reprise d'une session en cours). Nav en-tête : Accueil / Domaines / Historique.
+- Fichiers : `src/lib/dashboard.ts`, `src/lib/sim-history.ts`, `src/app/accueil/`,
+  `src/app/historique/`, `src/app/layout.tsx`.
+
+## 26. Chat de simulation streamé + confort (2 juillet)
+**État : ✅ Fait (streaming à tester avec clé Mistral)**
+- Réponse du patient **au fil de l'eau** (SSE Mistral → flux HTTP → UI), indicateur
+  « le patient réfléchit… », compteur tour X/Y en mini-scène, confirmation avant
+  Terminer, textarea auto-extensible, réplique rendue au champ en cas d'erreur.
+- Fichiers : `src/lib/mistral.ts` (mistralChatStream), `src/lib/simulator.ts`
+  (patientReplyStream), `src/app/api/sim/[id]/message/route.ts`, `src/app/sim/[id]/sim-chat.tsx`.
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,
