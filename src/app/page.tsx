@@ -22,8 +22,6 @@ import DemoDrill from "./demo-drill";
 
 export const dynamic = "force-dynamic";
 
-const CONTACT_EMAIL = "contact@meleta.app";
-
 // Page publique d'acquisition : praticiens/coachs (B2C) + écoles (B2B),
 // avec un exercice de démonstration jouable sans compte (et sans LLM).
 export default async function LandingPage() {
@@ -220,12 +218,12 @@ export default async function LandingPage() {
               Suivi de la progression de vos cohortes, compétence par compétence
             </Feature>
           </ul>
-          <a
-            href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Demande de démo MELETA — école / organisme")}`}
+          <Link
+            href="/demande-demo"
             className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--accent)] transition hover:bg-[var(--accent-soft)]"
           >
             <Building2 className="h-4 w-4" /> Demander une démo
-          </a>
+          </Link>
         </div>
       </section>
 
@@ -258,12 +256,12 @@ export default async function LandingPage() {
           >
             <Sparkles className="h-4 w-4" /> Créer mon compte gratuit
           </Link>
-          <a
-            href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Demande de démo MELETA — école / organisme")}`}
+          <Link
+            href="/demande-demo"
             className="inline-flex items-center gap-2 rounded-lg border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
           >
             <GraduationCap className="h-4 w-4" /> Je représente une école
-          </a>
+          </Link>
         </div>
       </section>
     </div>

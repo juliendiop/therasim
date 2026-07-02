@@ -103,15 +103,50 @@ function escapeHtml(s: string): string {
   );
 }
 
-async function send(to: string, subject: string, html: string): Promise<void> {
+async function send(
+  to: string,
+  subject: string,
+  html: string,
+  opts?: { replyTo?: string },
+): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new EmailNotConfiguredError();
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ from: fromAddress(), to: [to], subject, html }),
+    body: JSON.stringify({
+      from: fromAddress(),
+      to: [to],
+      subject,
+      html,
+      ...(opts?.replyTo ? { reply_to: [opts.replyTo] } : {}),
+    }),
   });
   if (!res.ok) {
     throw new Error(`Resend erreur ${res.status}: ${await res.text()}`);
   }
+}
+
+/**
+ * Notifie l'équipe MELETA d'une demande de démo (landing publique — formulaire
+ * « Écoles & organismes »). Envoyée à `to` (l'équipe), avec reply-to = le visiteur
+ * pour pouvoir répondre directement sans ressaisir son adresse.
+ */
+export async function sendDemoRequest(
+  to: string,
+  input: { nom: string; email: string; organisme: string; message: string },
+): Promise<void> {
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:480px;margin:0 auto;color:#1a1d23;line-height:1.6">
+    <h2 style="color:#0e5a54">Nouvelle demande de démo</h2>
+    <p><b>Nom :</b> ${escapeHtml(input.nom)}<br>
+       <b>Email :</b> ${escapeHtml(input.email)}<br>
+       ${input.organisme ? `<b>Établissement :</b> ${escapeHtml(input.organisme)}<br>` : ""}
+    </p>
+    ${input.message ? `<p style="white-space:pre-line">${escapeHtml(input.message)}</p>` : ""}
+    <p style="font-size:13px;color:#6b7280">Envoyé depuis la page d'accueil publique MELETA.</p>
+  </div>`;
+  await send(to, `Demande de démo — ${input.organisme || input.nom}`, html, {
+    replyTo: input.email,
+  });
 }
