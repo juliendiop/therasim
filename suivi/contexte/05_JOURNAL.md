@@ -795,6 +795,28 @@ le paywall en cliquant dessus (incitation à débloquer).
   landing → « Créer un compte » → /inscription → accueil de bienvenue.
 - Option backlog notée : page politique de confidentialité dédiée, double opt-in email.
 
+### Suite de session (même jour, duodecies) : corrections de navigation
+- Signalements porteur après le déploiement de l'inscription : (1) « après l'inscription on
+  ne voit aucune compétence, EM devrait être visible » ; (2) bouton « Se connecter » seul ;
+  (3) « on ne sait pas bien naviguer entre accueil et catalogue ».
+- **Diagnostic (1)** : script tsx contre Neon prod → un inscrit frais a bien
+  `unlocked=[em]` (EM débloqué). Le bug était d'**affichage** : l'accueil de bienvenue
+  n'affichait qu'un bouton « Commencer », jamais le domaine EM comme tuile → impression
+  « aucun domaine ». Corrigé : section **« Votre domaine »** (tuiles cliquables des domaines
+  débloqués) toujours affichée sur l'accueil, y compris pour un nouvel inscrit. Restructuré
+  la conditionnelle (bannière bienvenue + domaines + contenu habituel, au lieu d'un ternaire
+  exclusif).
+- **(2)** Header visiteur : « Se connecter » (discret) **+ « Créer un compte »** (bouton
+  accent) — pousse l'inscription pour la campagne.
+- **(3)** Vrai trou : la nav header (Accueil/Domaines/Historique) est `hidden sm:flex` →
+  **invisible sur mobile**, un apprenant sur téléphone n'avait aucun lien de navigation.
+  Ajout d'une **barre de navigation basse mobile** (`_components/mobile-nav.tsx`, client,
+  onglet actif surligné via `usePathname`) : Accueil / Domaines / Historique / Crédits,
+  visible sous `sm` uniquement, pour les connectés. `main`/`footer` : `pb-24 sm:pb-8` pour
+  réserver la place. Sur desktop, lien « Explorer le catalogue → » ajouté à la section
+  « Vos domaines » de l'accueil.
+- Aucun changement de schéma (pas de db:push). Build OK, types OK.
+
 ---
 
 <!-- Modèle pour la prochaine session :

@@ -7,6 +7,7 @@ import { canManageLive, canSupervise } from "@/lib/roles";
 import { syncWallet } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
 import { stopImpersonation } from "./admin/impersonate-actions";
+import MobileNav from "./_components/mobile-nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -99,12 +100,20 @@ export default async function RootLayout({
             )}
 
             {!user && (
-              <Link
-                href="/login"
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-hover)]"
-              >
-                Se connecter
-              </Link>
+              <div className="ml-auto flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"
+                >
+                  Se connecter
+                </Link>
+                <Link
+                  href="/inscription"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-hover)]"
+                >
+                  Créer un compte
+                </Link>
+              </div>
             )}
             {user && (
               <div className="ml-auto flex items-center gap-2.5 text-sm">
@@ -169,9 +178,10 @@ export default async function RootLayout({
           </div>
         </header>
 
-        <main className="mx-auto max-w-5xl px-5 py-8">{children}</main>
+        {/* pb-20 sur mobile : réserve la place de la barre de navigation basse. */}
+        <main className="mx-auto max-w-5xl px-5 py-8 pb-24 sm:pb-8">{children}</main>
 
-        <footer className="mx-auto max-w-5xl px-5 pb-10 pt-4 text-center text-xs text-[var(--muted)]">
+        <footer className="mx-auto max-w-5xl px-5 pb-24 pt-4 text-center text-xs text-[var(--muted)] sm:pb-10">
           {isPublic ? (
             <>MELETA — outil formatif, non certifiant.</>
           ) : (
@@ -180,6 +190,9 @@ export default async function RootLayout({
             </>
           )}
         </footer>
+
+        {/* Navigation mobile (connectés) : le header cache ses liens sous `sm`. */}
+        {user && <MobileNav showCredits={credits !== null} />}
       </body>
     </html>
   );

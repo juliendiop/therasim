@@ -43,14 +43,16 @@ export default async function AccueilPage({
         })
       : [];
 
-  // Domaine de démarrage (le 1er débloqué) : CTA direct « Commencer » à l'inscription.
-  const startFw =
+  // Domaines débloqués pour cet utilisateur (affichés explicitement à l'accueil
+  // de bienvenue — sinon un nouvel inscrit ne « voit » pas son domaine gratuit).
+  const mesDomaines =
     access.unlocked.size > 0
-      ? await prisma.framework.findFirst({
+      ? await prisma.framework.findMany({
           where: { id: { in: [...access.unlocked] }, statut: "publie" },
           orderBy: { nom: "asc" },
         })
-      : null;
+      : [];
+  const startFw = mesDomaines[0] ?? null;
 
   const premierePratique = !d.reprendre && !d.ongoingSim && d.recentSims.length === 0;
   const prenom = user.firstName ? ` ${user.firstName}` : "";
@@ -97,7 +99,51 @@ export default async function AccueilPage({
             <MiniStep n="3" t="Progression" d="Vos forces et lacunes, en temps réel." />
           </div>
         </div>
-      ) : (
+      ) : null}
+
+      {/* Domaines accessibles : toujours visibles (résout « je ne vois aucun
+          domaine » après inscription). Tuiles cliquables vers la carte du domaine. */}
+      {d.hasFrameworks && mesDomaines.length > 0 && (
+        <section className="mt-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+              {mesDomaines.length > 1 ? "Vos domaines" : "Votre domaine"}
+            </h2>
+            <Link
+              href="/catalogue"
+              className="inline-flex items-center gap-1 text-sm font-medium text-[var(--accent)] hover:underline"
+            >
+              Explorer le catalogue <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {mesDomaines.map((f) => (
+              <Link
+                key={f.id}
+                href={`/f/${f.id}`}
+                className="group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-white p-4 transition hover:border-[var(--accent)] hover:shadow-sm"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <Dumbbell className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-semibold group-hover:text-[var(--accent)]">
+                    {f.nom}
+                  </div>
+                  {f.description && (
+                    <p className="line-clamp-1 text-xs text-[var(--muted)]">{f.description}</p>
+                  )}
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-[var(--muted)] transition group-hover:translate-x-0.5 group-hover:text-[var(--accent)]" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Contenu « habituel » (reprise, révisions, stats) — masqué pour un
+          nouvel inscrit (rien à reprendre), affiché dès la première activité. */}
+      {d.hasFrameworks && !(bienvenue || premierePratique) && (
         <>
           {/* Entretien laissé en cours : reprise en un clic */}
           {d.ongoingSim && (
