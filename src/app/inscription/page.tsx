@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Brain, Check, Mail, UserPlus } from "lucide-react";
 
 type Mode = "password" | "magic";
 
 export default function InscriptionPage() {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>("password");
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
@@ -38,7 +36,9 @@ export default function InscriptionPage() {
         setError(data.message ?? data.error ?? "Erreur");
         return;
       }
-      router.push(data.redirect ?? "/accueil?bienvenue=1");
+      // Rechargement COMPLET : le layout serveur doit relire le cookie de session.
+      window.location.assign(data.redirect ?? "/accueil?bienvenue=1");
+      return;
     } catch {
       setError("Connexion impossible.");
     } finally {

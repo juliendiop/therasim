@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
 
 export default function ResetForm({ token }: { token: string }) {
-  const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,7 +36,9 @@ export default function ResetForm({ token }: { token: string }) {
         setError(data.message ?? data.error ?? "Erreur");
         return;
       }
-      router.push(data.redirect ?? "/accueil");
+      // Rechargement COMPLET : le layout serveur doit relire le cookie de session.
+      window.location.assign(data.redirect ?? "/accueil");
+      return;
     } catch {
       setError("Connexion impossible.");
     } finally {

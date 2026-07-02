@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Brain, LogIn, Mail } from "lucide-react";
 
 type Mode = "password" | "magic" | "forgot";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +31,10 @@ export default function LoginPage() {
         setError(data.message ?? data.error ?? "Erreur");
         return;
       }
-      router.push(data.redirect ?? "/accueil");
+      // Rechargement COMPLET (pas router.push) : le layout serveur doit relire
+      // le cookie de session, sinon le header reste en état « déconnecté ».
+      window.location.assign(data.redirect ?? "/accueil");
+      return;
     } catch {
       setError("Connexion impossible.");
     } finally {
