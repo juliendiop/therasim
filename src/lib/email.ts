@@ -38,6 +38,24 @@ export async function sendMagicLink(email: string, link: string): Promise<void> 
   await send(email, "Votre lien de connexion MELETA", html);
 }
 
+export async function sendPasswordReset(email: string, link: string): Promise<void> {
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:480px;margin:0 auto;color:#1a1d23">
+    <h2 style="color:#0e5a54">MELETA</h2>
+    <p>Vous avez demandé à réinitialiser votre mot de passe. Ce lien est valable 60 minutes
+      et à usage unique.</p>
+    <p style="margin:24px 0">
+      <a href="${link}" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
+        Choisir un nouveau mot de passe
+      </a>
+    </p>
+    <p style="font-size:13px;color:#6b7280">Si le bouton ne marche pas, copiez ce lien :<br>${link}</p>
+    <p style="font-size:13px;color:#6b7280">Si vous n'êtes pas à l'origine de cette demande, ignorez cet email —
+      votre mot de passe actuel reste valable.</p>
+  </div>`;
+  await send(email, "Réinitialiser votre mot de passe MELETA", html);
+}
+
 export async function sendInvitation(
   email: string,
   link: string,

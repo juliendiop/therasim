@@ -206,6 +206,9 @@ export async function buildActivity(opts: ActivityFilters): Promise<{
     } else if (ev.action === "member_removed") {
       type = "role";
       detail = `Retiré : ${String(meta.target ?? "?")}`;
+    } else if (ev.action === "password_reset") {
+      type = "login";
+      detail = "Mot de passe réinitialisé";
     }
     events.push({
       at: ev.createdAt.toISOString(),

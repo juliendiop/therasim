@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Brain, LogIn, Mail } from "lucide-react";
 
-type Mode = "password" | "magic";
+type Mode = "password" | "magic" | "forgot";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sentMsg, setSentMsg] = useState("");
   const [devLink, setDevLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +56,34 @@ export default function LoginPage() {
         return;
       }
       setSent(true);
+      setSentMsg("Vérifiez votre boîte mail et cliquez sur le lien pour vous connecter.");
+      setDevLink(data.devLink ?? null);
+    } catch {
+      setError("Connexion impossible.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function sendForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message ?? data.error ?? "Erreur");
+        return;
+      }
+      setSent(true);
+      setSentMsg(
+        "Si un compte existe avec cet email, vous recevrez un lien pour choisir un nouveau mot de passe (valable 60 minutes).",
+      );
       setDevLink(data.devLink ?? null);
     } catch {
       setError("Connexion impossible.");
@@ -99,9 +128,7 @@ export default function LoginPage() {
         {sent ? (
           <div className="text-sm">
             <p className="font-medium text-green-700">Lien envoyé ✓</p>
-            <p className="mt-1 text-[var(--muted)]">
-              Vérifiez votre boîte mail et cliquez sur le lien pour vous connecter.
-            </p>
+            <p className="mt-1 text-[var(--muted)]">{sentMsg}</p>
             {devLink && (
               <div className="mt-4 rounded-lg border border-dashed border-amber-300 bg-amber-50 p-3">
                 <p className="text-xs font-medium text-amber-800">
@@ -160,6 +187,54 @@ export default function LoginPage() {
                 >
                   <LogIn className="h-4 w-4" /> {loading ? "Connexion…" : "Se connecter"}
                 </button>
+                <p className="mt-3 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("forgot");
+                      setError(null);
+                    }}
+                    className="text-xs text-[var(--muted)] underline hover:text-[var(--foreground)]"
+                  >
+                    Mot de passe oublié&nbsp;?
+                  </button>
+                </p>
+              </form>
+            ) : mode === "forgot" ? (
+              <form onSubmit={sendForgot}>
+                <p className="text-xs text-[var(--muted)]">
+                  Entrez votre email : vous recevrez un lien pour choisir un nouveau mot de
+                  passe.
+                </p>
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="vous@exemple.fr"
+                  className={inputCls}
+                />
+                <button
+                  disabled={loading}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                >
+                  <Mail className="h-4 w-4" />
+                  {loading ? "Envoi…" : "Recevoir le lien de réinitialisation"}
+                </button>
+                <p className="mt-3 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("password");
+                      setError(null);
+                    }}
+                    className="text-xs text-[var(--muted)] underline hover:text-[var(--foreground)]"
+                  >
+                    ← Revenir à la connexion
+                  </button>
+                </p>
               </form>
             ) : (
               <form onSubmit={sendMagic}>

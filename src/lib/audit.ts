@@ -4,7 +4,12 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
-export type AuditAction = "login" | "invite" | "role_change" | "member_removed";
+export type AuditAction =
+  | "login"
+  | "invite"
+  | "role_change"
+  | "member_removed"
+  | "password_reset";
 
 export async function logAudit(input: {
   action: AuditAction;
