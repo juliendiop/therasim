@@ -59,7 +59,7 @@ export default async function RootLayout({
 
         <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-white/80 backdrop-blur-md">
           <div className="mx-auto flex max-w-5xl items-center gap-3 px-5 py-3.5">
-            <Link href="/accueil" className="flex items-center gap-2.5">
+            <Link href={user ? "/accueil" : "/"} className="flex items-center gap-2.5">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={brandName} className="h-7 w-auto object-contain" />
@@ -98,6 +98,14 @@ export default async function RootLayout({
               </nav>
             )}
 
+            {!user && (
+              <Link
+                href="/login"
+                className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-hover)]"
+              >
+                Se connecter
+              </Link>
+            )}
             {user && (
               <div className="ml-auto flex items-center gap-2.5 text-sm">
                 {credits !== null && (
