@@ -10,6 +10,8 @@ export async function GET() {
       DATABASE_URL: Boolean(process.env.DATABASE_URL),
       MISTRAL_API_KEY: Boolean(process.env.MISTRAL_API_KEY),
       ANTHROPIC_API_KEY: Boolean(process.env.ANTHROPIC_API_KEY),
+      STRIPE_SECRET_KEY: Boolean(process.env.STRIPE_SECRET_KEY),
+      STRIPE_WEBHOOK_SECRET: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
     },
   };
   try {
