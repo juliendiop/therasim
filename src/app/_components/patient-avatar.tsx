@@ -1,11 +1,11 @@
 // Composant partagé, purement présentationnel (pas de "use client" nécessaire) :
-// utilisable depuis des Server ou Client Components.
-import { patientAvatarStyle, patientInitials } from "@/lib/patient";
+// utilisable depuis des Server ou Client Components. Le portrait est généré
+// côté serveur (voir /api/patient-avatar) — jamais de dépendance lourde côté client.
 
 const SIZE_CLS = {
-  sm: "h-6 w-6 text-[10px]",
-  md: "h-9 w-9 text-xs",
-  lg: "h-14 w-14 text-lg",
+  sm: "h-6 w-6",
+  md: "h-9 w-9",
+  lg: "h-14 w-14",
 } as const;
 
 export default function PatientAvatar({
@@ -17,14 +17,12 @@ export default function PatientAvatar({
   seed: string;
   size?: keyof typeof SIZE_CLS;
 }) {
-  const style = patientAvatarStyle(seed);
   return (
-    <span
-      aria-hidden="true"
-      className={`inline-flex shrink-0 select-none items-center justify-center rounded-full font-semibold ${SIZE_CLS[size]}`}
-      style={{ backgroundColor: style.bg, color: style.fg }}
-    >
-      {patientInitials(name)}
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/api/patient-avatar?seed=${encodeURIComponent(seed)}`}
+      alt={name}
+      className={`inline-block shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface-tint)] object-cover ${SIZE_CLS[size]}`}
+    />
   );
 }

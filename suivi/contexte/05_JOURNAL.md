@@ -548,7 +548,26 @@ priorisation demandée, traités ensemble) :
   Reste à jouer un entretien complet en conditions réelles pour valider visuellement
   l'enchaînement (auto-évaluation → débrief → replay annoté → célébration éventuelle).
 
+### Suite de session (même jour, quinquies) : vrais portraits patients (retour porteur)
+- Retour du porteur : le monogramme coloré (initiale + couleur) ne ressemblait pas à un
+  « visage ». Remplacé par un **portrait illustré déterministe** (DiceBear, style
+  « lorelei ») généré **côté serveur uniquement** et servi via une image
+  (`GET /api/patient-avatar?seed=...`, SVG, cache navigateur long car contenu immuable pour
+  un seed donné). `PatientAvatar` devient un simple `<img>` — zéro dépendance ajoutée au
+  bundle client, aucun changement nécessaire dans les pages qui l'utilisaient déjà (même
+  interface `name`/`seed`/`size`).
+- Nouveaux paquets : `@dicebear/core`, `@dicebear/lorelei`. Nouveaux fichiers :
+  `src/lib/patient-avatar-svg.ts` (server-only, cache mémoire par seed),
+  `src/app/api/patient-avatar/route.ts`. `src/lib/patient.ts` allégé (ne garde que
+  `patientDisplayName`, safe pour le client).
+- ⚠️ **Un serveur `npm run dev` déjà lancé avant `npm install @dicebear/*` renverra une 500**
+  sur `/api/patient-avatar` tant qu'il n'est pas redémarré (limitation standard de résolution
+  des dépendances par le serveur de dev, pas un bug du code — `npm run build` + `tsc` sont
+  verts). `npm run db:push` **non requis** pour ce correctif (aucun changement de schéma).
+
 ### Prochaine étape suggérée
+- Redémarrer `npm run dev` puis vérifier `/api/patient-avatar?seed=Marc` affiche bien un
+  portrait (pas une bulle avec une lettre).
 - Jouer un entretien complet de bout en bout pour valider visuellement : auto-évaluation →
   débrief avec comparaison → moments clés surlignés dans le fil → (si palier franchi)
   bannière de célébration.

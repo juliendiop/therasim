@@ -235,9 +235,16 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   `src/app/supervision/[id]/sim/[simId]/page.tsx`.
 
 ## 31. Avatars patients + célébration des paliers (2 juillet)
-**État : ✅ Fait (V1)**
-- Avatars monogrammes colorés déterministes (dérivés du titre du scénario, zéro donnée
-  ajoutée) dans le chat de simulation, l'historique, l'accueil et la supervision.
+**État : ✅ Fait (V1, ajusté après retour porteur)**
+- Portraits illustrés déterministes (DiceBear, style « lorelei ») générés **côté serveur** à
+  partir du titre du scénario — même seed = même visage, à chaque session. Servis par
+  `/api/patient-avatar?seed=...` (SVG, cache long car contenu immuable pour un seed donné) ;
+  le composant `PatientAvatar` n'est plus qu'un `<img>`, donc zéro poids ajouté au bundle
+  client. Remplace la première version « monogramme coloré » (jugée trop pauvre — juste
+  une bulle avec une lettre). Palette de fond alignée sur l'identité MELETA.
+- Intégré dans le chat de simulation, l'historique, l'accueil et la supervision.
+- ⚠️ Un serveur `npm run dev` déjà lancé AVANT l'installation de `@dicebear/*` doit être
+  **redémarré** pour résoudre les nouveaux paquets (limitation Next.js standard, pas un bug).
 - Bannière de célébration animée quand un essai fait franchir un palier **solide/maîtrisé**
   (drill ou compétence d'un débrief) — pas le premier essai (non_pratique→faible).
 - Fichiers : `src/lib/patient.ts`, `src/app/_components/patient-avatar.tsx`,
