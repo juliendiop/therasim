@@ -956,9 +956,18 @@ porteur sur ce chantier (aucun changement de schéma, aucun setup manuel requis)
 ### Blog MDX versionné dans le repo
 
 Demande porteur : blog éditorial pour le SEO, contenu **MDX versionné dans le repo** (pas
-de CMS) — flux : agent rédige un `.mdx`, porteur valide en PR GitHub, merge → déploiement
-Vercel existant. Demande très détaillée (quasi-spec), passée en **Plan Mode** avant code
-comme demandé explicitement par le porteur.
+de CMS). Demande très détaillée (quasi-spec), passée en **Plan Mode** avant code comme
+demandé explicitement par le porteur.
+
+**Flux de publication ajusté juste après la mise en ligne** : la demande initiale
+prévoyait « agent rédige un `.mdx`, porteur valide en PR GitHub, merge → déploiement ».
+Le porteur est revenu dessus aussitôt : « ouvrir une PR ? je ne sais pas faire, je veux
+pouvoir le faire par simple prompt. » Question posée (AskUserQuestion) entre 2 options
+(publication directe sur `main` vs PR avec merge piloté par chat) — porteur a choisi la
+**publication directe**. Flux retenu, valable pour tout futur article : le porteur
+demande un article en chat, Claude le rédige, le porteur le relit dans la conversation,
+dit « publie-le », Claude committe + pousse directement sur `main` (même pattern que
+tout le reste de cette session) — pas de Pull Request.
 
 **Décisions techniques** (exploration directe du code + skill `vercel:nextjs` +
 `vercel:next-cache-components` chargés avant de planifier) :

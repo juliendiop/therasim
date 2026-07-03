@@ -91,10 +91,13 @@ Demande porteur (promo à sa communauté de thérapeutes). Avant : « Créer un 
 
 ## ⭐ Blog / SEO — ✅ FAITE et validée (3 juillet)
 
-Objectif : optimiser le référencement de l'app via un blog éditorial. Flux voulu par le
-porteur : contenu MDX **versionné dans le repo** (pas de CMS, pas de base de données) — un
-agent rédige un `.mdx`, le porteur valide en PR GitHub, le merge déclenche le déploiement
-Vercel existant.
+Objectif : optimiser le référencement de l'app via un blog éditorial. Contenu MDX
+**versionné dans le repo** (pas de CMS, pas de base de données). Flux de publication
+**ajusté après retour porteur** (« je ne sais pas ouvrir de PR, je veux le faire par
+simple prompt ») : pas de Pull Request — Claude rédige l'article, le porteur le relit
+directement dans la conversation, dit « publie-le », et Claude committe + pousse
+directement sur `main` (même pattern que tout le reste de cette session). Déploiement
+Vercel automatique sur push.
 - ✅ `content/blog/*.mdx`, frontmatter validé par zod (title/description 150-160
   caractères/slug/date/updated/keywords/audience/draft/cover) — invalide → `npm run
   build` échoue avec un message clair citant le fichier et les champs en cause (testé).
@@ -131,7 +134,8 @@ Vercel existant.
   Un vrai SSG au sens strict nécessiterait soit d'activer Cache Components (migration
   globale, à traiter séparément), soit de sortir la lecture de session du layout racine —
   hors périmètre de ce chantier.
-- Hors scope (comme prévu) : sitemap.xml dédié, éditeur admin (flux = commit/PR voulu),
+- Hors scope (comme prévu) : sitemap.xml dédié, éditeur admin (flux = commit direct par
+  Claude sur demande en chat),
   commentaires, recherche full-text.
 
 ## ✅ Responsive mobile — passe de fond faite (3 juillet)
