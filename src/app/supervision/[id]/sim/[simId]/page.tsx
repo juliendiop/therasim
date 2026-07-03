@@ -83,7 +83,7 @@ export default async function SupervisionSimPage({
                 <PatientAvatar name={patientName} seed={avatarSeed} size="sm" />
               )}
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
+                className={`max-w-[80%] break-words rounded-2xl px-4 py-2 text-sm ${
                   m.role === "apprenant"
                     ? "bg-[var(--accent)] text-white"
                     : "border border-[var(--border)] bg-white"

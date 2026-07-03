@@ -90,7 +90,11 @@ export default function SimChat({
   }
 
   function scrollDown() {
-    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }));
+    // `inline: "nearest"` : ne défile jamais horizontalement (évitait de
+    // décaler tout le chat vers la droite au premier message sur mobile).
+    requestAnimationFrame(() =>
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" }),
+    );
   }
 
   function autoresize() {
@@ -252,7 +256,7 @@ export default function SimChat({
                 <PatientAvatar name={patientName} seed={titre} size="sm" />
               )}
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
+                className={`max-w-[80%] break-words rounded-2xl px-4 py-2 text-sm ${
                   m.role === "apprenant"
                     ? "bg-[var(--accent)] text-white"
                     : "border border-[var(--border)] bg-white"
@@ -285,7 +289,7 @@ export default function SimChat({
         {pending !== null && (
           <div className="flex items-end justify-start gap-2">
             <PatientAvatar name={patientName} seed={titre} size="sm" />
-            <div className="max-w-[80%] rounded-2xl border border-[var(--border)] bg-white px-4 py-2 text-sm">
+            <div className="max-w-[80%] break-words rounded-2xl border border-[var(--border)] bg-white px-4 py-2 text-sm">
               <div className="mb-0.5 text-[11px] font-medium text-[var(--muted)]">
                 {patientName}
               </div>
@@ -378,9 +382,9 @@ export default function SimChat({
             }}
             rows={2}
             placeholder="Votre réponse au patient… (Entrée pour envoyer, Maj+Entrée : à la ligne)"
-            className="flex-1 resize-none rounded-lg border border-[var(--border)] p-2.5 text-sm outline-none focus:border-[var(--accent)]"
+            className="min-w-0 flex-1 resize-none rounded-lg border border-[var(--border)] p-2.5 text-sm outline-none focus:border-[var(--accent)]"
           />
-          <div className="flex flex-col gap-1.5">
+          <div className="flex shrink-0 flex-col gap-1.5">
             <button
               onClick={send}
               disabled={busy || ending || !input.trim()}
