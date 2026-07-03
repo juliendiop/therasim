@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Brain, ClipboardList, Coins, Eye, GraduationCap, Radio, ShieldCheck, Users } from "lucide-react";
+import { Brain, ClipboardList, Coins, Eye, GraduationCap, LogOut, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { canManageLive, canSupervise } from "@/lib/roles";
 import { syncWallet } from "@/lib/credits";
@@ -123,7 +123,7 @@ export default async function RootLayout({
               </div>
             )}
             {user && (
-              <div className="ml-auto flex items-center gap-2.5 text-sm">
+              <div className="ml-auto flex items-center gap-1.5 text-sm sm:gap-2.5">
                 {credits !== null && (
                   <Link
                     href="/credits"
@@ -133,13 +133,16 @@ export default async function RootLayout({
                     <Coins className="h-4 w-4" /> {credits}
                   </Link>
                 )}
+                {/* Liens outils (admin/formateur) : icône seule sur mobile pour
+                    éviter que le header ne déborde ; libellé visible dès `sm`. */}
                 {(user.role === "tenant_admin" ||
                   (user.role === "super_admin" && user.impersonating)) && (
                   <Link
                     href="/gestion"
-                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"
+                    title="Gestion"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)] sm:px-3"
                   >
-                    <Users className="h-4 w-4" /> Gestion
+                    <Users className="h-4 w-4" /> <span className="hidden sm:inline">Gestion</span>
                   </Link>
                 )}
                 {canManageLive(user.role) && (
@@ -161,23 +164,29 @@ export default async function RootLayout({
                 {canManageLive(user.role) && (
                   <Link
                     href="/sessions"
-                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"
+                    title="Sessions live"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)] sm:px-3"
                   >
-                    <Radio className="h-4 w-4" /> Sessions live
+                    <Radio className="h-4 w-4" /> <span className="hidden sm:inline">Sessions live</span>
                   </Link>
                 )}
                 {user.role === "super_admin" && (
                   <Link
                     href="/admin"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 font-medium text-[var(--accent)] transition hover:bg-[var(--accent-soft)]"
+                    title="Admin"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-2 py-1.5 font-medium text-[var(--accent)] transition hover:bg-[var(--accent-soft)] sm:px-3"
                   >
-                    <ShieldCheck className="h-4 w-4" /> Admin
+                    <ShieldCheck className="h-4 w-4" /> <span className="hidden sm:inline">Admin</span>
                   </Link>
                 )}
-                <span className="hidden text-[var(--muted)] sm:inline">{user.email}</span>
+                <span className="hidden text-[var(--muted)] lg:inline">{user.email}</span>
                 <form action="/api/auth/logout" method="post">
-                  <button className="rounded-lg px-2.5 py-1.5 text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]">
-                    Déconnexion
+                  <button
+                    title="Déconnexion"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)] sm:px-2.5"
+                  >
+                    <LogOut className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Déconnexion</span>
                   </button>
                 </form>
               </div>

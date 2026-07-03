@@ -121,7 +121,7 @@ export default async function AccueilPage({
               <Link
                 key={f.id}
                 href={`/f/${f.id}`}
-                className="group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-white p-4 transition hover:border-[var(--accent)] hover:shadow-sm"
+                className="group flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-white p-4 transition hover:border-[var(--accent)] hover:shadow-sm"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
                   <Dumbbell className="h-4 w-4" />
