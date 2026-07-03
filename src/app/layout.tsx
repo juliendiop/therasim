@@ -4,10 +4,11 @@ import Link from "next/link";
 import { Brain, ClipboardList, Coins, Eye, GraduationCap, LogOut, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { canManageLive, canSupervise } from "@/lib/roles";
-import { syncWallet } from "@/lib/credits";
+import { creditSettings, syncWallet } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
 import { stopImpersonation } from "./admin/impersonate-actions";
 import MobileNav from "./_components/mobile-nav";
+import LowCreditsBanner from "./_components/low-credits-banner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,6 +35,12 @@ export default async function RootLayout({
     : null;
   // Solde de crédits pour les apprenants (initialise le pack de bienvenue au 1er accès).
   const credits = user && user.role === "learner" ? await syncWallet(user.id) : null;
+  const settings = credits !== null ? await creditSettings() : null;
+  // Seuil du bandeau bas-solde : 20 % du pack de bienvenue.
+  const lowThreshold = settings ? Math.ceil(settings.welcome * 0.2) : 0;
+  const creditsTooltip = settings
+    ? `${credits} crédits\nMini-scène : ${settings.costMiniscene} crédit${settings.costMiniscene > 1 ? "s" : ""} · Entretien simulé : ${settings.costSimulation} crédits\nExercices : gratuits`
+    : undefined;
 
   const isPublic = !tenant || tenant.type === "public";
   const brandName = isPublic ? "MELETA" : tenant!.brandName || tenant!.nom;
@@ -133,7 +140,7 @@ export default async function RootLayout({
                 {credits !== null && (
                   <Link
                     href="/credits"
-                    title="Vos crédits de pratique IA"
+                    title={creditsTooltip}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 font-semibold text-[var(--accent)] transition hover:brightness-95"
                   >
                     <Coins className="h-4 w-4" /> {credits}
@@ -199,6 +206,9 @@ export default async function RootLayout({
             )}
           </div>
         </header>
+
+        {/* Bandeau discret bas-solde (apprenants uniquement, 1× par session navigateur). */}
+        {credits !== null && <LowCreditsBanner credits={credits} threshold={lowThreshold} />}
 
         {/* pb-20 sur mobile : réserve la place de la barre de navigation basse. */}
         <main className="mx-auto max-w-5xl px-5 py-8 pb-24 sm:pb-8">{children}</main>

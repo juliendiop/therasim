@@ -26,7 +26,8 @@ export async function startSimulationAction(formData: FormData) {
   try {
     await debit(user.id, s.costSimulation, "consume_simulation", { frameworkId });
   } catch (e) {
-    if (e instanceof InsufficientCreditsError) redirect("/credits?need=simulation");
+    if (e instanceof InsufficientCreditsError)
+      redirect(`/credits?need=simulation&fw=${frameworkId}`);
     throw e;
   }
 
@@ -63,7 +64,8 @@ export async function startMiniSceneAction(formData: FormData) {
   try {
     await debit(user.id, s.costMiniscene, "consume_miniscene", { frameworkId });
   } catch (e) {
-    if (e instanceof InsufficientCreditsError) redirect("/credits?need=miniscene");
+    if (e instanceof InsufficientCreditsError)
+      redirect(`/credits?need=miniscene&fw=${frameworkId}`);
     throw e;
   }
 

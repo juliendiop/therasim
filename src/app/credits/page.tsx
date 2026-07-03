@@ -1,8 +1,10 @@
-import { Coins, History, RefreshCw, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Coins, History, RefreshCw, Sparkles } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CREDIT_PACKS, creditSettings, syncWallet } from "@/lib/credits";
 import { canBuyIndividualOffers } from "@/lib/entitlements";
+import { palier, palierRank, PALIER_LABEL, type Palier } from "@/lib/mastery";
 import { isStripeConfigured } from "@/lib/stripe";
 import { planQuotaLabel } from "@/lib/ui";
 import { checkoutPackAction, checkoutPlanAction, manageBillingAction } from "./actions";
@@ -30,10 +32,16 @@ const SUBSCRIPTION_STATUS_LABEL: Record<string, string> = {
 export default async function CreditsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ need?: string; success?: string; canceled?: string; error?: string }>;
+  searchParams: Promise<{
+    need?: string;
+    success?: string;
+    canceled?: string;
+    error?: string;
+    fw?: string;
+  }>;
 }) {
   const user = await requireUser();
-  const { need, success, canceled, error } = await searchParams;
+  const { need, success, canceled, error, fw } = await searchParams;
   const stripeReady = isStripeConfigured();
 
   const [balance, settings, history, plans, subscription, freemium] = await Promise.all([
@@ -48,6 +56,29 @@ export default async function CreditsPage({
     prisma.userSubscription.findUnique({ where: { userId: user.id } }),
     canBuyIndividualOffers(user),
   ]);
+
+  // Écran dédié "plus de crédits" (need défini) : récap de progression + le
+  // forfait Praticien (recommandé) + un lien de retour vers le référentiel visé.
+  const [progress, recommendedPlan, fwName] = need
+    ? await Promise.all([
+        prisma.userCompetencyState
+          .findMany({ where: { userId: user.id }, select: { mastery: true } })
+          .then((rows) => {
+            const practiced = rows.filter((r) => r.mastery !== null);
+            let best: Palier = "non_pratique";
+            for (const r of practiced) {
+              const p = palier(r.mastery);
+              if (palierRank(p) > palierRank(best)) best = p;
+            }
+            return { count: practiced.length, bestPalier: best };
+          }),
+        prisma.subscriptionPlan.findFirst({ where: { key: "praticien", active: true } }),
+        fw
+          ? prisma.framework.findUnique({ where: { id: fw }, select: { nom: true } }).then((f) => f?.nom ?? null)
+          : Promise.resolve(null),
+      ])
+    : [null, null, null];
+  const recommendedPack = CREDIT_PACKS[0];
   const activePlan = subscription
     ? plans.find((p) => p.id === subscription.planId) ??
       (await prisma.subscriptionPlan.findUnique({ where: { id: subscription.planId } }))
@@ -67,11 +98,85 @@ export default async function CreditsPage({
         <h1 className="text-xl font-semibold">Mes crédits</h1>
       </div>
 
+      {/* Écran dédié "plus de crédits" (pas une erreur générique) : récap de
+          progression + 2 CTA directs vers le checkout. */}
       {need && (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          Vous n&apos;avez plus assez de crédits pour lancer{" "}
-          {need === "simulation" ? "un entretien simulé" : "une mini-scène"}. Rechargez votre
-          solde pour continuer à vous entraîner.
+        <div className="mt-4 rounded-2xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-5">
+          <h2 className="font-semibold">
+            Il vous manque des crédits pour{" "}
+            {need === "simulation" ? "lancer cet entretien simulé" : "lancer cette mini-scène"}
+          </h2>
+          {progress && (
+            <p className="mt-1 text-sm text-[var(--ink-soft)]">
+              Vous avez déjà travaillé <b>{progress.count}</b> compétence
+              {progress.count > 1 ? "s" : ""}
+              {progress.bestPalier !== "non_pratique" && (
+                <>
+                  {" "}
+                  — palier <b>{PALIER_LABEL[progress.bestPalier]}</b> atteint sur votre
+                  meilleure compétence
+                </>
+              )}
+              . Ne vous arrêtez pas en si bon chemin !
+            </p>
+          )}
+          {fwName && (
+            <Link
+              href={`/f/${fw}`}
+              className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[var(--accent)] hover:underline"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Retourner à « {fwName} »
+            </Link>
+          )}
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {/* Pack recommandé : le plus petit, reprise rapide sans engagement. */}
+            <div className="rounded-xl border border-[var(--border)] bg-white p-4">
+              <div className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+                Reprise rapide
+              </div>
+              <div className="mt-1 text-2xl font-bold">
+                {recommendedPack.credits}{" "}
+                <span className="text-sm font-normal text-[var(--muted)]">crédits</span>
+              </div>
+              <div className="text-sm font-semibold">{recommendedPack.priceEur} €</div>
+              <form action={checkoutPackAction} className="mt-3">
+                <input type="hidden" name="packId" value={recommendedPack.id} />
+                <button
+                  disabled={!stripeReady}
+                  className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                >
+                  Recharger maintenant
+                </button>
+              </form>
+            </div>
+
+            {/* Forfait Praticien : proposé uniquement aux comptes éligibles aux
+                abonnements (pas aux membres B2B sans opt-in). */}
+            {freemium && recommendedPlan && (
+              <div className="rounded-xl border border-[var(--accent)] bg-white p-4">
+                <div className="text-xs font-medium uppercase tracking-wide text-[var(--accent)]">
+                  {recommendedPlan.label}
+                </div>
+                <div className="mt-1 text-2xl font-bold">
+                  {(recommendedPlan.priceEurCents / 100).toFixed(2).replace(".00", "")} €
+                  <span className="text-sm font-normal text-[var(--muted)]">/mois</span>
+                </div>
+                <div className="text-sm text-[var(--muted)]">
+                  {recommendedPlan.monthlyCredits} crédits chaque mois
+                </div>
+                <form action={checkoutPlanAction} className="mt-3">
+                  <input type="hidden" name="planId" value={recommendedPlan.id} />
+                  <button
+                    disabled={!stripeReady || !recommendedPlan.stripePriceId}
+                    className="w-full rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent-soft)] disabled:opacity-50"
+                  >
+                    S&apos;abonner
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
       )}
       {success && (
@@ -156,8 +261,9 @@ export default async function CreditsPage({
       )}
 
       {/* Forfaits d'abonnement — réservés au site public (les membres des
-          plateformes clientes ont déjà tout le catalogue de leur plateforme). */}
-      {freemium && plans.length > 0 && !hasActiveSubscription && (
+          plateformes clientes ont déjà tout le catalogue de leur plateforme).
+          Masqué quand l'écran dédié "plus de crédits" est affiché (ci-dessus). */}
+      {!need && freemium && plans.length > 0 && !hasActiveSubscription && (
         <>
           <h2 className="mt-7 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
             <RefreshCw className="h-3.5 w-3.5" /> S&apos;abonner
@@ -192,34 +298,39 @@ export default async function CreditsPage({
         </>
       )}
 
-      {/* Packs de crédits (achat unique) */}
-      <h2 className="mt-7 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
-        Recharger
-      </h2>
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        {CREDIT_PACKS.map((p) => (
-          <div
-            key={p.id}
-            className="flex flex-col rounded-xl border border-[var(--border)] bg-white p-4 text-center"
-          >
-            <div className="text-2xl font-bold">{p.credits}</div>
-            <div className="text-xs text-[var(--muted)]">crédits</div>
-            <div className="mt-2 text-sm font-semibold">{p.priceEur} €</div>
-            <form action={checkoutPackAction} className="mt-3">
-              <input type="hidden" name="packId" value={p.id} />
-              <button
-                disabled={!stripeReady}
-                className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+      {/* Packs de crédits (achat unique) — masqué quand l'écran dédié
+          "plus de crédits" est affiché (ci-dessus, déjà son propre CTA). */}
+      {!need && (
+        <>
+          <h2 className="mt-7 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+            Recharger
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {CREDIT_PACKS.map((p) => (
+              <div
+                key={p.id}
+                className="flex flex-col rounded-xl border border-[var(--border)] bg-white p-4 text-center"
               >
-                Acheter
-              </button>
-            </form>
+                <div className="text-2xl font-bold">{p.credits}</div>
+                <div className="text-xs text-[var(--muted)]">crédits</div>
+                <div className="mt-2 text-sm font-semibold">{p.priceEur} €</div>
+                <form action={checkoutPackAction} className="mt-3">
+                  <input type="hidden" name="packId" value={p.id} />
+                  <button
+                    disabled={!stripeReady}
+                    className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                  >
+                    Acheter
+                  </button>
+                </form>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <p className="mt-2 text-center text-[11px] text-[var(--muted)]">
-        Paiement sécurisé par Stripe.
-      </p>
+          <p className="mt-2 text-center text-[11px] text-[var(--muted)]">
+            Paiement sécurisé par Stripe.
+          </p>
+        </>
+      )}
 
       {/* Historique */}
       <h2 className="mt-7 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
