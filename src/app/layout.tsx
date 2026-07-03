@@ -109,6 +109,12 @@ export default async function RootLayout({
             {!user && (
               <div className="ml-auto flex items-center gap-2">
                 <Link
+                  href="/tarifs"
+                  className="hidden items-center rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)] sm:inline-flex"
+                >
+                  Tarifs
+                </Link>
+                <Link
                   href="/login"
                   className="inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"
                 >
@@ -199,7 +205,12 @@ export default async function RootLayout({
 
         <footer className="mx-auto max-w-5xl px-5 pb-24 pt-4 text-center text-xs text-[var(--muted)] sm:pb-10">
           {isPublic ? (
-            <>MELETA — outil formatif, non certifiant.</>
+            <>
+              MELETA — outil formatif, non certifiant. ·{" "}
+              <Link href="/tarifs" className="underline hover:text-[var(--foreground)]">
+                Tarifs
+              </Link>
+            </>
           ) : (
             <>
               {brandName} · <span className="opacity-70">propulsé par MELETA</span>

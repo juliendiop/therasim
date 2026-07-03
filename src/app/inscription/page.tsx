@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Brain, Check, Mail, UserPlus } from "lucide-react";
 
 type Mode = "password" | "magic";
 
 export default function InscriptionPage() {
+  return (
+    <Suspense>
+      <InscriptionForm />
+    </Suspense>
+  );
+}
+
+function InscriptionForm() {
+  // Forfait choisi sur /tarifs (repris après création de compte).
+  const planId = useSearchParams().get("plan");
   const [mode, setMode] = useState<Mode>("password");
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
@@ -29,7 +40,7 @@ export default function InscriptionPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, email, password, consent }),
+        body: JSON.stringify({ firstName, email, password, consent, planId }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -58,7 +69,7 @@ export default function InscriptionPage() {
       const res = await fetch("/api/auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, planId }),
       });
       const data = await res.json();
       if (!res.ok) {

@@ -2,18 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { createSessionToken, setSessionCookie, type Role } from "@/lib/auth";
+import { appBaseUrlFromRequest } from "@/lib/base-url";
+import { createSubscriptionCheckout } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/auth/register — inscription B2C (site public) avec mot de passe.
-// body { firstName?, email, password, consent }. Crée un apprenant dans le
-// tenant public, ouvre la session, redirige vers l'accueil de bienvenue.
+// body { firstName?, email, password, consent, planId? }. Crée un apprenant
+// dans le tenant public, ouvre la session, puis :
+// - planId fourni (venant de /tarifs) -> redirige directement vers le
+//   checkout Stripe du forfait choisi ;
+// - sinon -> redirige vers l'accueil de bienvenue.
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const firstName = String(body.firstName ?? "").trim().slice(0, 60);
   const email = String(body.email ?? "").trim().toLowerCase();
   const password = String(body.password ?? "");
   const consent = Boolean(body.consent);
+  const planId = body.planId ? String(body.planId) : null;
 
   if (!email.includes("@")) {
     return NextResponse.json(
@@ -67,6 +73,22 @@ export async function POST(req: NextRequest) {
     role: user.role as Role,
   });
   await setSessionCookie(token);
+
+  // Report du forfait choisi sur /tarifs : direct vers le checkout Stripe.
+  // Un échec (Price ID manquant, Stripe non configuré) ne doit jamais bloquer
+  // la création de compte -> repli silencieux sur l'accueil de bienvenue.
+  if (planId) {
+    const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+    if (plan?.active) {
+      try {
+        const baseUrl = await appBaseUrlFromRequest();
+        const url = await createSubscriptionCheckout(user.id, planId, baseUrl);
+        return NextResponse.json({ ok: true, redirect: url });
+      } catch {
+        // repli ci-dessous
+      }
+    }
+  }
 
   return NextResponse.json({ ok: true, redirect: "/accueil?bienvenue=1" });
 }

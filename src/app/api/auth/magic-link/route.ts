@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const email = String(body.email ?? "").trim().toLowerCase();
+  const planId = body.planId ? String(body.planId) : null;
   if (!email || !email.includes("@")) {
     return NextResponse.json({ error: "email invalide" }, { status: 400 });
   }
@@ -28,7 +29,9 @@ export async function POST(req: NextRequest) {
 
   const token = await createMagicToken(email, tenantId);
   const base = await appBaseUrlFromRequest();
-  const link = `${base}/api/auth/callback?token=${token}`;
+  // Report du forfait choisi sur /tarifs : encodé dans l'URL cible du lien
+  // magique, lu par /api/auth/callback pour enchaîner sur le checkout Stripe.
+  const link = `${base}/api/auth/callback?token=${token}${planId ? `&plan=${encodeURIComponent(planId)}` : ""}`;
 
   // eslint-disable-next-line no-console
   console.log(`[magic-link] ${email} -> ${link}`);
