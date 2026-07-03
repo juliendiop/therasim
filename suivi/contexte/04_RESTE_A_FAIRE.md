@@ -56,6 +56,32 @@ Demande porteur (promo à sa communauté de thérapeutes). Avant : « Créer un 
   pointe vers un texte inline) ; **double opt-in** (vérification d'email) ; RGPD complet
   (export/suppression de compte, déjà au backlog transverse ci-dessous).
 
+## ⭐ Blog / SEO — 🔜 À FAIRE (demande porteur, 3 juillet)
+
+Objectif : optimiser le référencement de l'app via un blog (contenu éditorial → trafic
+organique de thérapeutes/coachs). Non commencé.
+- À prévoir : modèle `Article` (titre, slug, contenu markdown/riche, meta description,
+  date, statut brouillon/publié, éventuellement auteur), page liste `/blog`, page article
+  `/blog/[slug]`, édition depuis l'admin (réutiliser le pattern `/admin/referentiels` ou
+  un éditeur riche), balises SEO (title/description/OpenGraph par article — via `generateMetadata`),
+  sitemap.xml + robots.txt, données structurées (JSON-LD Article).
+- Décisions à cadrer avec le porteur : éditeur (markdown simple vs riche type Tiptap déjà
+  dans les deps frontend ? à vérifier), catégories/tags, page publique intégrée à la landing.
+
+## ✅ Responsive mobile — passe de fond faite (3 juillet)
+
+Signalement porteur : « effet zoom à recadrer », champs qui débordent sur mobile.
+- Cause principale de l'« effet zoom » = **débordement horizontal** (un élément plus large
+  que l'écran force le navigateur mobile à dézoomer). Corrigé de façon défensive :
+  **viewport explicite** (`export const viewport`, échelle 1:1), **filet `overflow-x: clip`**
+  sur `html,body` (ne casse pas le header sticky, contrairement à `hidden`), **`img/video
+  max-width:100%`**, **tables passées de `overflow-hidden` à `overflow-x-auto`** (scroll au
+  lieu de couper) sur credits/gestion/supervision/admin/sessions.
+- ⚠️ Si des **champs précis** débordent encore, à cibler au cas par cas (indiquer la page).
+  Le header d'un **super-admin/formateur** sur mobile peut être dense (liens Gestion/
+  Sessions/Admin non masqués) — à rendre plus compact si gênant (l'apprenant B2C, cible
+  principale, a un header léger : logo + crédits + déconnexion).
+
 ## 🔜 Immédiat (pour rendre l'app vivante)
 
 ### Brancher la base de données (porteur de projet)

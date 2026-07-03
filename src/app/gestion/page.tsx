@@ -44,7 +44,7 @@ export default async function GestionPage() {
       <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
         Membres ({members.length})
       </h2>
-      <div className="mt-3 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+      <div className="mt-3 overflow-x-auto rounded-xl border border-[var(--border)] bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs text-[var(--muted)]">
             <tr>

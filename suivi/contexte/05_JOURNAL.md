@@ -817,6 +817,35 @@ le paywall en cliquant dessus (incitation à débloquer).
   « Vos domaines » de l'accueil.
 - Aucun changement de schéma (pas de db:push). Build OK, types OK.
 
+## Session — 3 juillet 2026 : passe responsive mobile + blog SEO noté
+
+### Ce qui a été fait
+- **Passe responsive mobile** (signalement porteur : effet zoom, champs qui débordent).
+  Cause de l'effet zoom = débordement horizontal. Corrigé : `export const viewport`
+  (échelle 1:1) dans le layout ; `overflow-x: clip` sur `html,body` (globals.css — filet
+  qui ne casse pas le header sticky) ; `img/video { max-width: 100% }` ; **tables**
+  `overflow-hidden` → `overflow-x-auto` (credits, gestion, supervision, admin activity/
+  credits/tenants, sessions dashboard) pour scroller au lieu de couper.
+- La carte de progression `/f/[id]` et les lignes de compétences étaient déjà bien
+  construites (min-w-0, truncate, shrink-0) — pas touchées.
+- **Blog / SEO** noté au backlog (`04_RESTE_A_FAIRE.md`) : à cadrer (modèle Article, /blog +
+  /blog/[slug], generateMetadata OG, sitemap, JSON-LD, éditeur). Non commencé.
+
+### Décisions / pièges
+- `overflow-x: clip` plutôt que `hidden` sur body : `hidden` peut casser `position: sticky`
+  du header sur certains navigateurs, pas `clip` (support Safari 16+/Chrome 90+, OK 2026).
+- Filet clip = empêche le zoom global mais **coupe** un débordement au lieu de le montrer :
+  c'est un garde-fou, pas un substitut à corriger un champ qui déborde vraiment. Si le
+  porteur signale un champ précis, cibler la source.
+
+### État en fin de session
+- Build OK, types OK. Corrections de fond poussées. Reste à valider visuellement sur mobile
+  (le porteur signalera les cas précis restants).
+
+### Prochaine étape suggérée
+- Attaquer le blog/SEO si priorité ; sinon valider le responsive sur le terrain et cibler
+  les champs qui débordent encore (page par page).
+
 ---
 
 <!-- Modèle pour la prochaine session :

@@ -125,7 +125,7 @@ export default async function TenantDetail({
           Accès effectif = packs + ajouts − retraits. Forcez l&apos;ajout ou le retrait d&apos;un
           référentiel pour ce client (utile en négociation).
         </p>
-        <div className="mt-3 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+        <div className="mt-3 overflow-x-auto rounded-xl border border-[var(--border)] bg-white">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-left text-xs text-[var(--muted)]">
               <tr>

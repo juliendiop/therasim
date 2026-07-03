@@ -127,7 +127,7 @@ export default async function AdminActivityPage({
       </div>
 
       {/* Tableau */}
-      <div className="mt-6 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+      <div className="mt-6 overflow-x-auto rounded-xl border border-[var(--border)] bg-white">
         <table className="w-full text-sm">
           <thead className="bg-[var(--surface-tint)] text-left text-xs text-[var(--muted)]">
             <tr>

@@ -191,7 +191,7 @@ export default function LiveDashboard({
             <Download className="h-3.5 w-3.5" /> Exporter CSV
           </a>
         </div>
-        <div className="mt-2 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+        <div className="mt-2 overflow-x-auto rounded-xl border border-[var(--border)] bg-white">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-left text-xs text-[var(--muted)]">
               <tr>

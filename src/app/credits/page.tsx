@@ -228,7 +228,7 @@ export default async function CreditsPage({
       {history.length === 0 ? (
         <p className="mt-3 text-sm text-[var(--muted)]">Aucun mouvement pour l&apos;instant.</p>
       ) : (
-        <div className="mt-3 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+        <div className="mt-3 overflow-x-auto rounded-xl border border-[var(--border)] bg-white">
           <table className="w-full text-sm">
             <tbody className="divide-y divide-[var(--border)]">
               {history.map((h) => (

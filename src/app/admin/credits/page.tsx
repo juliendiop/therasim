@@ -107,7 +107,7 @@ export default async function AdminCreditsPage({
           </button>
         </form>
 
-        <div className="mt-3 overflow-hidden rounded-xl border border-[var(--border)] bg-white">
+        <div className="mt-3 overflow-x-auto rounded-xl border border-[var(--border)] bg-white">
           <table className="w-full text-sm">
             <thead className="bg-[var(--surface-tint)] text-left text-xs text-[var(--muted)]">
               <tr>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Brain, ClipboardList, Coins, Eye, GraduationCap, Radio, ShieldCheck, Users } from "lucide-react";
@@ -14,6 +14,13 @@ export const metadata: Metadata = {
   title: "MELETA — entraînement clinique par compétences",
   description:
     "Apprendre et s'entraîner sur des cas cliniques réalistes, du feedback au fil de l'eau à l'autonomie complète.",
+};
+
+// Viewport mobile explicite : garantit l'échelle 1:1 (évite l'effet « page
+// dézoomée » sur téléphone). `userScalable` laissé actif pour l'accessibilité.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 const HEX = /^#[0-9a-fA-F]{3,8}$/;
