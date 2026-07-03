@@ -953,6 +953,70 @@ crédits Exercices : gratuits ».
 Build OK, types OK, poussé, déployé et validé en conditions réelles. Rien en attente côté
 porteur sur ce chantier (aucun changement de schéma, aucun setup manuel requis).
 
+### Blog MDX versionné dans le repo
+
+Demande porteur : blog éditorial pour le SEO, contenu **MDX versionné dans le repo** (pas
+de CMS) — flux : agent rédige un `.mdx`, porteur valide en PR GitHub, merge → déploiement
+Vercel existant. Demande très détaillée (quasi-spec), passée en **Plan Mode** avant code
+comme demandé explicitement par le porteur.
+
+**Décisions techniques** (exploration directe du code + skill `vercel:nextjs` +
+`vercel:next-cache-components` chargés avant de planifier) :
+- `next-mdx-remote/rsc` (pas `@next/mdx`, qui transforme des `.mdx` EN pages — inadapté ici
+  où le contenu est découplé du routage).
+- `zod` (nouvelle dep) + `gray-matter` pour le frontmatter ; `remark-gfm` pour les tableaux.
+- Aucune dépendance pour la table des matières/temps de lecture (regex + comptage de mots
+  à la main, cohérent avec le reste du projet) ni pour le RSS (XML écrit à la main).
+- `revalidate = 3600` (pas `force-dynamic`, pas de migration Cache Components globale —
+  décision volontaire, voir plus bas).
+
+**Deux pièges non anticipés, découverts en testant réellement le rendu (pas juste
+build/tsc — la leçon de cette session) :**
+
+1. **Turbopack + next-mdx-remote** : sans `transpilePackages: ["next-mdx-remote"]` dans
+   `next.config.ts` (documenté dans le README du package, issue next.js #64525 citée),
+   la page article ne produit AUCUN HTML côté serveur — juste un shell vide + le payload
+   RSC pour hydratation client. `npm run build` réussissait quand même (aucune erreur
+   visible) : le seul moyen de le détecter a été de `curl` la page en prod locale
+   (`next start` sur un port libre) et de constater l'absence de vraies balises `<h1>`
+   sémantiques dans le HTML brut — un screenshot navigateur ne l'aurait PAS révélé
+   (le JS s'exécute et hydrate quand même visuellement).
+2. **`<FAQ items={[...]} />` (tableau d'objets en prop)** : même après le fix Turbopack,
+   la page continuait à ne rien rendre. Cause réelle, isolée via une route de test
+   minimale ajoutée puis supprimée (`blog-test-mdx/`, jamais commitée) : next-mdx-remote
+   évalue les props MDX au runtime via `Reflect.construct(Function, ...)`, et cette
+   évaluation ne gère pas correctement un littéral tableau/objet complexe passé en prop —
+   `items` arrivait `undefined`, `items.map()` levait `TypeError: Cannot read properties
+   of undefined (reading 'map')`, et Next affichait silencieusement une page d'erreur
+   générique (title/description génériques, `noindex`) plutôt qu'un 500 explicite.
+   **Corrigé** en remplaçant par des enfants imbriqués : `<FAQ><FaqItem q="...">réponse
+   </FaqItem></FAQ>` — motif MDX natif (JSX children), fiable. Leçon générale pour toute
+   future extension du blog : dans du contenu MDX compilé au runtime, toujours préférer
+   les enfants JSX aux props objet/tableau complexes.
+
+**Constat architectural important (pas un bug introduit ici, mais une découverte) :**
+`/blog` et `/blog/[slug]` (et en creusant, `/`, `/tarifs`, littéralement toutes les routes
+de l'app) sont classées « ƒ dynamique » par Next plutôt que « ○ statique », parce que le
+layout racine (`src/app/layout.tsx`) lit la session à chaque requête pour tout le site, et
+que sans Cache Components/PPR (non activé, volontairement — migration globale hors
+périmètre d'un ajout de blog), un enfant ne peut pas être statique sous un layout
+dynamique dans le modèle de rendu classique de Next. `revalidate = 3600` reste posé (pas
+de `force-dynamic`) : Vercel met en cache par URL et revalide en tâche de fond, ce qui
+reste proche d'un SSG en pratique pour la performance perçue. Un vrai SSG strict
+nécessiterait soit Cache Components (gros chantier séparé), soit sortir la lecture de
+session du layout racine — à traiter à part si le porteur le souhaite un jour.
+
+**✅ Validé de bout en bout** (frontmatter invalide → build échoue avec message clair
+citant fichier+champs ; draft → absent de `/blog` et du RSS, accessible par URL directe,
+`noindex` posé ; article publié → h1/h2 avec ancres/ToC, temps de lecture, Verbatim,
+PointCle, FAQ+JSON-LD FAQPage, JSON-LD BlogPosting, tableau GFM, CTA selon audience —
+tout vérifié via curl sur `next start` local, pas seulement en navigateur, précisément à
+cause du piège n°1 ci-dessus).
+
+### État en fin de session (quater)
+Build OK, types OK. Fichiers de test/diagnostic (`blog-test-mdx/`, articles `_test-*.mdx`)
+tous supprimés avant commit. Prêt à pousser.
+
 ---
 
 <!-- Modèle pour la prochaine session :

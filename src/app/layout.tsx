@@ -219,6 +219,10 @@ export default async function RootLayout({
               MELETA — outil formatif, non certifiant. ·{" "}
               <Link href="/tarifs" className="underline hover:text-[var(--foreground)]">
                 Tarifs
+              </Link>{" "}
+              ·{" "}
+              <Link href="/blog" className="underline hover:text-[var(--foreground)]">
+                Blog
               </Link>
             </>
           ) : (

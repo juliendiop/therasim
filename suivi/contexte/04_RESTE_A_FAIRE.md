@@ -89,17 +89,50 @@ Demande porteur (promo à sa communauté de thérapeutes). Avant : « Créer un 
   pointe vers un texte inline) ; **double opt-in** (vérification d'email) ; RGPD complet
   (export/suppression de compte, déjà au backlog transverse ci-dessous).
 
-## ⭐ Blog / SEO — 🔜 À FAIRE (demande porteur, 3 juillet)
+## ⭐ Blog / SEO — ✅ FAITE et validée (3 juillet)
 
-Objectif : optimiser le référencement de l'app via un blog (contenu éditorial → trafic
-organique de thérapeutes/coachs). Non commencé.
-- À prévoir : modèle `Article` (titre, slug, contenu markdown/riche, meta description,
-  date, statut brouillon/publié, éventuellement auteur), page liste `/blog`, page article
-  `/blog/[slug]`, édition depuis l'admin (réutiliser le pattern `/admin/referentiels` ou
-  un éditeur riche), balises SEO (title/description/OpenGraph par article — via `generateMetadata`),
-  sitemap.xml + robots.txt, données structurées (JSON-LD Article).
-- Décisions à cadrer avec le porteur : éditeur (markdown simple vs riche type Tiptap déjà
-  dans les deps frontend ? à vérifier), catégories/tags, page publique intégrée à la landing.
+Objectif : optimiser le référencement de l'app via un blog éditorial. Flux voulu par le
+porteur : contenu MDX **versionné dans le repo** (pas de CMS, pas de base de données) — un
+agent rédige un `.mdx`, le porteur valide en PR GitHub, le merge déclenche le déploiement
+Vercel existant.
+- ✅ `content/blog/*.mdx`, frontmatter validé par zod (title/description 150-160
+  caractères/slug/date/updated/keywords/audience/draft/cover) — invalide → `npm run
+  build` échoue avec un message clair citant le fichier et les champs en cause (testé).
+- ✅ `/blog` (liste paginée 10/page, filtre par audience), `/blog/[slug]` (table des
+  matières auto h2/h3, temps de lecture, composants MDX `Verbatim`/`PointCle`/`FAQ`+
+  `FaqItem` [JSON-LD FAQPage] + JSON-LD BlogPosting, CTA de fin selon audience), `/blog/
+  rss.xml` (RSS 2.0). Drafts jamais listés/indexés (`generateStaticParams` les exclut,
+  `robots: noindex` posé), mais accessibles par URL directe (`dynamicParams` par défaut).
+- ✅ Lien **Blog** dans le footer uniquement (site public), pas le header.
+- ✅ Un article d'exemple complet (`entretien-motivationnel-accueillir-ambivalence.mdx`)
+  utilisant les 3 composants custom + un tableau GFM — sert de gabarit pour l'agent
+  rédacteur.
+- ⚠️ **Piège important découvert et corrigé** : `next-mdx-remote` (compilation MDX au
+  runtime) est incompatible avec Turbopack sans `transpilePackages: ["next-mdx-remote"]`
+  dans `next.config.ts` (documenté dans le README du package) — sans ce flag, la page
+  article ne rend RIEN côté serveur. **Deuxième piège, plus subtil** : le composant `FAQ`
+  a d'abord été conçu avec un prop `items={[{q,a}, ...]}` (tableau d'objets) — ce motif
+  échoue **silencieusement** avec next-mdx-remote (le prop arrive `undefined` à
+  l'exécution, l'évaluation runtime des props MDX ne gérant pas les littéraux
+  objet/tableau complexes) ; Next affiche alors une page d'erreur générique sans le dire
+  clairement. Corrigé en passant à des **enfants imbriqués** (`<FAQ><FaqItem q="...">
+  réponse</FaqItem></FAQ>`), motif MDX natif qui fonctionne de façon fiable. À retenir
+  pour toute future extension du blog : préférer toujours les enfants JSX aux props
+  objet/tableau complexes dans du contenu MDX compilé au runtime.
+- ⚠️ **Constat architectural (pas un bug introduit ici)** : `/blog` et `/blog/[slug]`
+  sont classés « dynamique » (ƒ) par Next au lieu de « statique » (○), MAIS **c'est déjà
+  le cas de TOUTE l'application existante, y compris la landing page `/`** — le layout
+  racine (`src/app/layout.tsx`) lit la session (cookie) à chaque requête pour tout le
+  site, et sans Cache Components/PPR (flag global, volontairement non activé — changerait
+  le modèle de rendu de toute l'app), Next ne peut pas rendre un enfant statique sous un
+  layout dynamique. `revalidate = 3600` reste posé (pas de `force-dynamic`) : Vercel met
+  quand même en cache chaque URL jusqu'à 1h et revalide en tâche de fond — proche d'un SSG
+  en pratique pour la performance perçue, même si la classification interne de Next diffère.
+  Un vrai SSG au sens strict nécessiterait soit d'activer Cache Components (migration
+  globale, à traiter séparément), soit de sortir la lecture de session du layout racine —
+  hors périmètre de ce chantier.
+- Hors scope (comme prévu) : sitemap.xml dédié, éditeur admin (flux = commit/PR voulu),
+  commentaires, recherche full-text.
 
 ## ✅ Responsive mobile — passe de fond faite (3 juillet)
 
