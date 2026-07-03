@@ -3,6 +3,23 @@
 Ordre indicatif. Le détail fonctionnel est dans la spec
 (`Conception/spec-v2-entrainement-progression (1).md`).
 
+## ⭐ Visibilité des crédits + écran dédié "plus de crédits" — ✅ FAITE et validée (3 juillet)
+
+Demande porteur : audit du parcours d'essai (crédits de bienvenue, comportement à sec,
+impasses) puis 4 chantiers. Audit : aucune impasse dure (drills gratuits illimités, coût
+débité une seule fois au lancement, jamais en cours de conversation) ; le nombre de
+crédits de bienvenue était **déjà éditable** sans redéploiement depuis `/admin/credits`
+(rien à construire sur ce point) ; le badge crédits du header **existait déjà**.
+- ✅ Tooltip du badge crédits enrichi (détail du coût par activité).
+- ✅ Bandeau discret bas-solde (≤20% du pack de bienvenue), dismissible 1×/session.
+- ✅ Écran dédié `/credits?need=...` : récap de progression (compétences travaillées +
+  palier), 2 CTA directs (pack le plus petit + forfait Praticien si éligible), lien de
+  retour vers le référentiel visé.
+- ✅ Validé en conditions réelles sur `meleta.app` (les deux cas `need=miniscene`/
+  `need=simulation`, tooltip via arbre d'accessibilité).
+- Recommandation : garder les crédits de bienvenue à 10 (déjà largement au-dessus du
+  critère minimal « 3 drills + 1 mini-scène », les drills étant gratuits).
+
 ## ⭐ Page /tarifs + report du forfait choisi — ✅ FAITE et validée (3 juillet)
 
 Demande porteur : page de tarifs publique pour convertir des visiteurs sans compte.

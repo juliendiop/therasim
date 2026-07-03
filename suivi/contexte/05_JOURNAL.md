@@ -910,6 +910,49 @@ navigation/routing (sans paiement réel). Reste : validation du paiement live pa
 porteur lui-même ; décision sur la suppression des comptes de test jetables ; décision sur
 les dossiers `TESTS/`/`TESTS2/` (captures) dans le dépôt.
 
+### Visibilité des crédits + écran dédié "plus de crédits"
+
+Demande porteur : audit du parcours d'essai (crédits de bienvenue, comportement à sec,
+impasses), puis 4 chantiers, avec validation du plan attendue avant code (Plan Mode).
+
+**Audit (répondu en chat avant le plan)** : 10 crédits de bienvenue par défaut
+(`CREDIT_DEFAULTS.welcome`, `src/lib/credits.ts`), **déjà éditable sans redéploiement**
+depuis `/admin/credits` (`AppConfig.credits.welcome`) — un des 4 points demandés était donc
+déjà fait, rien à construire. Drills (N1) toujours gratuits, jamais bloqués. Mini-scène/
+simulation : coût débité **une seule fois** au clic « Démarrer », jamais en cours de
+conversation (les messages suivants ne coûtent rien). Aucune impasse dure identifiée (pas
+d'erreur brute) — le rebond `/credits?need=...` existait déjà mais était générique (perdait
+le contexte, ne mettait rien en avant, pas de rappel de progression). Badge crédits du
+header déjà existant (icône+solde), tooltip générique seulement.
+Recommandation crédits de bienvenue : garder 10 (déjà largement au-dessus du critère
+minimal « 3 drills + 1 mini-scène », les drills étant gratuits et illimités).
+
+**Construit** (après validation du plan) :
+- Tooltip du badge crédits (déjà existant) enrichi : détail du coût par activité, construit
+  depuis `creditSettings()` désormais lu dans le layout.
+- `_components/low-credits-banner.tsx` (nouveau, client) : bandeau dismissible si solde ≤
+  20 % du pack de bienvenue, via `sessionStorage` (1×/session navigateur).
+- `/credits?need=...` : bloc dédié remplaçant le bandeau générique — récap de progression
+  (compteur de compétences travaillées + palier le plus haut, via `palier()`/`palierRank()`
+  déjà dans `lib/mastery.ts`), 2 CTA directs vers le checkout (pack le plus petit +
+  forfait Praticien si `canBuyIndividualOffers`), lien de retour vers le référentiel visé
+  (`fw=` reporté depuis les deux redirects de `sim/actions.ts`). Grilles complètes
+  masquées quand `need` est présent (évite la redondance) mais solde+historique restent
+  visibles en dessous (pas un mur sans issue).
+- Aucune nouvelle route de paiement : réutilise entièrement `checkoutPackAction`/
+  `checkoutPlanAction` déjà existants, juste appelés avec des valeurs pré-remplies.
+
+**✅ Validé en conditions réelles** sur `meleta.app` (sans toucher à Stripe, uniquement du
+rendu de page) : `/credits?need=miniscene&fw=em` → titre contextualisé + « Retourner à
+« Entretien motivationnel » » + 2 CTA ; `/credits?need=simulation` (sans `fw`) → titre
+adapté, pas de lien retour (comportement correct). Tooltip confirmé via l'arbre
+d'accessibilité de la page : « 30 crédits Mini-scène : 1 crédit · Entretien simulé : 2
+crédits Exercices : gratuits ».
+
+### État en fin de session (ter)
+Build OK, types OK, poussé, déployé et validé en conditions réelles. Rien en attente côté
+porteur sur ce chantier (aucun changement de schéma, aucun setup manuel requis).
+
 ---
 
 <!-- Modèle pour la prochaine session :
