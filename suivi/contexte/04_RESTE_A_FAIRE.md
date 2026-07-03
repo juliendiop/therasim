@@ -3,6 +3,22 @@
 Ordre indicatif. Le détail fonctionnel est dans la spec
 (`Conception/spec-v2-entrainement-progression (1).md`).
 
+## ⭐ Page /tarifs + report du forfait choisi — ✅ FAITE et validée (3 juillet)
+
+Demande porteur : page de tarifs publique pour convertir des visiteurs sans compte.
+- ✅ `/tarifs` (forfaits, packs, écoles, FAQ+JSON-LD), report du plan choisi jusqu'au
+  premier checkout (inscription mot de passe ET lien magique), liens Tarifs header+footer.
+  Réutilise entièrement le système de paiement déjà construit (aucune nouvelle route).
+- ✅ Validé en conditions réelles sur `meleta.app` (navigation, routing, déclenchement du
+  checkout avec le bon forfait).
+- ⚠️ **Stripe est passé en mode LIVE en production** (détecté lors du test : URL
+  `cs_live_...`). La validation d'un paiement réel complet reste à faire par le porteur
+  lui-même (a dit vouloir tester par ses propres moyens).
+- 🔴 **Nettoyage optionnel** : deux comptes de test jetables en base sans abonnement actif
+  (`julien.diop+mobtest...`, `julien.diop+tarifs...@gmail.com`) — à supprimer si souhaité.
+  Dossiers `TESTS/`/`TESTS2/` (captures de bugs responsive) présents dans le dépôt — à
+  retirer si le porteur préfère ne pas les garder versionnés.
+
 ## ⭐ Paiements Stripe — ✅ V1 FAITE côté code (2 juillet), setup manuel requis
 
 Demande porteur : rendre réel le paiement des packs de crédits (déjà dans l'UI) + ajouter

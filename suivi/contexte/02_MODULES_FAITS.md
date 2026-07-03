@@ -349,6 +349,45 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 - ⚠️ Reste (option) : page politique de confidentialité dédiée (le consentement pointe pour
   l'instant vers un texte inline) ; vérification d'email (double opt-in).
 
+## 35. Page publique /tarifs + report du forfait choisi à l'inscription (3 juillet)
+**État : ✅ Fait**
+- Page publique `/tarifs` (Server Component) : forfaits d'abonnement (lus depuis
+  `SubscriptionPlan` actifs en DB, badge « Le plus choisi » sur `praticien`),
+  packs de crédits (`CREDIT_PACKS`), carte « Écoles et organismes » sans prix
+  vers `/demande-demo`, FAQ 6 questions + JSON-LD `FAQPage`, metadata SEO.
+  Réutilise intégralement le système de paiement existant (Server Actions
+  `checkoutPlanAction`/`checkoutPackAction`, webhook `/api/stripe/webhook`
+  déjà en place et déjà enregistré côté Stripe) — aucune nouvelle route de
+  paiement créée.
+- CTA résolus côté serveur (zéro JS supplémentaire) : visiteur →
+  `/inscription?plan=<id>` ; connecté + éligible → formulaire Server Action ;
+  connecté non éligible (B2B sans opt-in) → CTA grisé + message explicatif.
+- **Report du forfait choisi** entre `/inscription` et le premier checkout,
+  nouveau : `inscription/page.tsx` lit `?plan=` (`useSearchParams` + `Suspense`)
+  et le transmet aux deux modes (mot de passe et lien magique) ;
+  `/api/auth/register` déclenche le checkout Stripe direct après création du
+  compte si un `planId` valide est fourni (repli silencieux sur l'accueil de
+  bienvenue si le checkout échoue) ; `/api/auth/magic-link` encode le plan
+  dans l'URL du lien ; `/api/auth/callback` fait de même après connexion.
+- Liens « Tarifs » : header (visiteur, à côté de Se connecter/Créer un
+  compte) et footer partagé (site public uniquement, jamais en marque blanche).
+- **✅ Validé en conditions réelles** (navigateur, `meleta.app/tarifs`) : rendu
+  de la page (forfaits/packs/FAQ/JSON-LD 6 questions), lien Tarifs visible,
+  clic « S'abonner » → `/inscription?plan=...` → inscription → checkout Stripe
+  déclenché avec le bon forfait (URL Stripe valide obtenue).
+- ⚠️ **Découverte importante lors du test** : la clé Stripe en production est
+  passée en **mode LIVE** (`cs_live_...`, plus `cs_test_...`) — le porteur a dû
+  basculer les clés Vercel suite à un échange précédent sur le passage en
+  production. Je me suis arrêté avant de compléter un paiement réel (aucune
+  charge engagée, une session Checkout non finalisée expire sans débit) ; la
+  validation finale du paiement (carte réelle) est laissée au porteur, qui a
+  dit vouloir tester lui-même.
+- Deux comptes de test jetables ont été créés en base au fil des sessions
+  (`julien.diop+mobtest...@gmail.com`, `julien.diop+tarifs...@gmail.com`),
+  sans abonnement actif (paiement non finalisé) — à supprimer si le porteur
+  le souhaite (non fait automatiquement : suppression d'utilisateur en prod,
+  action laissée à sa discrétion).
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,

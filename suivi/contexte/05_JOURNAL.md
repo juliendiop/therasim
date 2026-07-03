@@ -864,6 +864,52 @@ corrigés :
 Note : dossiers `TESTS/` et `TESTS2/` (captures) committés — à retirer du dépôt si le
 porteur préfère (ce sont des artefacts de test, pas du code).
 
+### Page /tarifs publique + report du forfait choisi à l'inscription
+
+Demande porteur : page de tarifs publique (abonnements + packs) pour convertir des
+visiteurs sans compte, avec report du forfait choisi jusqu'au premier checkout.
+Passage en **Plan Mode** (état des lieux exigé avant code) : exploration a confirmé que
+**tout le système de paiement existait déjà et fonctionnait** (chantier Stripe précédent) —
+schéma, `billing.ts`, webhook `/api/stripe/webhook` déjà enregistré côté Stripe, Server
+Actions de `/credits`, et même les 3 forfaits (Essentiel/Praticien/Intensif) déjà
+configurés en base avec leurs Price ID. Décision validée avec le porteur (AskUserQuestion) :
+**réutiliser l'existant** plutôt que créer une route `/api/billing/checkout` et un second
+webhook `/api/billing/webhook` comme demandé littéralement dans l'énoncé — le webhook
+actuel est déjà enregistré dans le Dashboard Stripe, le renommer aurait forcé une
+ré-inscription manuelle sans bénéfice.
+
+Construit :
+- `/tarifs` (Server Component) : forfaits actifs (badge « Le plus choisi » sur
+  `plan.key === "praticien"`, pas une position en dur), packs de crédits, carte
+  « Écoles et organismes » sans prix vers `/demande-demo`, FAQ 6 questions + JSON-LD
+  `FAQPage`, CTA résolus côté serveur (visiteur/connecté éligible/connecté non éligible).
+- Report du plan : `/inscription` passe en `useSearchParams` + `Suspense` (était un simple
+  client component sans lecture de query params) ; `/api/auth/register` et
+  `/api/auth/callback` déclenchent `createSubscriptionCheckout()` (déjà dans `billing.ts`)
+  directement après création de session si un `planId` valide est fourni ; `/api/auth/
+  magic-link` encode le plan dans l'URL du lien envoyé par email.
+- Liens « Tarifs » : header visiteur + footer public (jamais en marque blanche B2B).
+
+**✅ Validé en conditions réelles** sur `meleta.app` : rendu de `/tarifs` conforme, clic
+« S'abonner » → `/inscription?plan=...` → inscription (compte jetable créé) → checkout
+Stripe déclenché avec le bon `planId` (URL Stripe valide obtenue par appel direct à
+`/api/auth/register`).
+
+### ⚠️ Découverte importante : Stripe est passé en mode LIVE sur meleta.app
+En testant, l'URL Checkout obtenue était `cs_live_...` (pas `cs_test_...`) — le porteur a
+dû basculer `STRIPE_SECRET_KEY` en clé live sur Vercel suite à notre échange précédent sur
+le passage en production. Je me suis arrêté **avant** de compléter un paiement réel (pas de
+saisie de carte, pas de charge engagée — une session Checkout abandonnée expire sans
+débit). Le porteur a dit vouloir tester lui-même un vrai paiement. Deux comptes de test
+jetables traînent en base (`julien.diop+mobtest...`, `julien.diop+tarifs...@gmail.com`),
+sans abonnement actif — à supprimer à la discrétion du porteur.
+
+### État en fin de session (bis)
+Build OK, types OK, poussé et déployé. Fonctionnalité complète et validée pour la partie
+navigation/routing (sans paiement réel). Reste : validation du paiement live par le
+porteur lui-même ; décision sur la suppression des comptes de test jetables ; décision sur
+les dossiers `TESTS/`/`TESTS2/` (captures) dans le dépôt.
+
 ---
 
 <!-- Modèle pour la prochaine session :
