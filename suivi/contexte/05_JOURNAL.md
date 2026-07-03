@@ -846,6 +846,24 @@ le paywall en cliquant dessus (incitation à débloquer).
 - Attaquer le blog/SEO si priorité ; sinon valider le responsive sur le terrain et cibler
   les champs qui débordent encore (page par page).
 
+### Corrections responsive ciblées (captures device réel — dossiers TESTS/ TESTS2/)
+Validé le responsive en émulant un viewport 390px via **iframe** (Chrome refuse de
+descendre sous ~1700px avec resize_window ; une iframe 390px fait répondre les media
+queries correctement — technique fiable). Les pages publiques + apprenant : 0 débordement.
+Les captures device réel (compte super-admin) ont révélé 3 bugs supplémentaires, tous
+corrigés :
+1. **Header admin déborde** (Sessions live / Admin / Déconnexion en texte) → icône seule
+   sous `sm`, libellé dès `sm` ; Déconnexion = icône LogOut sur mobile ; email dès `lg`.
+2. **Cartes « Vos domaines » de l'accueil** ne tronquaient pas (élément de grille CSS a
+   `min-width:auto` par défaut) → `min-w-0` sur le lien-carte.
+3. **Chat d'entretien décalé dès la 1re réponse** : `<textarea>` en flex sans `min-w-0`
+   (largeur intrinsèque `cols`) poussait « Envoyer » hors écran → `min-w-0` sur le textarea,
+   `shrink-0` sur le bouton, `break-words` sur les bulles, `scrollIntoView` en
+   `inline:'nearest'`. Même `break-words` sur la vue transcript formateur.
+
+Note : dossiers `TESTS/` et `TESTS2/` (captures) committés — à retirer du dépôt si le
+porteur préfère (ce sont des artefacts de test, pas du code).
+
 ---
 
 <!-- Modèle pour la prochaine session :
