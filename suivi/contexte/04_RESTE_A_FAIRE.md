@@ -224,8 +224,25 @@ Signalement porteur : « effet zoom à recadrer », champs qui débordent sur mo
 ### Tester le mode production (Mistral)
 - Mettre une `MISTRAL_API_KEY` dans `.env` et jouer un drill `production`
   (ex. DRL-REFLET-02). Vérifier la note, la citation, le feedback.
-- **Calibrer l'évaluateur EM** sur un échantillon coté par un superviseur (spec §6) —
-  prérequis avant tout usage « sérieux » du référentiel.
+
+### ~~Calibrer l'évaluateur~~ — ✅ V1 FAITE (22 juillet)
+- **Évaluateur amélioré** (`src/lib/evaluator-core.ts`) : rubrique 1..5 explicite (2 et 4
+  définis par interpolation), raisonnement AVANT la note, exemple travaillé pour ancrer
+  l'échelle, `non_evalue` resserré, **température 0** (note reproductible), règle « juste en
+  haut » (une réponse au niveau du modèle = 5). Cœur pur séparé de l'appel LLM pour être
+  testable hors Next.
+- **Harnais de mesure** (`scripts/calibrate-evaluator.ts`, `npm run calibrate`) : rejoue le
+  vrai prompt sur un « gold set » (réponses dont le niveau attendu est connu) et sort des
+  métriques (MAE, %±1, violations d'ordre, détection non_evalue) + un verdict. Réutilisable à
+  chaque changement de prompt/modèle.
+- **Baseline mesurée (Mistral, gold set actuel) : MAE 0.28, 94% à ±1, 0 violation d'ordre,
+  non_evalue 2/2** → verdict ACCEPTABLE. Le grader est (volontairement) strict sur les réponses
+  faibles.
+- ⚠️ **Reste (validation clinique)** : le gold set est un premier jet dérivé du contenu ; ses
+  niveaux « moyens » (2-4), plus subjectifs, gagneraient à être **cotés/étendus par un
+  clinicien** — c'est le fichier `scripts/calibrate-evaluator.ts` qu'on enrichit pour durcir
+  la calibration. Idéalement, coter aussi un échantillon de VRAIES réponses d'apprenants une
+  fois du trafic présent.
 
 ## Phase 1 — compléter le N1 (entraînement)
 

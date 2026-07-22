@@ -45,14 +45,23 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 - Met à jour la carte immédiatement.
 - Fichiers : `src/app/drills/[id]/`, `src/app/api/drills/[id]/attempt/route.ts`.
 
-## 7. Mode entraînement — PRODUCTION (spec §4.3)
-**État : ⚙️ Codé, non encore testé en conditions réelles**
-- Réponse libre → évaluateur mono-compétence **Mistral** (ancrages 1/3/5, temp 0.2,
-  JSON strict) → note 1-5 normalisée → feedback + citation + réponse modèle.
+## 7. Mode entraînement — PRODUCTION (spec §4.3 ; évaluateur calibré le 22 juillet)
+**État : ✅ Codé + évaluateur calibré (V1)**
+- Réponse libre → évaluateur mono-compétence (Mistral **ou** Claude, usage `evaluateur`) →
+  note 1-5 normalisée → feedback + citation + réponse modèle.
 - Item « non évalué » → n'écrit pas d'attempt (spec §5.1).
-- Dégrade proprement si `MISTRAL_API_KEY` absente (HTTP 503 + message clair).
-- Fichier : `src/lib/evaluator.ts` (+ branche production de l'`attempt` route).
-- ⚠️ À tester avec une vraie clé Mistral (voir PLAN_DE_TEST).
+- Dégrade proprement si aucune clé IA (HTTP 503 + message clair).
+- **Calibration (22 juillet)** : prompt refondu (rubrique 1..5 explicite, raisonnement avant
+  la note, exemple travaillé, `non_evalue` resserré, **température 0** → note reproductible,
+  règle « au niveau du modèle = 5 »). Cœur pur `src/lib/evaluator-core.ts` (prompt + parsing,
+  sans `server-only`) séparé de l'appel LLM `src/lib/evaluator.ts`, pour être testable hors Next.
+- **Harnais `scripts/calibrate-evaluator.ts` (`npm run calibrate`)** : mesure l'accord sur un
+  gold set → **baseline MAE 0.28, 94% à ±1, 0 violation d'ordre, non_evalue 2/2 (verdict
+  ACCEPTABLE)**. À relancer à chaque changement de prompt/modèle.
+- Fichiers : `src/lib/evaluator.ts`, `src/lib/evaluator-core.ts`, `scripts/calibrate-evaluator.ts`,
+  branche production de l'`attempt` route.
+- ⚠️ Reste : faire **coter/étendre le gold set par un clinicien** (niveaux moyens 2-4, plus
+  subjectifs) — cf. `04_RESTE_A_FAIRE.md`.
 
 ## 8. API REST (spec §6)
 **État : ✅ Fait**

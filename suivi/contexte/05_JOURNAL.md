@@ -1188,6 +1188,50 @@ satisfaits**, pas des visiteurs froids. Retenu : 3 emplacements ciblés, ton pai
 
 ---
 
+## Session — 22 juillet 2026 (suite) : enrichissement contenu + calibration évaluateur
+
+### Contenu — 3 référentiels enrichis (produits d'appel)
+Constat porteur : un nouvel inscrit ne voyait qu'« Entretien motivationnel », et les domaines
+manquaient de cartes. Analyse : l'EM est une *méthode* (école), pas universelle ; l'**anamnèse**
+(transversale, déjà seedée) est le meilleur hameçon. Enrichissement :
+- **ACT** et **Anamnèse** : 3 → **12 cartes** chacun (2/compétence : 1 reco + 1 production),
+  **2 cas patients** chacun (ACT : +Karim/ruminations ; Anamnèse : +Mme Bonnet/volubile).
+- **EM** (produit d'appel principal) : → **32 cartes**, chaque compétence ≥ 3 cartes et les 2
+  modes (comble la lacune « collaboration sans production »), **3e cas** (Nadia/diabète).
+- Seed idempotent (upsert). `npm run db:seed` fait en prod par le porteur (105 drills au total).
+- Conseil donné : rendre l'anamnèse gratuite à l'inscription via `/admin/facturation`.
+- ⚠️ Contenu clinique rédigé par Claude → à relire par un clinicien.
+
+### Calibration de l'évaluateur (mode production)
+Deux volets (améliorer ET mesurer) :
+- **Améliorer** : prompt refondu dans `src/lib/evaluator-core.ts` (cœur pur, sans `server-only`,
+  séparé de l'appel LLM `evaluator.ts`) — rubrique 1..5 explicite (2/4 par interpolation),
+  raisonnement avant la note, exemple travaillé, `non_evalue` resserré, **température 0**
+  (reproductible), règle « au niveau du modèle = 5 ».
+- **Mesurer** : `scripts/calibrate-evaluator.ts` (`npm run calibrate`) rejoue le vrai prompt sur
+  un gold set et sort MAE / %±1 / violations d'ordre / détection non_evalue + verdict.
+- Exécuté 2 fois : avant la règle « juste en haut » MAE 0.44 (61% exact) ; après **MAE 0.28,
+  78% exact, 94% à ±1, 0 violation d'ordre, non_evalue 2/2 → ACCEPTABLE**.
+
+### Décisions / pièges
+- `server-only` (dans `llm.ts`) fait échouer tout import depuis un script tsx → d'où le cœur
+  pur `evaluator-core.ts` importable par le script sans casser la frontière serveur de Next.
+- Pas d'overfit : la seule note >±1 restante (« idée juste mais assénée » notée 1 au lieu de 3)
+  est un label discutable — le gold set (niveaux moyens) doit être coté par un clinicien plutôt
+  que d'ajuster le prompt sur une cible incertaine.
+- Le harnais fait de vrais appels Mistral (~18) : à lancer ponctuellement (QA), pas en CI auto.
+
+### État en fin de session
+tsc + build OK. Contenu poussé en prod (db:seed fait). Évaluateur calibré (V1) et mesurable.
+Reste : cotation clinique du gold set + du contenu ; puis, avec du trafic, coter de vraies
+réponses d'apprenants.
+
+### Prochaine étape suggérée
+- Faire relire ACT/Anamnèse/EM + le gold set par un clinicien.
+- Envisager une petite page `/admin` « Calibration » (lancer le harnais depuis l'UI) si utile.
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA
