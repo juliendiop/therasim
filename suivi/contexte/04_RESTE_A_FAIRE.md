@@ -20,10 +20,11 @@ le socle utile dès maintenant.
   avec un prompt prêt à copier-coller** dans l'IA de dev de son choix. L'IA PROPOSE, le
   porteur VALIDE et déclenche — rien d'autonome. Dernière analyse stockée en `AppConfig`
   (`growth.last_analysis`), pas de nouvelle table. `src/lib/growth-advisor.ts`.
-- 🔴 **Action requise du porteur** : `npm run db:push` (table `funnel_events`). L'analyse
-  IA nécessite une clé LLM configurée dans `/admin/modeles` (déjà le cas si le simulateur
-  marche). À mentionner dans la future politique de confidentialité (mesure d'audience
-  exemptée de consentement au sens CNIL car minimale et sans PII, mais à documenter).
+- ✅ `npm run db:push` fait (22 juillet, table `funnel_events` créée sur Neon prod). Mesure
+  d'entonnoir pleinement opérationnelle. L'analyse IA nécessite une clé LLM configurée dans
+  `/admin/modeles` (déjà le cas si le simulateur marche). À mentionner dans la future
+  politique de confidentialité (mesure d'audience exemptée de consentement au sens CNIL car
+  minimale et sans PII, mais à documenter).
 - ⏭️ **Étape suivante (non faite, séparée)** : A/B testing réel (affectation stable +
   variantes) — se branchera SUR cette mesure une fois du trafic présent (viser ≥ ~100
   visites/variante avant de conclure). Alternative « buy » possible : PostHog (sessions,
