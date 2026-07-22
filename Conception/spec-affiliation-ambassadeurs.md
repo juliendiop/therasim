@@ -249,10 +249,16 @@ Réservé aux apprenants du **tenant public** + rôles concernés (pas pertinent
 membre B2B en marque blanche — réutiliser la logique `canBuyIndividualOffers`/type de
 tenant de `src/lib/entitlements.ts` pour décider de l'affichage).
 
+> **Contenu rédactionnel** : tous les titres/textes/libellés de cette section sont fournis
+> dans `src/lib/affiliation-copy.ts` (`AFFILIATION_ACTIVATION` pour l'activation,
+> `AFFILIATION_DASHBOARD` pour l'espace). Ne pas réécrire — importer et afficher.
+
 Sections :
 
-1. **Activation** (si `ambassadorAt` null) : encart expliquant le programme + case CGU
-   (§1.5) + bouton « Devenir ambassadeur ». Server action : génère `referralCode`
+1. **Activation** (si `ambassadorAt` null) : encart expliquant le programme (contenu =
+   `AFFILIATION_ACTIVATION` : `h1`, `lead`, `benefits`, `consentLabel`, `consentHint`, `cta`)
+   + case CGU (§1.5, obligatoire) + bouton « Devenir ambassadeur ». Server action : génère
+   `referralCode`
    (court, lisible, unique — ex. 8 caractères base32 sans ambiguïté, regénérer en cas de
    collision), pose `ambassadorAt` et `ambassadorTermsAt = now()`.
 2. **Mon lien** : affiche `…/r/CODE`, bouton copier (réutiliser le pattern client de
@@ -422,11 +428,27 @@ Le **contenu texte ET les visuels du kit sont déjà générés** et présents d
 
 Page publique (Server Component, pas de `force-dynamic` nécessaire) qui explique le
 programme et donne envie de rejoindre. Réutiliser le style de `/tarifs`
-(`src/app/tarifs/page.tsx`) : héro, « comment ça marche » en 3 étapes (1. Partagez votre
-lien · 2. Vos filleuls s'abonnent · 3. Vous touchez X% à vie), mention des 2 niveaux, du
-volet écoles, FAQ, CTA « Devenir ambassadeur » → `/inscription` si déconnecté, `/affiliation`
-si connecté. Afficher les taux depuis AppConfig (pas en dur). `export const metadata` SEO.
+(`src/app/tarifs/page.tsx`).
+
+> **Contenu rédactionnel = `AMBASSADEURS_PAGE` dans `src/lib/affiliation-copy.ts`** (rédigé
+> et optimisé conversion). Structure à monter, dans l'ordre, avec ce contenu :
+> - `metadata` = `AMBASSADEURS_PAGE.seo` (title/description).
+> - **Héro** : `eyebrow`, `h1`, `lead`, bouton `ctaPrimary` (→ `/affiliation` si connecté,
+>   `/inscription` sinon), petite mention `ctaSecondaryNote`.
+> - **Bandeau chiffres** : `highlights[]` (3 cartes value/label).
+> - **Comment ça marche** : `howItWorksTitle` + `howItWorks[]` (3 étapes numérotées — ici
+>   la numérotation est légitime, c'est une vraie séquence).
+> - **Deux niveaux** : `twoLevelsTitle` + `twoLevelsText`.
+> - **Écoles** : `schoolsTitle` + `schoolsText` + `schoolsCta`.
+> - **FAQ** : `faqTitle` + `faq[]` (+ JSON-LD `FAQPage`, même pattern que `/tarifs`).
+> - **CTA final** : `finalCtaTitle`, `finalCtaText`, `finalCta`.
+>
+> Remplacer `{T1}`/`{T2}`/`{SEUIL}` par les valeurs AppConfig avant rendu.
+
 Ajouter le lien « Ambassadeurs » au **footer** (`src/app/layout.tsx`, à côté de Tarifs/Blog).
+Envisager aussi un encart d'incitation discret dans l'espace connecté (ex. sur `/credits`
+ou `/accueil`) : « Vous aimez MELETA ? Recommandez-le et gagnez à vie → Devenir
+ambassadeur » — bon levier de recrutement d'ambassadeurs parmi les utilisateurs actifs.
 
 ---
 
@@ -435,6 +457,13 @@ Ajouter le lien « Ambassadeurs » au **footer** (`src/app/layout.tsx`, à côt�
 **DÉJÀ FOURNIS (ne pas recréer) :**
 - `src/lib/affiliation-kit.ts` — contenu texte du kit + manifeste des visuels + helpers.
 - `public/affiliation/*.svg` — 4 visuels à la marque (lien, carré, story, bandeau email).
+- **`src/lib/affiliation-copy.ts`** — **TOUT le contenu rédactionnel** des pages, optimisé
+  conversion (rédigé à la main) : `AMBASSADEURS_PAGE` (page publique §10), `AFFILIATION_
+  ACTIVATION` (écran d'activation §6.1), `AFFILIATION_DASHBOARD` (libellés de l'espace §6).
+  **N'invente aucun texte** : importe et affiche ces constantes. Remplace les placeholders
+  (`{T1}`, `{T2}`, `{SEUIL}`, `{LIEN}`, `{PRENOM}`, `{MONTANT}`) par les valeurs réelles
+  (taux/seuil depuis AppConfig §2 ; lien/prénom/montant selon le contexte). Un helper de
+  remplacement simple suffit (cf. `fillTemplate` de `affiliation-kit.ts`).
 
 **Créer :**
 - `src/lib/affiliation.ts` — logique commissions, stats, cookie ref, résolution parrain.
