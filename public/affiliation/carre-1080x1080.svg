@@ -39,9 +39,9 @@
   <text x="540" y="828" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="27" fill="#3f514c">progression par compétences.</text>
 
   <!-- CTA -->
-  <g transform="translate(300,900)">
-    <rect width="480" height="60" rx="30" fill="#0e5a54"/>
-    <text x="240" y="39" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="24" font-weight="600" fill="#ffffff">Essai gratuit — sans carte bancaire</text>
+  <g transform="translate(280,900)">
+    <rect width="520" height="60" rx="30" fill="#0e5a54"/>
+    <text x="260" y="39" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="23" font-weight="600" fill="#ffffff">Essai gratuit — sans carte bancaire</text>
   </g>
   <text x="540" y="1010" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="26" font-weight="700" fill="#15302c">meleta.app</text>
 </svg>

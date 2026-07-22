@@ -36,8 +36,8 @@
 
   <!-- CTA -->
   <g transform="translate(72,516)">
-    <rect width="360" height="52" rx="26" fill="#0e5a54"/>
-    <text x="180" y="34" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="21" font-weight="600" fill="#ffffff">Essai gratuit — sans carte bancaire</text>
-    <text x="392" y="34" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="21" font-weight="700" fill="#15302c">meleta.app</text>
+    <rect width="440" height="52" rx="26" fill="#0e5a54"/>
+    <text x="220" y="34" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="20" font-weight="600" fill="#ffffff">Essai gratuit — sans carte bancaire</text>
+    <text x="472" y="34" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="21" font-weight="700" fill="#15302c">meleta.app</text>
   </g>
 </svg>
