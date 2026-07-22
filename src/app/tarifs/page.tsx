@@ -13,10 +13,12 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CREDIT_PACKS } from "@/lib/credits";
 import { canBuyIndividualOffers } from "@/lib/entitlements";
+import { resolveCommissionRate } from "@/lib/affiliation";
 import { isStripeConfigured } from "@/lib/stripe";
 import { planQuotaLabel } from "@/lib/ui";
 import { checkoutPackAction, checkoutPlanAction } from "@/app/credits/actions";
 import Track from "@/app/_components/track";
+import AffiliationNudge from "@/app/_components/affiliation-nudge";
 
 export const dynamic = "force-dynamic";
 
@@ -55,11 +57,27 @@ const FAQ: { q: string; a: string }[] = [
 
 export default async function TarifsPage() {
   const user = await getSessionUser();
-  const [plans, freemium] = await Promise.all([
+  const [plans, freemium, rates] = await Promise.all([
     prisma.subscriptionPlan.findMany({ where: { active: true }, orderBy: { ordre: "asc" } }),
     user ? canBuyIndividualOffers(user) : Promise.resolve(true),
+    resolveCommissionRate(),
   ]);
   const stripeReady = isStripeConfigured();
+
+  // Argument affiliation : « vous pouvez aussi être rémunéré ». La question FAQ
+  // s'affiche pour tout le monde (informatif + SEO) ; le band n'est proposé
+  // qu'aux utilisateurs connectés éligibles (un visiteur froid ne connaît pas
+  // encore le produit — cf. analyse). Taux lus depuis AppConfig, jamais en dur.
+  const faq = rates.enabled
+    ? [
+        ...FAQ,
+        {
+          q: "Puis-je gagner de l'argent en recommandant MELETA ?",
+          a: `Oui. Le programme ambassadeur, gratuit et sans engagement, vous permet de toucher ${rates.rateTier1} % de commission sur chaque abonnement souscrit via votre lien de parrainage — versé tant que la personne reste abonnée. Vous suivez vos filleuls et vos revenus depuis votre espace, et demandez le paiement dès ${(rates.payoutMinCents / 100).toFixed(2).replace(".00", "")} € de solde.`,
+        },
+      ]
+    : FAQ;
+  const showAffiliationBand = Boolean(user) && freemium && rates.enabled;
 
   return (
     <div className="animate-in mx-auto max-w-5xl">
@@ -225,13 +243,20 @@ export default async function TarifsPage() {
         </div>
       </section>
 
+      {/* ---- Programme ambassadeur (connectés éligibles) ---- */}
+      {showAffiliationBand && (
+        <section className="mt-6">
+          <AffiliationNudge rateTier1={rates.rateTier1} />
+        </section>
+      )}
+
       {/* ---- FAQ ---- */}
       <section className="mt-12 mb-10">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
           <Sparkles className="h-3.5 w-3.5 text-[var(--ochre)]" /> Questions fréquentes
         </h2>
         <div className="mt-4 divide-y divide-[var(--border)] rounded-2xl border border-[var(--border)] bg-white">
-          {FAQ.map((item) => (
+          {faq.map((item) => (
             <div key={item.q} className="p-4">
               <h3 className="text-sm font-semibold">{item.q}</h3>
               <p className="mt-1 text-sm text-[var(--muted)]">{item.a}</p>
@@ -247,7 +272,7 @@ export default async function TarifsPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "FAQPage",
-            mainEntity: FAQ.map((item) => ({
+            mainEntity: faq.map((item) => ({
               "@type": "Question",
               name: item.q,
               acceptedAnswer: { "@type": "Answer", text: item.a },

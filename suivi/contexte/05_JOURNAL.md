@@ -1147,17 +1147,44 @@ des pages (conversion), puis **que je code l'ensemble** de la spec moi-même.
   colonne neuve donc toutes les lignes existantes valent `NULL`, et Postgres n'impose jamais
   l'unicité entre plusieurs `NULL`). Tables `commission_ledger`/`payout_requests` + nouveaux
   champs `User` créés sur Neon prod.
-- 🔴 **Reste** : **enregistrer l'événement `charge.refunded`** sur le webhook Stripe existant
-  (Dashboard → Webhooks → l'endpoint déjà configuré → ajouter cet événement à la liste
-  écoutée) : sans ça, aucun clawback automatique en cas de remboursement (à surveiller
-  manuellement en attendant, ou traiter par l'ajustement manuel dans `/admin/affiliation`).
+- ✅ Événement `charge.refunded` ajouté par le porteur sur l'endpoint webhook Stripe existant
+  — le clawback automatique de commission sur remboursement est opérationnel.
+
+### Commit + déploiement
+Commit `28efc8a` (« feat(affiliation): programme ambassadeurs — parrainage 2 niveaux,
+paiement, admin »), poussé sur `main` → déploiement Vercel automatique. `TESTS2/`
+(captures responsive d'une session antérieure, toujours non versionné) volontairement
+exclu du commit — nettoyage optionnel laissé au porteur.
 
 ### État en fin de session
 `npx tsc --noEmit` et `npm run build` passent (toutes les nouvelles routes compilent :
 `/affiliation`, `/ambassadeurs`, `/admin/affiliation`, `/r/[code]`). `npm run lint` reste
 cassé (config ESLint préexistante, non liée à ce chantier — déjà noté au backlog Phase 3).
-Schéma poussé en prod ; pas encore de test manuel en navigateur bout en bout (activation
-ambassadeur, parrainage, demande de paiement) — à faire au prochain tour ou par le porteur.
+Schéma poussé en prod, webhook Stripe à jour, code déployé — programme d'affiliation
+**pleinement opérationnel**. Reste optionnel : test manuel bout en bout en conditions
+réelles (activation ambassadeur, parrainage via `/r/CODE`, commission sur un paiement test,
+cycle de demande de paiement).
+
+### Suite — visibilité du programme dans l'app (le lien seul en pied de page était trop discret)
+Constat porteur : l'accès ambassadeur, uniquement au footer, passe inaperçu. Question : en
+parler davantage (ex. sur `/tarifs`, comme argument « vous pouvez aussi être rémunéré »).
+**Analyse donnée avant de coder** : oui au constat, mais bémol de ton — MELETA est un outil
+clinique sobre, il ne faut pas virer au discours « gagnez de l'argent » (risque MLM qui
+décrédibilise). Et point de timing : le programme convertit des utilisateurs **engagés et
+satisfaits**, pas des visiteurs froids. Retenu : 3 emplacements ciblés, ton pair-à-pair.
+- **Composant partagé** `src/app/_components/affiliation-nudge.tsx` (encart Link discret, fond
+  accent-soft, icône Gift, taux lu depuis AppConfig — jamais en dur). Copy : « Recommandez
+  MELETA, touchez une commission » / « … gagnez X % sur chaque abonnement que vous parrainez ».
+- **`/credits`** : encart après le bloc abonnement, pour les éligibles (`canBuyIndividualOffers`)
+  hors écran « plus de crédits » — couvre aussi le moment post-abonnement (le succès Stripe
+  atterrit sur `/credits`).
+- **`/tarifs`** : band réservé aux **connectés éligibles** (un visiteur froid ne connaît pas
+  encore le produit) + **une question FAQ** affichée pour tous (informatif + SEO + JSON-LD),
+  avec taux et seuil injectés depuis AppConfig.
+- **`/accueil`** : encart réservé aux utilisateurs **déjà engagés** (`!premierePratique`) et
+  éligibles — jamais montré à un tout nouvel inscrit.
+- Tous gated sur `rates.enabled` : si le programme est désactivé en admin, aucun encart nulle
+  part. `tsc` + `npm run build` OK.
 
 ---
 

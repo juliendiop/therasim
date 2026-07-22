@@ -389,7 +389,7 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   action laissée à sa discrétion).
 
 ## 36. Programme d'affiliation « Ambassadeurs » (22 juillet)
-**État : ✅ Fait (V1)** — `npm run db:push` fait ; ⚠️ reste à enregistrer `charge.refunded` sur le webhook Stripe (voir `05_JOURNAL.md`)
+**État : ✅ Fait (V1), pleinement opérationnel** — `npm run db:push` fait, `charge.refunded` enregistré sur le webhook Stripe par le porteur, commit poussé sur `main` (voir `05_JOURNAL.md`)
 - Parrainage 2 niveaux (commission récurrente à vie, niveau 2 **dérivé**, jamais stocké —
   contrainte légale anti-système pyramidal), attribution par cookie `ts_ref` (first-touch,
   résolue à l'inscription), demandes de paiement (facture email, seuil configurable, solde

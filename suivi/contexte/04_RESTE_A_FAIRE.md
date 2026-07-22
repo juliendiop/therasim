@@ -21,11 +21,13 @@ moins coûteux comme prévu initialement).
   réel : nouvelle colonne `referral_code`, donc toutes les lignes existantes valent `NULL`,
   et Postgres n'impose jamais l'unicité entre `NULL`) — tables `commission_ledger`/
   `payout_requests` + nouveaux champs `User` créés.
-- 🔴 **Reste à faire du porteur** : **ajouter l'événement `charge.refunded`** à l'endpoint
-  webhook Stripe déjà enregistré (Dashboard Stripe → Webhooks → l'endpoint existant → *Edit*),
-  sans quoi les remboursements ne déclenchent pas de reprise automatique de commission (à
-  surveiller manuellement en attendant, ou traiter par l'ajustement manuel dans
-  `/admin/affiliation`).
+- ✅ Événement `charge.refunded` ajouté par le porteur à l'endpoint webhook Stripe (22 juillet)
+  — le clawback automatique de commission sur remboursement est opérationnel.
+- ✅ Commit + push sur `main` (22 juillet, `28efc8a`) — déploiement Vercel automatique.
+- **Reste (v1 considérée complète)** : test manuel bout en bout en conditions réelles
+  (activation ambassadeur, parrainage via `/r/CODE`, commission générée par un paiement test,
+  demande de paiement → marquer payé en admin) — non fait faute d'accès navigateur/Stripe
+  dans cette session.
 - ⚠️ **Dérive d'API Stripe documentée** (comme les précédentes) : `Charge.invoice` et
   `Invoice.payment_intent` n'existent plus dans les types de `stripe@22.3.0`. Le clawback
   utilise un repli défensif ; si l'invoice reste introuvable, un avertissement explicite est

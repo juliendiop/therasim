@@ -4,9 +4,11 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CREDIT_PACKS, creditSettings, syncWallet } from "@/lib/credits";
 import { canBuyIndividualOffers } from "@/lib/entitlements";
+import { resolveCommissionRate } from "@/lib/affiliation";
 import { palier, palierRank, PALIER_LABEL, type Palier } from "@/lib/mastery";
 import { isStripeConfigured } from "@/lib/stripe";
 import { planQuotaLabel } from "@/lib/ui";
+import AffiliationNudge from "@/app/_components/affiliation-nudge";
 import { checkoutPackAction, checkoutPlanAction, manageBillingAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +46,7 @@ export default async function CreditsPage({
   const { need, success, canceled, error, fw } = await searchParams;
   const stripeReady = isStripeConfigured();
 
-  const [balance, settings, history, plans, subscription, freemium] = await Promise.all([
+  const [balance, settings, history, plans, subscription, freemium, rates] = await Promise.all([
     syncWallet(user.id),
     creditSettings(),
     prisma.creditLedger.findMany({
@@ -55,6 +57,7 @@ export default async function CreditsPage({
     prisma.subscriptionPlan.findMany({ where: { active: true }, orderBy: { ordre: "asc" } }),
     prisma.userSubscription.findUnique({ where: { userId: user.id } }),
     canBuyIndividualOffers(user),
+    resolveCommissionRate(),
   ]);
 
   // Écran dédié "plus de crédits" (need défini) : récap de progression + le
@@ -257,6 +260,15 @@ export default async function CreditsPage({
               </button>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Programme ambassadeur : rappel discret pour un utilisateur éligible et
+          engagé (il consulte déjà ses crédits/abonnement). Masqué sur l'écran
+          dédié "plus de crédits" pour ne pas détourner de la reprise. */}
+      {!need && freemium && rates.enabled && (
+        <div className="mt-6">
+          <AffiliationNudge rateTier1={rates.rateTier1} />
         </div>
       )}
 

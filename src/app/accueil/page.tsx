@@ -14,10 +14,12 @@ import {
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildDashboard } from "@/lib/dashboard";
-import { userFrameworkAccess } from "@/lib/entitlements";
+import { userFrameworkAccess, canBuyIndividualOffers } from "@/lib/entitlements";
+import { resolveCommissionRate } from "@/lib/affiliation";
 import { KIND_LABEL, fmtDate, pct } from "@/lib/ui";
 import { patientDisplayName } from "@/lib/patient";
 import PatientAvatar from "@/app/_components/patient-avatar";
+import AffiliationNudge from "@/app/_components/affiliation-nudge";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +58,14 @@ export default async function AccueilPage({
 
   const premierePratique = !d.reprendre && !d.ongoingSim && d.recentSims.length === 0;
   const prenom = user.firstName ? ` ${user.firstName}` : "";
+
+  // Programme ambassadeur : proposé uniquement à un utilisateur éligible ET déjà
+  // engagé (au moins une pratique) — inutile de le montrer à un tout nouvel
+  // inscrit qui n'a pas encore éprouvé le produit.
+  const [affiliationEligible, rates] = premierePratique
+    ? [false, null]
+    : await Promise.all([canBuyIndividualOffers(user), resolveCommissionRate()]);
+  const showAffiliation = affiliationEligible && rates!.enabled;
 
   return (
     <div>
@@ -332,6 +342,13 @@ export default async function AccueilPage({
               </div>
             )}
           </section>
+
+          {/* Programme ambassadeur : rappel discret (utilisateur engagé + éligible) */}
+          {showAffiliation && (
+            <section className="mt-6">
+              <AffiliationNudge rateTier1={rates!.rateTier1} />
+            </section>
+          )}
         </>
       )}
 
