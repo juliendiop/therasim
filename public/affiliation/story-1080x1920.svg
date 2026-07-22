@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" role="img" aria-label="MELETA — La pratique clinique, ça s'entraîne">
+  <defs>
+    <radialGradient id="sg" cx="85%" cy="6%" r="60%">
+      <stop offset="0%" stop-color="#0e5a54" stop-opacity="0.16"/>
+      <stop offset="60%" stop-color="#0e5a54" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sg2" cx="10%" cy="70%" r="55%">
+      <stop offset="0%" stop-color="#a8772a" stop-opacity="0.12"/>
+      <stop offset="70%" stop-color="#a8772a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="#f4f1e9"/>
+  <rect width="1080" height="1920" fill="url(#sg)"/>
+  <rect width="1080" height="1920" fill="url(#sg2)"/>
+
+  <!-- Logo -->
+  <g transform="translate(540,300)">
+    <g transform="translate(-42,0)">
+      <rect width="84" height="84" rx="21" fill="#0e5a54"/>
+      <g transform="translate(26,20) scale(1.34)" stroke="#ffffff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3a3.2 3.2 0 0 0-3.2 3.2 2.7 2.7 0 0 0-2.1 4.3 2.7 2.7 0 0 0 1.6 4.8A2.7 2.7 0 0 0 12 20"/>
+        <path d="M12 3a3.2 3.2 0 0 1 3.2 3.2 2.7 2.7 0 0 1 2.1 4.3 2.7 2.7 0 0 1-1.6 4.8A2.7 2.7 0 0 1 12 20"/>
+        <path d="M12 3v17"/>
+      </g>
+    </g>
+    <text x="0" y="140" text-anchor="middle" font-family="Fraunces, Georgia, 'Times New Roman', serif" font-size="42" font-weight="700" fill="#15302c" letter-spacing="1">MELETA</text>
+  </g>
+
+  <text x="540" y="720" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="6" fill="#a8772a">PROGRAMME AMBASSADEUR</text>
+
+  <text x="540" y="860" text-anchor="middle" font-family="Fraunces, Georgia, 'Times New Roman', serif" font-size="92" font-weight="700" fill="#15302c" letter-spacing="-1">La pratique</text>
+  <text x="540" y="965" text-anchor="middle" font-family="Fraunces, Georgia, 'Times New Roman', serif" font-size="92" font-weight="700" fill="#15302c" letter-spacing="-1">clinique,</text>
+  <text x="540" y="1070" text-anchor="middle" font-family="Fraunces, Georgia, 'Times New Roman', serif" font-size="92" font-weight="700" fill="#0e5a54" letter-spacing="-1">ça s'entraîne.</text>
+
+  <text x="540" y="1180" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="30" fill="#3f514c">Cas réalistes · patient simulé par IA</text>
+  <text x="540" y="1224" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="30" fill="#3f514c">progression par compétences.</text>
+
+  <!-- CTA bloc bas -->
+  <g transform="translate(210,1560)">
+    <rect width="660" height="76" rx="38" fill="#0e5a54"/>
+    <text x="330" y="49" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="28" font-weight="600" fill="#ffffff">Essai gratuit — sans carte bancaire</text>
+  </g>
+  <text x="540" y="1700" text-anchor="middle" font-family="'Hanken Grotesk', system-ui, Arial, sans-serif" font-size="30" font-weight="700" fill="#15302c">Lien en bio  ·  meleta.app</text>
+</svg>

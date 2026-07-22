@@ -392,21 +392,29 @@ Bien à vous,
 {PRENOM}
 ```
 
-### 9.6 Visuels
-Deux options, implémenter **au moins l'option A** :
+### 9.6 Visuels — DÉJÀ FOURNIS (ne pas les recréer)
 
-- **Option A — images de partage personnalisées via `next/og`** (recommandé, natif Next) :
-  route `src/app/affiliation/share-image/route.tsx` (ou `opengraph-image`) qui génère à la
-  volée une image (formats : 1200×630 pour lien/LinkedIn, 1080×1080 carré, 1080×1920
-  story) reprenant le branding MELETA (fond papier, teal, logo cerveau, baseline
-  « La pratique clinique, ça s'entraîne »). L'ambassadeur les télécharge depuis le kit.
-- **Option B — visuels statiques** : déposer dans `public/affiliation/` un jeu de
-  bannières prêtes (mêmes formats). Lister les fichiers attendus ; si tu ne peux pas
-  produire les binaires, crée des placeholders et documente les specs (dimensions, texte,
-  couleurs `--accent #0e5a54`, `--ochre #a8772a`, fond `#f4f1e9`).
+Le **contenu texte ET les visuels du kit sont déjà générés** et présents dans le dépôt.
+**Ne les régénère pas** — tu n'as qu'à les afficher dans l'espace ambassadeur (§6.7).
 
-Ajouter un rappel de bonne conduite dans le kit : *« Restez factuel : MELETA est un outil
-formatif, non certifiant. Ne promettez pas de résultats. »*
+- **Textes** : `src/lib/affiliation-kit.ts` exporte `KIT_BLOCKS` (email confrère, LinkedIn,
+  Instagram, WhatsApp/DM, message écoles), `KIT_IMAGES` (manifeste des visuels),
+  `fillTemplate(text, { lien, prenom })` (remplace `{LIEN}`/`{PRENOM}`) et `KIT_DISCLAIMER`
+  (rappel déontologique à afficher au-dessus du kit).
+- **Visuels** : 4 fichiers SVG à la marque MELETA dans `public/affiliation/` :
+  `banniere-lien-1200x630.svg`, `carre-1080x1080.svg`, `story-1080x1920.svg`,
+  `bandeau-email-1200x400.svg`. Ils sont servis directement par Next (`/affiliation/…svg`)
+  et téléchargeables. SVG = net à toute taille, exportable en PNG par l'ambassadeur si
+  besoin.
+- **UI à construire** (c'est TON travail) : dans la section kit de `/affiliation`, pour
+  chaque `KIT_BLOCKS`, afficher le titre + un `<textarea>`/`<pre>` du corps rempli via
+  `fillTemplate(block.body, { lien, prenom })` (et le sujet pour les emails) avec un bouton
+  « Copier » (pattern `src/app/admin/optimisation/copy-prompt.tsx`). Pour chaque
+  `KIT_IMAGES`, afficher un aperçu (`<img src={img.src}>`) + un lien de téléchargement
+  (`<a href={img.src} download>`). Afficher `KIT_DISCLAIMER` en tête.
+- **Personnalisation optionnelle (v2, non requise)** : une route `next/og` par ambassadeur
+  pour incruster son lien/prénom dans l'image. Les visuels statiques ci-dessus suffisent
+  pour la v1.
 
 ---
 
@@ -423,6 +431,10 @@ Ajouter le lien « Ambassadeurs » au **footer** (`src/app/layout.tsx`, à côt�
 ---
 
 ## 11. Fichiers — récapitulatif
+
+**DÉJÀ FOURNIS (ne pas recréer) :**
+- `src/lib/affiliation-kit.ts` — contenu texte du kit + manifeste des visuels + helpers.
+- `public/affiliation/*.svg` — 4 visuels à la marque (lien, carré, story, bandeau email).
 
 **Créer :**
 - `src/lib/affiliation.ts` — logique commissions, stats, cookie ref, résolution parrain.
