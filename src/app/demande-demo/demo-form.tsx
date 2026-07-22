@@ -54,6 +54,16 @@ export default function DemoRequestForm() {
           placeholder="Nombre d'apprenants, référentiels visés, calendrier…"
         />
       </div>
+      <div>
+        <label className="text-xs font-medium">
+          Recommandé par (nom ou email de votre ambassadeur MELETA — optionnel)
+        </label>
+        <input
+          name="parrainage"
+          className={inputCls}
+          placeholder="ex. Jeanne Dupont ou jeanne@exemple.fr"
+        />
+      </div>
       <button
         disabled={pending}
         className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"

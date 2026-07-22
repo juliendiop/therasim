@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Brain, ClipboardList, Coins, Eye, GraduationCap, LogOut, Radio, ShieldCheck, Users } from "lucide-react";
+import { Brain, ClipboardList, Coins, Eye, Gift, GraduationCap, LogOut, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { canManageLive, canSupervise } from "@/lib/roles";
 import { creditSettings, syncWallet } from "@/lib/credits";
@@ -43,6 +43,13 @@ export default async function RootLayout({
     : undefined;
 
   const isPublic = !tenant || tenant.type === "public";
+  // Programme ambassadeur : pertinent pour les apprenants du site public, ou
+  // les membres B2B dont la plateforme a activé l'opt-in "offres individuelles"
+  // (même logique que canBuyIndividualOffers, src/lib/entitlements.ts).
+  const affiliationEligible =
+    Boolean(user) &&
+    user!.role === "learner" &&
+    (isPublic || Boolean(tenant?.allowIndividualOffers));
   const brandName = isPublic ? "MELETA" : tenant!.brandName || tenant!.nom;
   const logoUrl = !isPublic ? tenant!.logoUrl : null;
   const color =
@@ -110,6 +117,14 @@ export default async function RootLayout({
                 >
                   Historique
                 </Link>
+                {affiliationEligible && (
+                  <Link
+                    href="/affiliation"
+                    className="rounded-lg px-2.5 py-1.5 font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)]"
+                  >
+                    Ambassadeur
+                  </Link>
+                )}
               </nav>
             )}
 
@@ -223,6 +238,10 @@ export default async function RootLayout({
               ·{" "}
               <Link href="/blog" className="underline hover:text-[var(--foreground)]">
                 Blog
+              </Link>{" "}
+              ·{" "}
+              <Link href="/ambassadeurs" className="underline hover:text-[var(--foreground)]">
+                Ambassadeurs
               </Link>
             </>
           ) : (
@@ -233,7 +252,7 @@ export default async function RootLayout({
         </footer>
 
         {/* Navigation mobile (connectés) : le header cache ses liens sous `sm`. */}
-        {user && <MobileNav showCredits={credits !== null} />}
+        {user && <MobileNav showCredits={credits !== null} showAffiliation={affiliationEligible} />}
       </body>
     </html>
   );

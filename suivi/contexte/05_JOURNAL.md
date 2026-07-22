@@ -1084,6 +1084,83 @@ réel = étape suivante séparée (attendre du trafic).
 
 ---
 
+## Session — 22 juillet 2026 : programme d'affiliation « Ambassadeurs »
+
+Demande porteur : programme d'ambassadeurs (lien de parrainage, commission récurrente à vie,
+2 niveaux, espace de suivi, demande de paiement par facture email, volet écoles B2B, kit de
+diffusion prêt à l'emploi). D'abord rédigé en **spec complète** (`Conception/
+spec-affiliation-ambassadeurs.md`) destinée à un modèle moins coûteux ; le porteur a ensuite
+demandé que **je génère moi-même** le kit (textes + visuels SVG) et le contenu rédactionnel
+des pages (conversion), puis **que je code l'ensemble** de la spec moi-même.
+
+**Construit (spec suivie intégralement) :**
+- **Schéma** : `User.referralCode/referredByUserId/ambassadorAt/ambassadorTermsAt` +
+  `CommissionLedger` (ledger à solde roulant, unique `(beneficiaryId, stripeInvoiceId, tier)`
+  pour l'idempotence webhook) + `PayoutRequest`.
+- **`src/lib/affiliation.ts`** : attribution (cookie `ts_ref`, first-touch, résolu à
+  l'inscription uniquement), activation (code unique base32), calcul de commission niveau 1/2
+  **dérivé** (jamais stocké au-delà du niveau 2 — contrainte légale art. L.122-6, système
+  pyramidal interdit), stats ambassadeur, liste de filleuls **anonymisée** (RGPD, jamais
+  email/nom), cycle de vie des demandes de paiement, fonctions admin (liste ambassadeurs,
+  file de paiement, commission école manuelle, ajustement manuel).
+- **Stripe** : commission créditée dans `handleInvoicePaid` (1er paiement + chaque
+  renouvellement → « à vie »), best-effort (try/catch avalé, ne doit jamais faire échouer le
+  webhook). **Clawback** `handleChargeRefunded` (`charge.refunded`) : ⚠️ dérive d'API Stripe
+  rencontrée — `Charge.invoice` et `Invoice.payment_intent` n'existent plus dans les types de
+  `stripe@22.3.0` (vérifié par lecture directe des `.d.ts`). Résolution en repli défensif
+  (champs legacy castés `as unknown`, comme le pattern déjà en place pour
+  `current_period_end`) ; si l'invoice reste introuvable, **TODO explicite loggé** (pas
+  d'échec silencieux) — clawback à faire manuellement via l'ajustement admin dans ce cas rare.
+- **`/r/[code]`** : route de redirection qui pose le cookie d'attribution.
+- **`/affiliation`** : écran d'activation (CGU) puis espace ambassadeur (lien + bouton copier,
+  cartes revenus, demande de paiement avec seuil et flux facture, filleuls masqués,
+  historique, kit de diffusion avec blocs copiables + visuels téléchargeables). Contenu
+  entièrement dans `src/lib/affiliation-copy.ts` / `affiliation-kit.ts` (déjà rédigés au tour
+  précédent), jamais de texte en dur dans les composants.
+- **`/ambassadeurs`** : page publique de recrutement (hero, chiffres clés, comment ça marche,
+  2 niveaux, écoles, FAQ + JSON-LD), même gabarit que `/tarifs`.
+- **`/admin/affiliation`** : réglages (taux/seuil/cookie/activation), table ambassadeurs
+  triée par solde, file de paiements (Marquer payé / Rejeter), commission école manuelle,
+  ajustement manuel.
+- **Volet écoles** : champ optionnel « Recommandé par » sur `/demande-demo`, transmis dans
+  l'email (pas de nouveau modèle `DemoRequest` — l'email suffit en v1, comme prévu par la
+  spec).
+- **Navigation** : lien « Ambassadeur » (header connecté + nav mobile, réservé aux apprenants
+  éligibles — même règle que `canBuyIndividualOffers`), lien « Ambassadeurs » au footer
+  public, entrée `AdminLink` (icône `Gift`).
+
+### Pièges / décisions
+- Unicité Postgres sur `(beneficiaryId, stripeInvoiceId, tier)` : `NULL` n'est jamais égal à
+  `NULL` pour une contrainte unique → les lignes `payout`/`commission_school`/`adjustment`
+  (sans `stripeInvoiceId`) peuvent s'accumuler sans collision, seules les commissions liées à
+  une facture Stripe précise sont dédupliquées.
+- Solde **jamais remis à zéro à la demande** de paiement — seulement quand l'admin marque
+  « payé » (ligne `payout` négative). Une 2ᵉ demande est bloquée tant qu'une demande
+  pending/invoice_received existe.
+- Éligibilité `/affiliation` calquée sur `canBuyIndividualOffers` (apprenant + tenant public
+  ou opt-in B2B) plutôt que réutilisée telle quelle, pour rester cohérente avec les données
+  déjà chargées dans `layout.tsx` sans appel async supplémentaire.
+
+### 🔴 Actions requises du porteur
+- ✅ **`npm run db:push`** fait (22 juillet, `--accept-data-loss` — averti par Prisma
+  uniquement à cause de la nouvelle contrainte unique `referral_code`, sans risque réel car
+  colonne neuve donc toutes les lignes existantes valent `NULL`, et Postgres n'impose jamais
+  l'unicité entre plusieurs `NULL`). Tables `commission_ledger`/`payout_requests` + nouveaux
+  champs `User` créés sur Neon prod.
+- 🔴 **Reste** : **enregistrer l'événement `charge.refunded`** sur le webhook Stripe existant
+  (Dashboard → Webhooks → l'endpoint déjà configuré → ajouter cet événement à la liste
+  écoutée) : sans ça, aucun clawback automatique en cas de remboursement (à surveiller
+  manuellement en attendant, ou traiter par l'ajustement manuel dans `/admin/affiliation`).
+
+### État en fin de session
+`npx tsc --noEmit` et `npm run build` passent (toutes les nouvelles routes compilent :
+`/affiliation`, `/ambassadeurs`, `/admin/affiliation`, `/r/[code]`). `npm run lint` reste
+cassé (config ESLint préexistante, non liée à ce chantier — déjà noté au backlog Phase 3).
+Schéma poussé en prod ; pas encore de test manuel en navigateur bout en bout (activation
+ambassadeur, parrainage, demande de paiement) — à faire au prochain tour ou par le porteur.
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA

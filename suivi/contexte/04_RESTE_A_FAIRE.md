@@ -3,6 +3,39 @@
 Ordre indicatif. Le détail fonctionnel est dans la spec
 (`Conception/spec-v2-entrainement-progression (1).md`).
 
+## ⭐ Programme d'affiliation « Ambassadeurs » — ✅ V1 FAITE (22 juillet)
+
+Demande porteur : parrainage avec commission récurrente à vie (2 niveaux), espace ambassadeur,
+demande de paiement (facture email), volet écoles B2B, kit de diffusion prêt à l'emploi.
+Spec complète écrite d'abord (`Conception/spec-affiliation-ambassadeurs.md`), puis codée
+intégralement par Claude (le kit texte+visuels et le contenu des pages avaient déjà été
+générés par Claude au tour précédent, à la demande explicite du porteur — pas par un modèle
+moins coûteux comme prévu initialement).
+- ✅ Schéma (`CommissionLedger`/`PayoutRequest` + champs `User`), logique métier
+  `src/lib/affiliation.ts`, attribution `/r/[code]`, commission Stripe (`handleInvoicePaid`),
+  clawback `handleChargeRefunded`, espace `/affiliation`, page publique `/ambassadeurs`, admin
+  `/admin/affiliation`, champ « recommandé par » sur `/demande-demo`, navigation
+  (header/footer/mobile-nav/AdminLink). Détail complet dans `02_MODULES_FAITS.md` §36 et
+  `05_JOURNAL.md` (session du 22 juillet).
+- ✅ `npm run db:push` fait (22 juillet, contre Neon prod, `--accept-data-loss` — sans risque
+  réel : nouvelle colonne `referral_code`, donc toutes les lignes existantes valent `NULL`,
+  et Postgres n'impose jamais l'unicité entre `NULL`) — tables `commission_ledger`/
+  `payout_requests` + nouveaux champs `User` créés.
+- 🔴 **Reste à faire du porteur** : **ajouter l'événement `charge.refunded`** à l'endpoint
+  webhook Stripe déjà enregistré (Dashboard Stripe → Webhooks → l'endpoint existant → *Edit*),
+  sans quoi les remboursements ne déclenchent pas de reprise automatique de commission (à
+  surveiller manuellement en attendant, ou traiter par l'ajustement manuel dans
+  `/admin/affiliation`).
+- ⚠️ **Dérive d'API Stripe documentée** (comme les précédentes) : `Charge.invoice` et
+  `Invoice.payment_intent` n'existent plus dans les types de `stripe@22.3.0`. Le clawback
+  utilise un repli défensif ; si l'invoice reste introuvable, un avertissement explicite est
+  loggé (`console.warn`) plutôt que d'échouer silencieusement.
+- ⚠️ Non testé de bout en bout en conditions réelles (pas de base de données locale avec les
+  nouvelles tables tant que `db:push` n'est pas fait) — build et types vérifiés uniquement.
+- Hors scope v1 (comme prévu par la spec) : QR code du lien de parrainage, modèle
+  `DemoRequest` en base (l'email suffit), profondeur de parrainage configurable (interdit
+  légalement au-delà de 2 niveaux).
+
 ## ⭐ Growth — mesure de l'entonnoir + conseiller d'optimisation IA — ✅ V1 FAITE (22 juillet)
 
 Demande porteur : « automatiser l'acquisition », growth basé sur des mesures concrètes.

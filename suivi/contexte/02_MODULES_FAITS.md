@@ -388,6 +388,20 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   le souhaite (non fait automatiquement : suppression d'utilisateur en prod,
   action laissée à sa discrétion).
 
+## 36. Programme d'affiliation « Ambassadeurs » (22 juillet)
+**État : ✅ Fait (V1)** — `npm run db:push` fait ; ⚠️ reste à enregistrer `charge.refunded` sur le webhook Stripe (voir `05_JOURNAL.md`)
+- Parrainage 2 niveaux (commission récurrente à vie, niveau 2 **dérivé**, jamais stocké —
+  contrainte légale anti-système pyramidal), attribution par cookie `ts_ref` (first-touch,
+  résolue à l'inscription), demandes de paiement (facture email, seuil configurable, solde
+  remis à 0 uniquement par l'admin), volet écoles B2B (commission manuelle), kit de diffusion
+  (textes + visuels SVG).
+- Fichiers : `src/lib/affiliation.ts`, `src/lib/affiliation-copy.ts`, `src/lib/affiliation-kit.ts`,
+  `src/app/r/[code]/`, `src/app/affiliation/`, `src/app/ambassadeurs/`,
+  `src/app/admin/affiliation/`, modèles `CommissionLedger`/`PayoutRequest` + champs `User`
+  (`prisma/schema.prisma`). Commission calculée dans `handleInvoicePaid` (`src/lib/billing.ts`),
+  clawback best-effort dans `handleChargeRefunded`.
+- Spec : `Conception/spec-affiliation-ambassadeurs.md`.
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,

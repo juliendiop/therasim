@@ -60,9 +60,15 @@ model User {
   creditsRefreshedAt DateTime? @map("credits_refreshed_at")
   // Client Stripe (créé au premier achat/abonnement). Un seul par utilisateur.
   stripeCustomerId   String?   @map("stripe_customer_id")
+  // --- Programme d'affiliation (Ambassadeurs) ---
+  referralCode      String?   @unique @map("referral_code") // code public de l'ambassadeur (généré à l'activation)
+  referredByUserId  String?   @map("referred_by_user_id") @db.Uuid // parrain DIRECT (niveau 1), figé à l'inscription
+  ambassadorAt      DateTime? @map("ambassador_at") // date d'activation du statut ambassadeur (null = pas activé)
+  ambassadorTermsAt DateTime? @map("ambassador_terms_at") // consentement CGU affiliation
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])
+  @@index([referredByUserId])
   @@map("users")
 }
 
@@ -190,6 +196,49 @@ model StripeEvent {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("stripe_events")
+}
+
+// --- Programme d'affiliation (Ambassadeurs) --------------------------------
+
+// Journal des commissions d'affiliation. Miroir de CreditLedger (même logique
+// ledger : chaque ligne = un mouvement, balanceAfter = solde après ce mouvement).
+// Limite légale : niveau 2 MAXIMUM (voir User.referredByUserId, non chaîné plus
+// loin) — au-delà, le dispositif serait un système pyramidal (interdit).
+model CommissionLedger {
+  id              String   @id @default(uuid()) @db.Uuid
+  beneficiaryId   String   @map("beneficiary_id") @db.Uuid // l'ambassadeur qui touche
+  delta           Int // + gain / - paiement, en CENTIMES
+  balanceAfter    Int      @map("balance_after") // solde après, en centimes
+  // 'commission_sub_t1' | 'commission_sub_t2' | 'commission_school' | 'payout' | 'clawback' | 'adjustment'
+  reason          String
+  tier            Int? // 1 ou 2 pour les commissions d'abonnement
+  sourceUserId    String?  @map("source_user_id") @db.Uuid // le filleul dont l'abonnement génère la commission
+  stripeInvoiceId String?  @map("stripe_invoice_id") // clé d'idempotence
+  payoutRequestId String?  @map("payout_request_id") @db.Uuid
+  meta            Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([beneficiaryId, createdAt])
+  // Idempotence : une même facture ne peut pas créer deux fois la même commission
+  // pour le même bénéficiaire au même palier.
+  @@unique([beneficiaryId, stripeInvoiceId, tier])
+  @@map("commission_ledger")
+}
+
+// Demande de paiement de commission par un ambassadeur.
+model PayoutRequest {
+  id             String    @id @default(uuid()) @db.Uuid
+  ambassadorId   String    @map("ambassador_id") @db.Uuid
+  amountCents    Int       @map("amount_cents") // montant demandé (= solde au moment de la demande)
+  status         String    @default("pending") // 'pending' | 'invoice_received' | 'paid' | 'rejected'
+  invoiceEmailAt DateTime? @map("invoice_email_at") // quand l'ambassadeur signale avoir envoyé la facture
+  paidAt         DateTime? @map("paid_at")
+  note           String? // note interne admin (réf. virement, etc.)
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@index([ambassadorId])
+  @@map("payout_requests")
 }
 
 // Jeton de connexion par lien magique (usage unique, expirable).

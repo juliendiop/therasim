@@ -5,6 +5,7 @@ import { createSessionToken, setSessionCookie, type Role } from "@/lib/auth";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { createSubscriptionCheckout } from "@/lib/billing";
 import { recordFunnel, peekVisitorId } from "@/lib/funnel";
+import { attributeReferralForNewUser } from "@/lib/affiliation";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +78,8 @@ export async function POST(req: NextRequest) {
 
   // Mesure d'entonnoir : relie le parcours anonyme (cookie visiteur) au compte créé.
   await recordFunnel("signup_complete", { visitorId: await peekVisitorId(), userId: user.id });
+  // Affiliation : résout le cookie ts_ref (lien de parrainage) en referredByUserId.
+  await attributeReferralForNewUser(user.id);
 
   // Report du forfait choisi sur /tarifs : direct vers le checkout Stripe.
   // Un échec (Price ID manquant, Stripe non configuré) ne doit jamais bloquer

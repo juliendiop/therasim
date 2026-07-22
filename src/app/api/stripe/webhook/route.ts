@@ -6,6 +6,7 @@ import {
   handleInvoicePaid,
   handleSubscriptionDeleted,
   handleSubscriptionUpdated,
+  handleChargeRefunded,
 } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +53,9 @@ export async function POST(req: NextRequest) {
         break;
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(event);
+        break;
+      case "charge.refunded":
+        await handleChargeRefunded(event);
         break;
       default:
         // Événement non géré : on l'ignore silencieusement (déjà marqué traité ci-dessus).

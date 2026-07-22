@@ -9,6 +9,7 @@ import { grant } from "./credits";
 import { CREDIT_PACKS } from "./credits";
 import { ensureStripeCustomer, stripeClient } from "./stripe";
 import { recordFunnelOncePerUser } from "./funnel";
+import { recordCommissionsForInvoice, creditCommission } from "./affiliation";
 
 // --- Création des sessions (checkout / portail) ----------------------------
 
@@ -231,6 +232,15 @@ export async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
     planId: plan.id,
   });
 
+  // Affiliation : commission niveau 1/2 sur ce paiement d'abonnement encaissé
+  // (1er paiement ET chaque renouvellement -> commission "à vie"). Best-effort :
+  // ne doit jamais faire échouer le traitement du webhook.
+  await recordCommissionsForInvoice({
+    payingUserId: userSub.userId,
+    invoiceId: invoice.id,
+    amountPaidCents: invoice.amount_paid,
+  });
+
   // Rafraîchit la période courante à partir de l'objet Subscription à jour.
   const sub = await stripeClient().subscriptions.retrieve(subscriptionId);
   await prisma.userSubscription.update({
@@ -241,6 +251,68 @@ export async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
       cancelAtPeriodEnd: sub.cancel_at_period_end,
     },
   });
+}
+
+/** `charge.refunded` : reprend (clawback) les commissions d'affiliation liées
+ *  à la facture remboursée. Best-effort, ne doit jamais faire échouer le webhook.
+ *
+ *  Dérive Stripe : dans cette version du SDK (stripe@22.3.0), ni `Charge.invoice`
+ *  ni `Invoice.payment_intent`/`charge` n'existent plus dans les types (vérifié
+ *  par lecture directe de node_modules/stripe/cjs/resources/{Charges,Invoices,
+ *  PaymentIntents}.d.ts). On tente un repli défensif sur les champs legacy qui
+ *  peuvent encore être présents dans la charge utile JSON réelle même si absents
+ *  des types. Si la facture reste introuvable, on documente le trou plutôt que
+ *  de l'ignorer silencieusement (aucun clawback n'est alors effectué -> à traiter
+ *  manuellement via /admin/affiliation, ajustement manuel). */
+export async function handleChargeRefunded(event: Stripe.Event): Promise<void> {
+  try {
+    const charge = event.data.object as Stripe.Charge;
+
+    // Repli défensif : champ legacy, non typé dans cette version du SDK.
+    const legacyInvoice = (charge as unknown as { invoice?: string | { id: string } | null })
+      .invoice;
+    let invoiceId =
+      typeof legacyInvoice === "string" ? legacyInvoice : legacyInvoice?.id ?? null;
+
+    if (!invoiceId && charge.payment_intent) {
+      const paymentIntentId =
+        typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent.id;
+      const pi = await stripeClient().paymentIntents.retrieve(paymentIntentId);
+      const legacyPiInvoice = (pi as unknown as { invoice?: string | { id: string } | null }).invoice;
+      invoiceId = typeof legacyPiInvoice === "string" ? legacyPiInvoice : legacyPiInvoice?.id ?? null;
+    }
+
+    if (!invoiceId) {
+      // TODO(affiliation) : trou d'API Stripe documenté — impossible de relier ce
+      // remboursement à une facture avec cette version du SDK. Clawback à faire
+      // manuellement si nécessaire (voir /admin/affiliation).
+      console.warn(
+        "[affiliation] clawback ignoré : impossible de résoudre l'invoice depuis charge.refunded",
+        charge.id,
+      );
+      return;
+    }
+
+    const rows = await prisma.commissionLedger.findMany({
+      where: { stripeInvoiceId: invoiceId, reason: { in: ["commission_sub_t1", "commission_sub_t2"] } },
+    });
+    const refundRatio =
+      charge.amount > 0 ? Math.min(1, charge.amount_refunded / charge.amount) : 0;
+    if (refundRatio <= 0) return;
+
+    for (const row of rows) {
+      const clawbackCents = -Math.round(row.delta * refundRatio);
+      await creditCommission(row.beneficiaryId, clawbackCents, {
+        reason: "clawback",
+        tier: row.tier ?? undefined,
+        sourceUserId: row.sourceUserId ?? undefined,
+        stripeInvoiceId: `${invoiceId}:refund:${charge.id}`,
+        meta: { originalLedgerId: row.id, refundRatio },
+      });
+    }
+  } catch (e) {
+    console.error("[affiliation] échec clawback charge.refunded", e);
+  }
 }
 
 /** `customer.subscription.updated` : synchronise statut/période/résiliation programmée. */

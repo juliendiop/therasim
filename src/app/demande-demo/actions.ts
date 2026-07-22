@@ -15,13 +15,16 @@ export async function submitDemoRequest(
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const organisme = String(formData.get("organisme") ?? "").trim();
   const message = String(formData.get("message") ?? "").trim();
+  const parrainage = String(formData.get("parrainage") ?? "").trim();
 
   if (!nom || !email || !email.includes("@")) {
     return { ok: false, message: "Merci de renseigner votre nom et un email valide." };
   }
 
   // eslint-disable-next-line no-console
-  console.log(`[demande-demo] ${nom} <${email}> · ${organisme || "—"} : ${message || "—"}`);
+  console.log(
+    `[demande-demo] ${nom} <${email}> · ${organisme || "—"} : ${message || "—"}${parrainage ? ` (recommandé par ${parrainage})` : ""}`,
+  );
 
   if (!isEmailConfigured()) {
     // Dev / email non configuré : on ne bloque pas le visiteur, mais rien n'est envoyé.
@@ -39,7 +42,7 @@ export async function submitDemoRequest(
   }
 
   try {
-    await sendDemoRequest(CONTACT_EMAIL, { nom, email, organisme, message });
+    await sendDemoRequest(CONTACT_EMAIL, { nom, email, organisme, message, parrainage });
     return {
       ok: true,
       message: "Merci ! Votre demande est bien envoyée, nous revenons vers vous rapidement.",

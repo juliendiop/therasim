@@ -134,7 +134,13 @@ async function send(
  */
 export async function sendDemoRequest(
   to: string,
-  input: { nom: string; email: string; organisme: string; message: string },
+  input: {
+    nom: string;
+    email: string;
+    organisme: string;
+    message: string;
+    parrainage?: string;
+  },
 ): Promise<void> {
   const html = `
   <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:480px;margin:0 auto;color:#1a1d23;line-height:1.6">
@@ -142,6 +148,7 @@ export async function sendDemoRequest(
     <p><b>Nom :</b> ${escapeHtml(input.nom)}<br>
        <b>Email :</b> ${escapeHtml(input.email)}<br>
        ${input.organisme ? `<b>Établissement :</b> ${escapeHtml(input.organisme)}<br>` : ""}
+       ${input.parrainage ? `<b>Recommandé par (ambassadeur) :</b> ${escapeHtml(input.parrainage)}<br>` : ""}
     </p>
     ${input.message ? `<p style="white-space:pre-line">${escapeHtml(input.message)}</p>` : ""}
     <p style="font-size:13px;color:#6b7280">Envoyé depuis la page d'accueil publique MELETA.</p>

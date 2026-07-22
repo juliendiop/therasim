@@ -6,11 +6,17 @@
 // l'accueil au catalogue. Rendu pour les utilisateurs connectés uniquement.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Coins, Compass, History, Home } from "lucide-react";
+import { Coins, Compass, Gift, History, Home } from "lucide-react";
 
 type Item = { href: string; label: string; icon: React.ReactNode };
 
-export default function MobileNav({ showCredits }: { showCredits: boolean }) {
+export default function MobileNav({
+  showCredits,
+  showAffiliation,
+}: {
+  showCredits: boolean;
+  showAffiliation?: boolean;
+}) {
   const pathname = usePathname();
 
   const items: Item[] = [
@@ -20,6 +26,9 @@ export default function MobileNav({ showCredits }: { showCredits: boolean }) {
   ];
   if (showCredits) {
     items.push({ href: "/credits", label: "Crédits", icon: <Coins className="h-5 w-5" /> });
+  }
+  if (showAffiliation) {
+    items.push({ href: "/affiliation", label: "Ambassadeur", icon: <Gift className="h-5 w-5" /> });
   }
 
   return (

@@ -94,10 +94,15 @@ paiements (packs de crédits + abonnements) :
 3. **Enregistrer le webhook** : Dashboard Stripe → Developers → Webhooks → *Add endpoint* →
    URL `https://<ton-domaine>/api/stripe/webhook` → événements à sélectionner :
    `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`,
-   `customer.subscription.deleted` → copier le **signing secret** →
+   `customer.subscription.deleted`, `charge.refunded` → copier le **signing secret** →
    `STRIPE_WEBHOOK_SECRET` dans `.env`/Vercel.
    ⚠️ Sans cette étape, les paiements réussissent côté Stripe mais **aucun crédit n'est
    accordé** (c'est le webhook qui déclenche l'octroi).
+   ⚠️ `charge.refunded` est utilisé par le programme d'affiliation (reprise de commission en
+   cas de remboursement, voir `02_MODULES_FAITS.md` §36) — si l'endpoint était déjà enregistré
+   avant ce chantier, **ajouter cet événement** à la liste écoutée depuis le Dashboard
+   (Webhooks → l'endpoint existant → *Edit* → cocher `charge.refunded`), pas besoin de
+   recréer l'endpoint.
 4. **Activer le Customer Portal** : Dashboard Stripe → Settings → Billing → Customer portal
    → *Activate* (nécessaire pour le bouton « Gérer mon abonnement »).
 5. `npm run db:push` (nouveaux modèles `SubscriptionPlan`/`UserSubscription`/`StripeEvent`

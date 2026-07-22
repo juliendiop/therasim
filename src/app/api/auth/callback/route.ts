@@ -5,6 +5,7 @@ import { logAudit } from "@/lib/audit";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { createSubscriptionCheckout } from "@/lib/billing";
 import { recordFunnel, peekVisitorId } from "@/lib/funnel";
+import { attributeReferralForNewUser } from "@/lib/affiliation";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,8 @@ export async function GET(req: NextRequest) {
   });
   if (!before) {
     await recordFunnel("signup_complete", { visitorId: await peekVisitorId(), userId: user.id });
+    // Affiliation : résout le cookie ts_ref (lien de parrainage) en referredByUserId.
+    await attributeReferralForNewUser(user.id);
   }
 
   const sessionToken = await createSessionToken({
