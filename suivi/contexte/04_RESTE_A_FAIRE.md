@@ -234,9 +234,12 @@ Signalement porteur : « effet zoom à recadrer », champs qui débordent sur mo
 - Envoi email (Resend, comme theraflow). Consentement RGPD à l'inscription, suppression compte.
 - Remplacer l'utilisateur de dev unique (`src/lib/user.ts`) par la session réelle.
 
-### Compléter le contenu EM (spec §4.5)
-- Atteindre **2 drills/compétence** (1 reconnaissance + 1 production) pour les 7 compétences
-  qui n'ont encore qu'un drill de reconnaissance.
+### ~~Compléter le contenu EM (spec §4.5)~~ — ✅ FAIT (22 juillet)
+- EM enrichi : **32 drills**, chaque compétence ≥ 3 cartes avec les deux modes, 3e cas patient
+  (Nadia/diabète). ACT et Anamnèse aussi enrichis (12 cartes chacun, 2 cas chacun) le même
+  jour — cf. `02_MODULES_FAITS.md` §10 et §16.
+- ⚠️ Reste : **relecture clinique** du contenu ajouté + **calibration de l'évaluateur**
+  (mode production) avant usage sérieux — inchangé.
 
 ### Affiner le routage
 - Câbler `pertinence_scenario` (w4) quand on travaille un cas précis.

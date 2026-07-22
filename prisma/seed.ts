@@ -131,6 +131,12 @@ const scenarios = [
     contexte:
       "Sophie, 34 ans, fume depuis 15 ans. Plusieurs arrêts suivis de rechutes. Vient « pour voir » à la demande de son conjoint.",
   },
+  {
+    id: "EM-DIAB-01",
+    titre: "Nadia — diabète et activité physique",
+    contexte:
+      "Nadia, 52 ans, diabète de type 2. Son médecin insiste pour qu'elle « bouge plus ». Elle se sent culpabilisée, débordée entre travail et famille, et un peu fataliste.",
+  },
 ];
 
 type Opt = { text: string; is_best: boolean; score: number; feedback: string };
@@ -689,6 +695,197 @@ const drills: DrillSeed[] = [
         feedback: "Étiquette qui peut braquer.",
       },
     ],
+  },
+  // --- Collaboration (production : comble la seule lacune de mode) ---
+  {
+    id: "DRL-COL-03",
+    competencyId: "collaboration",
+    scenario: "EM-DIAB-01",
+    difficulty: 2,
+    mode: "production",
+    rappel:
+      "La collaboration co-construit : on demande la permission avant de conseiller et on part de ce que le patient a déjà pensé.",
+    stimulus: "Bon, dites-moi juste ce que je dois faire pour l'activité physique, ça ira plus vite.",
+    reactionSiBon: "D'accord… c'est vrai que dit comme ça, j'ai déjà quelques idées de ce qui serait tenable.",
+    modele:
+      "Je peux tout à fait partager des pistes — mais avant, ce qui marchera, c'est ce qui vous convient à vous : qu'avez-vous déjà envisagé, et qu'est-ce qui vous semblerait tenable ? On construit à partir de là.",
+  },
+  // --- Cas Nadia (diabète) : enrichit le produit d'appel EM ---
+  {
+    id: "DRL-QO-04",
+    competencyId: "questions_ouvertes",
+    scenario: "EM-DIAB-01",
+    difficulty: 1,
+    mode: "reconnaissance",
+    rappel:
+      "Une question ouverte invite à développer et explore le point de vue du patient, sans l'orienter.",
+    stimulus: "De toute façon, avec mon emploi du temps, faire du sport c'est impossible.",
+    modele: "À quoi ressemble une journée type pour vous, pour qu'on voie ensemble où il y aurait, ou non, de la place ?",
+    options: [
+      {
+        text: "À quoi ressemble une de vos journées, pour qu'on regarde ensemble où il y aurait de la place ?",
+        is_best: true,
+        score: 1,
+        feedback: "Question ouverte qui explore le quotidien sans juger l'objection.",
+      },
+      {
+        text: "Vous ne pouvez pas trouver ne serait-ce que 20 minutes ?",
+        is_best: false,
+        score: 0.2,
+        feedback: "Fermée et un peu confrontante : fait monter la justification.",
+      },
+      {
+        text: "Tout le monde peut trouver du temps s'il le veut vraiment.",
+        is_best: false,
+        score: 0,
+        feedback: "Jugement généralisant qui ferme l'échange.",
+      },
+    ],
+  },
+  {
+    id: "DRL-EMP-03",
+    competencyId: "empathie",
+    scenario: "EM-DIAB-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel:
+      "L'empathie accueille le vécu (ici la culpabilité et la surcharge) sans juger ni précipiter la solution.",
+    stimulus: "Je sais que je devrais bouger plus, mais je culpabilise déjà assez comme ça.",
+    modele: "Entre ce qu'on vous demande et tout ce que vous portez déjà, cette culpabilité pèse lourd.",
+    options: [
+      {
+        text: "Cette culpabilité pèse déjà lourd, en plus de tout ce que vous portez au quotidien.",
+        is_best: true,
+        score: 1,
+        feedback: "Accueille le vécu et la charge, sans ajouter d'injonction.",
+      },
+      {
+        text: "Il ne faut pas culpabiliser, il faut agir, c'est tout.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Balaie l'émotion et remet une injonction : ferme l'exploration.",
+      },
+      {
+        text: "Pourquoi culpabilisez-vous, au juste ?",
+        is_best: false,
+        score: 0.4,
+        feedback: "Rationalise l'émotion au lieu de l'accueillir d'abord.",
+      },
+    ],
+  },
+  {
+    id: "DRL-NJ-03",
+    competencyId: "non_jugement",
+    scenario: "EM-DIAB-01",
+    difficulty: 2,
+    mode: "production",
+    rappel:
+      "Le non-jugement accueille sans reproche et reconnaît que la décision appartient au patient.",
+    stimulus: "Je sais, je sais, je mange mal et je ne bouge pas. Vous allez me faire la morale vous aussi ?",
+    reactionSiBon: "(elle se détend un peu) Ça change, d'habitude on me sermonne direct.",
+    modele:
+      "Non, ce n'est pas mon rôle de vous faire la morale — ce qui se passe dans votre vie vous appartient. Je suis là pour réfléchir avec vous, si et quand vous le souhaitez.",
+  },
+  {
+    id: "DRL-VAL-03",
+    competencyId: "valorisations",
+    scenario: "EM-DIAB-01",
+    difficulty: 1,
+    mode: "reconnaissance",
+    rappel: "Une valorisation reconnaît un effort ou une force précis et authentique, pas un compliment vague.",
+    stimulus: "J'ai réussi à marcher jusqu'au travail deux fois cette semaine, mais bon, c'est rien.",
+    modele: "Deux fois cette semaine malgré votre emploi du temps, ce n'est pas rien : vous avez trouvé un moyen concret.",
+    options: [
+      {
+        text: "Deux fois malgré un agenda chargé, c'est une vraie initiative que vous avez prise.",
+        is_best: true,
+        score: 1,
+        feedback: "Valorise un effort précis et réel : soutient le sentiment d'efficacité.",
+      },
+      {
+        text: "C'est un début, mais il va falloir faire beaucoup plus.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Minimise l'effort et remet la barre : décourage.",
+      },
+      {
+        text: "C'est bien, continuez.",
+        is_best: false,
+        score: 0.4,
+        feedback: "Encouragement vague, peu spécifique.",
+      },
+    ],
+  },
+  {
+    id: "DRL-RES-03",
+    competencyId: "resumes",
+    scenario: "EM-DIAB-01",
+    difficulty: 2,
+    mode: "production",
+    rappel:
+      "Un bon résumé relie les éléments, fait ressortir le discours-changement du patient et relance.",
+    stimulus:
+      "En vrai, le sport ça me gonfle, mais c'est vrai que quand je marche je dors mieux, et j'aimerais tenir pour mes enfants.",
+    reactionSiBon: "Oui… dit comme ça, il y a quand même des choses qui me donneraient envie de m'y tenir.",
+    modele:
+      "Si je résume : l'idée de « faire du sport » vous rebute, et en même temps vous remarquez que marcher vous fait mieux dormir, et vous aimeriez tenir pour vos enfants. Qu'est-ce qui, là-dedans, compte le plus pour vous ?",
+  },
+  {
+    id: "DRL-RAR-03",
+    competencyId: "rouler_avec_resistance",
+    scenario: "EM-DIAB-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel:
+      "Rouler avec la résistance : ne pas contrer l'objection, l'accueillir et réorienter avec souplesse.",
+    stimulus: "De toute façon, le diabète, c'est génétique chez moi, l'activité n'y changera rien.",
+    modele: "Vous n'êtes pas convaincue que ça changerait grand-chose — et en même temps, vous êtes venue en parler. Qu'est-ce qui vous ferait quand même essayer, ou pas ?",
+    options: [
+      {
+        text: "Vous doutez que ça serve — et pourtant vous êtes là aujourd'hui. Qu'est-ce qui compterait assez pour tenter, malgré tout ?",
+        is_best: true,
+        score: 1,
+        feedback: "Accueille l'objection et la réoriente vers la motivation propre.",
+      },
+      {
+        text: "C'est faux, l'activité physique réduit clairement la glycémie, c'est prouvé.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Contre-argumente : installe le bras de fer, renforce la résistance.",
+      },
+      {
+        text: "Si vous pensez ça, je ne peux rien pour vous.",
+        is_best: false,
+        score: 0,
+        feedback: "Abandonne et culpabilise : rupture de l'alliance.",
+      },
+    ],
+  },
+  {
+    id: "DRL-ENG-03",
+    competencyId: "renforcer_engagement",
+    scenario: "EM-DIAB-01",
+    difficulty: 2,
+    mode: "production",
+    rappel:
+      "Renforcer l'engagement : aider à formuler un premier pas concret, réaliste, choisi par le patient.",
+    stimulus: "Bon, je veux bien essayer de bouger un peu plus, mais je ne sais pas comment m'y prendre.",
+    reactionSiBon: "Descendre un arrêt plus tôt le matin… oui, ça, je peux commencer dès lundi.",
+    modele:
+      "Qu'est-ce qui serait un tout premier pas, réaliste pour vous cette semaine — assez petit pour être quasi sûr de le tenir ?",
+  },
+  {
+    id: "DRL-DC-04",
+    competencyId: "evoquer_discours_changement",
+    scenario: "EM-DIAB-01",
+    difficulty: 2,
+    mode: "production",
+    rappel:
+      "Évoquer le discours-changement : faire formuler au patient ses propres raisons et l'importance qu'il y accorde.",
+    stimulus: "Je suppose que ça serait bien pour ma santé de m'y mettre, oui.",
+    reactionSiBon: "Ce qui compterait le plus… c'est de pouvoir jouer avec mes petits-enfants sans être essoufflée.",
+    modele:
+      "« Bien pour votre santé » — si vous imaginez concrètement : qu'est-ce que ça vous permettrait de faire, ou de retrouver, qui compte vraiment pour vous ?",
   },
 ];
 

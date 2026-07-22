@@ -411,13 +411,14 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   clawback best-effort dans `handleChargeRefunded`.
 - Spec : `Conception/spec-affiliation-ambassadeurs.md`.
 
-## 10. Contenu — référentiel EM (spec §2.5, §4.5)
+## 10. Contenu — référentiel EM (spec §2.5, §4.5 ; enrichi le 22 juillet)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,
-  **10 compétences** avec ancrages 1/3/5, **2 cas** (Marc/alcool, Sophie/tabac),
-  **14 drills** (≥1 reconnaissance par compétence + 3 production).
-- Fichier : `prisma/seed.ts`.
-- ⚠️ Spec §4.5 vise **2 drills/compétence** (1 reco + 1 production). Atteint pour
-  questions_ouvertes, reflets, evoquer_discours_changement. À compléter pour les 7 autres.
+  **10 compétences** avec ancrages 1/3/5.
+- **Enrichi le 22 juillet (produit d'appel) : 32 drills** (contre 14/23), **chaque compétence
+  a ≥ 3 cartes et les DEUX modes** (la lacune « collaboration sans production » est comblée),
+  et **3 cas patients** : Marc/alcool, Sophie/tabac + **Nadia/diabète-activité physique**
+  (nouveau, pour varier les mises en situation).
+- Fichier : `prisma/seed.ts`. Idempotent (upsert par id) → re-`npm run db:seed` sûr en prod.
 - ⚠️ **Validation clinique + calibration de l'évaluateur EM non faites** (spec §6/§7) :
   le contenu est réaliste mais doit être relu par un clinicien avant usage réel.
