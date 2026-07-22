@@ -115,12 +115,12 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 ## 16. Contenu de démo — ACT & Anamnèse (session 2 suite ; enrichi le 22 juillet)
 **État : ✅ Seedé (à valider cliniquement)**
 - ACT (approche, 6 compétences) + Anamnèse (transversale, 6 compétences).
-- **Enrichi le 22 juillet : chaque compétence a désormais 2 cartes** (1 reconnaissance
-  + 1 production), soit **12 drills par référentiel** (contre 3 auparavant), et **2 cas
-  patients par référentiel** (ACT : Léa/anxiété + Karim/ruminations ; Anamnèse :
-  M. Dubois/réservé + Mme Bonnet/volubile). But : assez de contenu pour un parcours qui
-  donne envie de revenir (l'anamnèse, transversale, est le meilleur domaine « gratuit »
-  à l'inscription — cf. `04_RESTE_A_FAIRE.md`).
+- **ACT** (22 juillet) : **12 drills**, 2 cartes/compétence (1 reco + 1 production), **2 cas**
+  (Léa/anxiété + Karim/ruminations).
+- **Anamnèse** (produit d'appel, porté à **5 cartes/compétence** le 22 juillet) : **30 drills**
+  (3 reconnaissance + 2 production par compétence), **3 cas** : M. Dubois/réservé,
+  Mme Bonnet/volubile, **Mme Faure/douleurs chroniques** (nouveau). L'anamnèse est le
+  meilleur domaine « gratuit » à l'inscription (transversale — cf. `04_RESTE_A_FAIRE.md`).
 - Pack « Praticien+ » (EM+ACT+Anamnèse) accordé au tenant public.
 - Fichier : `prisma/seed.ts`. Idempotent (upsert par id) → re-`npm run db:seed` sûr en prod
   (ajoute les nouvelles cartes sans toucher aux données existantes).
@@ -424,10 +424,10 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,
   **10 compétences** avec ancrages 1/3/5.
-- **Enrichi le 22 juillet (produit d'appel) : 32 drills** (contre 14/23), **chaque compétence
-  a ≥ 3 cartes et les DEUX modes** (la lacune « collaboration sans production » est comblée),
-  et **3 cas patients** : Marc/alcool, Sophie/tabac + **Nadia/diabète-activité physique**
-  (nouveau, pour varier les mises en situation).
+- **Enrichi le 22 juillet (produit d'appel) : 50 drills, EXACTEMENT 5 cartes par compétence**
+  (3 reconnaissance + 2 production), les deux modes partout, et **4 cas patients** :
+  Marc/alcool, Sophie/tabac, Nadia/diabète-activité physique, **Théo/cannabis** (nouveau).
+  (Étapes : 14 → 32 → 50.)
 - Fichier : `prisma/seed.ts`. Idempotent (upsert par id) → re-`npm run db:seed` sûr en prod.
 - ⚠️ **Validation clinique + calibration de l'évaluateur EM non faites** (spec §6/§7) :
   le contenu est réaliste mais doit être relu par un clinicien avant usage réel.

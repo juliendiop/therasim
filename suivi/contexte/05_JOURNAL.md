@@ -1226,6 +1226,16 @@ tsc + build OK. Contenu poussé en prod (db:seed fait). Évaluateur calibré (V1
 Reste : cotation clinique du gold set + du contenu ; puis, avec du trafic, coter de vraies
 réponses d'apprenants.
 
+### Suite — 5 cartes/compétence pour les 2 produits d'appel (EM + Anamnèse)
+Demande porteur : au moins 5 questions différentes par compétence pour EM et Anamnèse.
+- **EM** : 32 → **50 drills** (10 compétences × 5 : 3 reconnaissance + 2 production), 4ᵉ cas
+  **Théo/cannabis** (jeune sur la défensive) en plus de Marc/Sophie/Nadia.
+- **Anamnèse** : 12 → **30 drills** (6 × 5), 3ᵉ cas **Mme Faure/douleurs chroniques** (« déjà
+  tout essayé », se sent incomprise) en plus de M. Dubois/Mme Bonnet.
+- Vérifié : 5 cartes/compétence exactement, 0 doublon d'id, tous les scénarios référencés
+  existent, seed parse. `npm run db:seed` reste à relancer en prod (idempotent).
+- ⚠️ +36 drills rédigés par Claude → relecture clinique d'autant plus utile.
+
 ### Prochaine étape suggérée
 - Faire relire ACT/Anamnèse/EM + le gold set par un clinicien.
 - Envisager une petite page `/admin` « Calibration » (lancer le harnais depuis l'UI) si utile.

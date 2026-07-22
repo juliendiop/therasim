@@ -137,6 +137,12 @@ const scenarios = [
     contexte:
       "Nadia, 52 ans, diabète de type 2. Son médecin insiste pour qu'elle « bouge plus ». Elle se sent culpabilisée, débordée entre travail et famille, et un peu fataliste.",
   },
+  {
+    id: "EM-CAN-01",
+    titre: "Théo — cannabis, envoyé par ses parents",
+    contexte:
+      "Théo, 19 ans, fume du cannabis quotidiennement. Il vient à la demande de ses parents, sur la défensive : « Je gère, c'est eux le problème. »",
+  },
 ];
 
 type Opt = { text: string; is_best: boolean; score: number; feedback: string };
@@ -887,6 +893,462 @@ const drills: DrillSeed[] = [
     modele:
       "« Bien pour votre santé » — si vous imaginez concrètement : qu'est-ce que ça vous permettrait de faire, ou de retrouver, qui compte vraiment pour vous ?",
   },
+  // ===== Compléments : 5 cartes par compétence (produit d'appel) =====
+  // --- Empathie ---
+  {
+    id: "DRL-EMP-04",
+    competencyId: "empathie",
+    scenario: "EM-CAN-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel: "L'empathie accueille le vécu du patient sans prendre parti contre lui ni sermonner.",
+    stimulus: "Franchement, je vois pas pourquoi je suis là, c'est mes parents qui flippent pour rien.",
+    modele: "Vous ne voyez pas le problème, et vous vous retrouvez ici à cause de l'inquiétude de vos parents — c'est agaçant d'être envoyé comme ça.",
+    options: [
+      {
+        text: "Vous ne voyez pas le problème, et vous voilà ici à cause de l'inquiétude de vos parents. C'est agaçant d'être envoyé comme ça.",
+        is_best: true,
+        score: 1,
+        feedback: "Accueille son vécu (l'agacement) sans prendre parti contre lui.",
+      },
+      {
+        text: "Vos parents ont sûrement de bonnes raisons de s'inquiéter.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Prend parti contre lui d'emblée : le braque.",
+      },
+      {
+        text: "Le cannabis, ce n'est pas anodin à votre âge.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Sermonne au lieu d'accueillir le vécu.",
+      },
+    ],
+  },
+  {
+    id: "DRL-EMP-05",
+    competencyId: "empathie",
+    scenario: "EM-TAB-01",
+    difficulty: 2,
+    mode: "production",
+    rappel: "L'empathie nomme finement le vécu sous-jacent, sans le minimiser ni le corriger.",
+    stimulus: "À chaque rechute, j'ai l'impression d'être faible, de ne jamais y arriver.",
+    reactionSiBon: "Oui… c'est ça, cette impression de ne pas être à la hauteur.",
+    modele: "Chaque rechute réveille ce sentiment d'être en échec, comme si vos efforts ne comptaient pas — c'est douloureux à porter.",
+  },
+  // --- Non-jugement ---
+  {
+    id: "DRL-NJ-04",
+    competencyId: "non_jugement",
+    scenario: "EM-CAN-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel: "Le non-jugement accueille sans reproche et reconnaît la liberté de choix du patient.",
+    stimulus: "Ouais je fume tous les jours, et alors ? C'est pas illégal dans plein de pays.",
+    modele: "Vous avez le droit d'avoir votre position là-dessus, c'est votre vie. Mon rôle n'est pas de vous juger.",
+    options: [
+      {
+        text: "C'est votre vie et votre point de vue vous appartient — je ne suis pas là pour vous juger.",
+        is_best: true,
+        score: 1,
+        feedback: "Affirme l'autonomie et désamorce la confrontation.",
+      },
+      {
+        text: "Sauf qu'ici c'est illégal, justement.",
+        is_best: false,
+        score: 0,
+        feedback: "Confronte sur le terrain légal : entre en lutte.",
+      },
+      {
+        text: "Vous savez que ça peut abîmer votre mémoire ?",
+        is_best: false,
+        score: 0.1,
+        feedback: "Sermon sur les risques : renforce la position défensive.",
+      },
+    ],
+  },
+  {
+    id: "DRL-NJ-05",
+    competencyId: "non_jugement",
+    scenario: "EM-ALC-01",
+    difficulty: 1,
+    mode: "reconnaissance",
+    rappel: "Le non-jugement évite l'étiquette et renvoie la décision au patient.",
+    stimulus: "Vous allez me dire que je bois trop, comme les autres.",
+    modele: "Je ne suis pas là pour vous coller une étiquette. Ce que vous faites de votre consommation, c'est vous qui décidez.",
+    options: [
+      {
+        text: "Je ne vais pas vous coller d'étiquette. Ce que vous décidez de votre consommation vous appartient.",
+        is_best: true,
+        score: 1,
+        feedback: "Refuse l'étiquette et affirme l'autonomie.",
+      },
+      {
+        text: "Je dis juste ce que montre votre bilan.",
+        is_best: false,
+        score: 0.3,
+        feedback: "Se réfugie derrière le factuel : n'accueille pas la crainte d'être jugé.",
+      },
+      {
+        text: "Non, mais quand même, votre foie parle pour vous.",
+        is_best: false,
+        score: 0,
+        feedback: "Confronte via le corps : braque.",
+      },
+    ],
+  },
+  // --- Collaboration ---
+  {
+    id: "DRL-COL-04",
+    competencyId: "collaboration",
+    scenario: "EM-ALC-01",
+    difficulty: 1,
+    mode: "reconnaissance",
+    rappel: "La collaboration part du patient avant de proposer, plutôt que de prescrire d'en haut.",
+    stimulus: "Bon, qu'est-ce que je dois faire alors, d'après vous ?",
+    modele: "Avant de vous donner mon avis, j'aimerais partir de vous : qu'est-ce que vous verriez comme premier changement possible ?",
+    options: [
+      {
+        text: "Avant mon avis, partons de vous : qu'est-ce que vous, vous envisageriez comme premier petit changement ?",
+        is_best: true,
+        score: 1,
+        feedback: "Part du patient et partage le pouvoir de décision.",
+      },
+      {
+        text: "Il faut arrêter complètement, c'est le plus sûr.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Posture d'expert descendante.",
+      },
+      {
+        text: "Je vais vous faire une liste de choses à faire.",
+        is_best: false,
+        score: 0.2,
+        feedback: "Prescrit sans co-construire.",
+      },
+    ],
+  },
+  {
+    id: "DRL-COL-05",
+    competencyId: "collaboration",
+    scenario: "EM-CAN-01",
+    difficulty: 2,
+    mode: "production",
+    rappel: "La collaboration demande la permission et propose de réfléchir ensemble, sans imposer.",
+    stimulus: "De toute façon vous allez me faire la leçon comme le reste.",
+    reactionSiBon: "Ah… ok, ça change. Bon, si je devais changer un truc, ce serait peut-être de moins fumer en semaine.",
+    modele: "Non, je ne suis pas là pour vous faire la leçon. On peut plutôt regarder ensemble ce qui, de votre point de vue, mériterait ou non d'être changé — vous êtes d'accord pour qu'on fasse comme ça ?",
+  },
+  // --- Questions ouvertes ---
+  {
+    id: "DRL-QO-05",
+    competencyId: "questions_ouvertes",
+    scenario: "EM-CAN-01",
+    difficulty: 1,
+    mode: "reconnaissance",
+    rappel: "Une question ouverte explore le point de vue du patient sans l'orienter ni le confronter.",
+    stimulus: "Le cannabis, ça me détend, c'est tout. Y'a rien à dire de plus.",
+    modele: "Qu'est-ce que ça vous apporte, ce moment de détente, dans votre quotidien en ce moment ?",
+    options: [
+      {
+        text: "Qu'est-ce que ça vous apporte concrètement, cette détente, dans votre quotidien ?",
+        is_best: true,
+        score: 1,
+        feedback: "Ouverte, explore la fonction sans juger.",
+      },
+      {
+        text: "Vous ne pensez pas que ça vous rend passif ?",
+        is_best: false,
+        score: 0,
+        feedback: "Fermée et orientée : confronte.",
+      },
+      {
+        text: "Combien de joints par jour ?",
+        is_best: false,
+        score: 0.4,
+        feedback: "Ouverte mais factuelle et intrusive d'emblée.",
+      },
+    ],
+  },
+  // --- Reflets ---
+  {
+    id: "DRL-REFLET-04",
+    competencyId: "reflets",
+    scenario: "EM-DIAB-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel: "Un reflet complexe nomme le sens ou le schéma sous-jacent, au lieu de conseiller ou constater.",
+    stimulus: "J'essaie de faire des efforts, mais dès que je rate un jour, je laisse tout tomber.",
+    modele: "Un écart, et c'est toute la démarche qui s'effondre — comme si c'était tout ou rien.",
+    options: [
+      {
+        text: "Dès qu'il y a un écart, c'est toute la démarche qui s'effondre — comme si c'était tout ou rien pour vous.",
+        is_best: true,
+        score: 1,
+        feedback: "Reflet complexe : nomme le schéma « tout ou rien ».",
+      },
+      {
+        text: "Il ne faut pas tout arrêter pour un jour manqué.",
+        is_best: false,
+        score: 0.2,
+        feedback: "Conseil, pas un reflet.",
+      },
+      {
+        text: "Donc vous manquez souvent.",
+        is_best: false,
+        score: 0,
+        feedback: "Constat un peu accusateur.",
+      },
+    ],
+  },
+  {
+    id: "DRL-REFLET-05",
+    competencyId: "reflets",
+    scenario: "EM-TAB-01",
+    difficulty: 2,
+    mode: "production",
+    rappel: "Un reflet complexe renvoie le vécu sous-jacent (ici la réactance), sans argumenter.",
+    stimulus: "Mon conjoint me pousse à arrêter, mais du coup ça me braque encore plus.",
+    reactionSiBon: "Voilà, c'est exactement ça, j'ai l'impression que ce n'est plus mon choix.",
+    modele: "Plus on vous pousse, plus vous avez le sentiment que la décision vous échappe — et ça vous fait résister.",
+  },
+  // --- Valorisations ---
+  {
+    id: "DRL-VAL-04",
+    competencyId: "valorisations",
+    scenario: "EM-TAB-01",
+    difficulty: 1,
+    mode: "reconnaissance",
+    rappel: "Une valorisation reconnaît un effort précis et réel, sans le minimiser.",
+    stimulus: "J'ai réussi à ne pas fumer pendant la réunion ce matin, mais bon, c'est rien.",
+    modele: "Tenir toute une réunion sans fumer alors que l'envie était là, c'est une vraie capacité de résistance.",
+    options: [
+      {
+        text: "Tenir toute une réunion malgré l'envie, ce n'est pas rien : vous avez montré une vraie capacité à résister.",
+        is_best: true,
+        score: 1,
+        feedback: "Valorise un effort précis et authentique.",
+      },
+      {
+        text: "C'est un petit pas, il en faudra beaucoup d'autres.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Minimise l'effort : décourage.",
+      },
+      {
+        text: "Bravo.",
+        is_best: false,
+        score: 0.3,
+        feedback: "Compliment vague et peu spécifique.",
+      },
+    ],
+  },
+  {
+    id: "DRL-VAL-05",
+    competencyId: "valorisations",
+    scenario: "EM-ALC-01",
+    difficulty: 2,
+    mode: "production",
+    rappel: "Valoriser une démarche réelle, même minime, renforce le sentiment d'efficacité personnelle.",
+    stimulus: "J'ai pris rendez-vous et je suis venu, alors que ça me gonfle ce genre de trucs.",
+    reactionSiBon: "C'est vrai que rien que venir, c'était pas gagné.",
+    modele: "Venir aujourd'hui alors que la démarche vous rebute, ça demande déjà une vraie décision de votre part — je le souligne.",
+  },
+  // --- Résumés ---
+  {
+    id: "DRL-RES-04",
+    competencyId: "resumes",
+    scenario: "EM-CAN-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel: "Un bon résumé relie les éléments et fait ressortir l'ambivalence, sans étiqueter ni conclure.",
+    stimulus: "Bon ouais, ça me détend, mais c'est vrai que je rate des cours et mes parents me lâchent plus.",
+    modele: "Si je résume : le cannabis vous détend, et en même temps ça commence à vous coûter — des cours manqués et des tensions à la maison. C'est bien ça ?",
+    options: [
+      {
+        text: "Si je résume : ça vous détend, et en même temps ça vous coûte — des cours manqués et des tensions avec vos parents. C'est ça ?",
+        is_best: true,
+        score: 1,
+        feedback: "Relie les deux faces de l'ambivalence et fait valider.",
+      },
+      {
+        text: "Donc vous admettez que c'est un problème.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Étiquette qui braque.",
+      },
+      {
+        text: "Bref, il faut arrêter.",
+        is_best: false,
+        score: 0,
+        feedback: "Saute à la conclusion à la place du patient.",
+      },
+    ],
+  },
+  {
+    id: "DRL-RES-05",
+    competencyId: "resumes",
+    scenario: "EM-TAB-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel: "Un résumé relie le parcours et relance vers la motivation propre du patient.",
+    stimulus: "J'ai déjà arrêté plusieurs fois, ça a tenu quelques mois, et là je viens surtout pour mon conjoint.",
+    modele: "Donc : plusieurs arrêts réussis sur quelques mois, des rechutes, et aujourd'hui une démarche d'abord pour votre conjoint. Qu'est-ce qui, pour vous, compterait dans tout ça ?",
+    options: [
+      {
+        text: "Donc : des arrêts déjà réussis plusieurs mois, des rechutes, et aujourd'hui vous venez surtout pour votre conjoint. Et pour vous, qu'est-ce qui compterait ?",
+        is_best: true,
+        score: 1,
+        feedback: "Relie le parcours et relance vers sa motivation propre.",
+      },
+      {
+        text: "En résumé, vous n'êtes pas vraiment motivée.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Jugement démotivant.",
+      },
+      {
+        text: "On va reprendre depuis le début.",
+        is_best: false,
+        score: 0.2,
+        feedback: "Ignore ce qui vient d'être dit.",
+      },
+    ],
+  },
+  // --- Évoquer le discours-changement ---
+  {
+    id: "DRL-DC-05",
+    competencyId: "evoquer_discours_changement",
+    scenario: "EM-DIAB-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel: "On fait élaborer le patient sur ses propres raisons, au lieu d'argumenter à sa place.",
+    stimulus: "Je sais que bouger un peu me ferait du bien, sûrement.",
+    modele: "« Du bien » — de quelle manière, pour vous concrètement ? Qu'est-ce que ça changerait dans votre quotidien ?",
+    options: [
+      {
+        text: "« Du bien » de quelle façon, concrètement pour vous ? Qu'est-ce que ça changerait ?",
+        is_best: true,
+        score: 1,
+        feedback: "Fait élaborer le patient sur ses propres raisons.",
+      },
+      {
+        text: "Oui, ça ferait baisser votre glycémie, c'est prouvé.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Argumente à sa place : risque de contre-argumentation.",
+      },
+      {
+        text: "Donc vous êtes d'accord qu'il faut vous y mettre.",
+        is_best: false,
+        score: 0.2,
+        feedback: "Étiquette qui force l'engagement.",
+      },
+    ],
+  },
+  // --- Rouler avec la résistance ---
+  {
+    id: "DRL-RAR-04",
+    competencyId: "rouler_avec_resistance",
+    scenario: "EM-CAN-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel: "Rouler avec la résistance : ne pas contrer, réorienter vers la motivation propre du patient.",
+    stimulus: "Si vous êtes là pour me faire arrêter, on perd notre temps tous les deux.",
+    modele: "Vous n'êtes pas venu pour qu'on vous force à arrêter — et je ne suis pas là pour ça non plus. Qu'est-ce qui, pour vous, vaudrait la peine qu'on en parle ?",
+    options: [
+      {
+        text: "Je ne suis pas là pour vous forcer à arrêter. Qu'est-ce qui, pour vous, vaudrait quand même la peine qu'on aborde ?",
+        is_best: true,
+        score: 1,
+        feedback: "Accueille la résistance et réoriente vers ce qui compte pour lui.",
+      },
+      {
+        text: "Pourtant vous devriez, à votre âge c'est risqué.",
+        is_best: false,
+        score: 0,
+        feedback: "Confronte : renforce la lutte.",
+      },
+      {
+        text: "C'est vous qui voyez, moi je fais mon travail.",
+        is_best: false,
+        score: 0.2,
+        feedback: "Se retire avec une pointe d'agacement : occasion manquée.",
+      },
+    ],
+  },
+  {
+    id: "DRL-RAR-05",
+    competencyId: "rouler_avec_resistance",
+    scenario: "EM-ALC-01",
+    difficulty: 2,
+    mode: "production",
+    rappel: "Face à une objection, réorienter vers l'observation propre du patient plutôt que d'argumenter.",
+    stimulus: "Vous allez pas me faire croire qu'un verre le soir c'est dangereux.",
+    reactionSiBon: "Bon… c'est vrai que le matin, des fois, je le sens passer.",
+    modele: "Je ne vais pas vous dire ce que vous devez penser d'un verre le soir. Vous, qu'est-ce que vous remarquez, s'il y a quelque chose, sur les effets — ou l'absence d'effets ?",
+  },
+  // --- Renforcer l'engagement ---
+  {
+    id: "DRL-ENG-04",
+    competencyId: "renforcer_engagement",
+    scenario: "EM-TAB-01",
+    difficulty: 1,
+    mode: "reconnaissance",
+    rappel: "Renforcer l'engagement : aider à formuler un premier pas concret, choisi par le patient.",
+    stimulus: "Ok, j'aimerais bien réduire, mais je sais pas comment m'y prendre.",
+    modele: "Qu'est-ce qui serait un tout premier pas, réaliste pour vous cette semaine — assez petit pour être presque sûr de le tenir ?",
+    options: [
+      {
+        text: "Qu'est-ce qui serait un premier pas réaliste pour vous cette semaine, assez petit pour être sûre de le tenir ?",
+        is_best: true,
+        score: 1,
+        feedback: "Fait choisir au patient un pas concret et réaliste.",
+      },
+      {
+        text: "Il faut fixer une date d'arrêt total et vous y tenir.",
+        is_best: false,
+        score: 0.2,
+        feedback: "Plan imposé, pas choisi.",
+      },
+      {
+        text: "Achetez des substituts nicotiniques, c'est le plus efficace.",
+        is_best: false,
+        score: 0.2,
+        feedback: "Conseil descendant à la place du choix du patient.",
+      },
+    ],
+  },
+  {
+    id: "DRL-ENG-05",
+    competencyId: "renforcer_engagement",
+    scenario: "EM-CAN-01",
+    difficulty: 2,
+    mode: "reconnaissance",
+    rappel: "On soutient le pas que le patient se sent prêt à faire, sans surenchérir vers l'arrêt total.",
+    stimulus: "Je veux bien essayer de lever le pied, mais pas tout arrêter d'un coup.",
+    modele: "Ça me paraît réaliste de commencer sans tout arrêter d'un coup. Qu'est-ce que vous, vous verriez comme premier changement tenable ?",
+    options: [
+      {
+        text: "Commencer sans tout arrêter d'un coup, c'est réaliste. Qu'est-ce que vous verriez comme premier pas tenable ?",
+        is_best: true,
+        score: 1,
+        feedback: "Soutient son rythme et le fait choisir son pas.",
+      },
+      {
+        text: "Non, pour que ça marche il faut arrêter complètement.",
+        is_best: false,
+        score: 0.1,
+        feedback: "Impose l'arrêt total : provoque la résistance.",
+      },
+      {
+        text: "D'accord, mais c'est rarement suffisant de réduire.",
+        is_best: false,
+        score: 0.2,
+        feedback: "Décourage le pas qu'il propose.",
+      },
+    ],
+  },
 ];
 
 // --- Référentiels supplémentaires (démo) ---------------------------------
@@ -1358,6 +1820,12 @@ const ANAMNESE: RefDef = {
       contexte:
         "Mme Bonnet, 38 ans, consulte pour « angoisses ». Volubile, elle passe d'un sujet à l'autre (travail, sommeil, sa mère) et livre spontanément beaucoup d'éléments.",
     },
+    {
+      id: "ANA-DOUL-01",
+      titre: "Mme Faure — douleurs et fatigue",
+      contexte:
+        "Mme Faure, 45 ans, consulte pour des douleurs diffuses et une fatigue persistantes. Elle a « déjà tout essayé » et se sent incomprise par le corps médical.",
+    },
   ],
   drills: [
     {
@@ -1635,6 +2103,475 @@ const ANAMNESE: RefDef = {
       reactionSiBon: "Oui… c'est exactement ça. Ça fait du bien de l'entendre résumé comme ça.",
       modele:
         "Si je reprends l'essentiel : une fatigue installée depuis le printemps, après la réorganisation, avec une baisse de moral et l'impression de tenir sans plus vraiment y trouver de plaisir. Est-ce que ça reflète bien ce que vous vouliez me faire comprendre ?",
+    },
+    // ===== Compléments : 5 cartes par compétence (produit d'appel) =====
+    // --- Ouverture de l'entretien ---
+    {
+      id: "DRL-ANA-OUV-03",
+      competencyId: "ouverture_entretien",
+      scenario: "ANA-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Ouvrir, c'est poser le cadre (temps, déroulé, confidentialité) et mettre à l'aise, surtout face à une patiente lasse d'être renvoyée d'un professionnel à l'autre.",
+      stimulus: "(méfiante) J'espère que vous, au moins, vous allez m'écouter, parce que j'en ai marre de répéter.",
+      modele:
+        "Je comprends cette lassitude. On a le temps aujourd'hui : je vais d'abord vous écouter, à votre rythme, puis on verra ensemble. Ce qui se dit ici reste entre nous.",
+      options: [
+        {
+          text: "Je comprends cette lassitude. On a le temps : je vous écoute d'abord, à votre rythme, puis on avancera ensemble. Tout reste confidentiel.",
+          is_best: true,
+          score: 1,
+          feedback: "Accueille la lassitude et pose le cadre : sécurise.",
+        },
+        {
+          text: "Reprenons depuis le début, dites-moi vos symptômes.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Entre dans le questionnaire sans poser le cadre.",
+        },
+        {
+          text: "Ne vous inquiétez pas, ça va aller.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Rassure à vide, sans installer de cadre.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-OUV-04",
+      competencyId: "ouverture_entretien",
+      scenario: "ANA-PREM-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "Poser explicitement le cadre (durée, déroulé, confidentialité) avant de questionner, surtout face à un patient réservé qui attend.",
+      stimulus: "(silence, il attend)",
+      modele:
+        "Je vous propose qu'on prenne une quarantaine de minutes : d'abord ce qui vous amène, avec vos mots, puis quelques questions de ma part. Rien de ce que vous direz ne sortira d'ici.",
+      options: [
+        {
+          text: "Prenons une quarantaine de minutes : d'abord ce qui vous amène, avec vos mots, puis quelques questions. Rien ne sort d'ici.",
+          is_best: true,
+          score: 1,
+          feedback: "Pose durée, déroulé et confidentialité : cadre complet.",
+        },
+        {
+          text: "Alors, quel est le motif de votre venue ?",
+          is_best: false,
+          score: 0.3,
+          feedback: "Entre direct dans le motif sans poser le cadre.",
+        },
+        {
+          text: "Vous pouvez y aller, je vous écoute.",
+          is_best: false,
+          score: 0.4,
+          feedback: "Invite mais n'installe ni durée, ni déroulé, ni confidentialité.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-OUV-05",
+      competencyId: "ouverture_entretien",
+      scenario: "ANA-ANX-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Cadrer avec souplesse une patiente qui déborde et se dit pressée : nommer le temps, prioriser, rassurer sur la confidentialité.",
+      stimulus: "(débit rapide) Bon je vous préviens j'ai plein de choses à dire et pas beaucoup de temps parce qu'après je dois filer au travail…",
+      reactionSiBon: "Ah, d'accord, ok. Bon alors le plus important c'est sans doute mon sommeil.",
+      modele:
+        "Entendu. Vu le temps, je vous propose qu'on commence par ce qui compte le plus pour vous aujourd'hui — dites-moi ce qui vous pèse en premier, et je poserai des questions ensuite. Ce qu'on se dit reste confidentiel.",
+    },
+    // --- Alliance / climat de confiance ---
+    {
+      id: "DRL-ANA-ALL-03",
+      competencyId: "alliance",
+      scenario: "ANA-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "L'alliance passe par la reconnaissance du vécu (se sentir prise au sérieux), sans confirmer d'emblée la crainte du « c'est psychologique ».",
+      stimulus: "De toute façon les médecins pensent tous que c'est dans ma tête.",
+      modele:
+        "Vous vous êtes sentie souvent renvoyée à « c'est psychologique », et c'est blessant. Ici, je prends au sérieux ce que vous vivez, sans a priori.",
+      options: [
+        {
+          text: "Vous vous êtes souvent sentie renvoyée à « c'est dans la tête », et c'est blessant. Moi, je prends au sérieux ce que vous ressentez.",
+          is_best: true,
+          score: 1,
+          feedback: "Reconnaît le vécu et rassure sans a priori : renforce l'alliance.",
+        },
+        {
+          text: "Parfois le stress joue sur les douleurs, vous savez.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Confirme d'emblée sa crainte d'être renvoyée au psychologique.",
+        },
+        {
+          text: "On va faire des examens pour vérifier.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Évite le ressenti et part sur le technique.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-ALL-04",
+      competencyId: "alliance",
+      scenario: "ANA-ANX-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "Sécuriser une patiente qui craint de « prendre trop de place » en validant l'utilité de ce qu'elle partage.",
+      stimulus: "Je vous raconte tout ça mais vous devez me trouver pénible avec mes histoires.",
+      modele:
+        "Pas du tout — ce que vous partagez m'aide à comprendre. Vous pouvez y aller, il n'y a rien de pénible là-dedans.",
+      options: [
+        {
+          text: "Pas du tout, ce que vous me confiez m'aide vraiment à comprendre. Continuez, il n'y a rien de pénible.",
+          is_best: true,
+          score: 1,
+          feedback: "Rassure et légitime sa parole : soutient l'alliance.",
+        },
+        {
+          text: "Effectivement, essayons d'aller à l'essentiel.",
+          is_best: false,
+          score: 0.1,
+          feedback: "La renvoie à sa crainte d'être pénible.",
+        },
+        {
+          text: "Ne vous inquiétez pas de ça.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Balaie la crainte sans vraiment rassurer.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-ALL-05",
+      competencyId: "alliance",
+      scenario: "ANA-PREM-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Respecter le retrait d'un patient réservé tout en gardant la porte ouverte préserve l'alliance.",
+      stimulus: "(il se ferme après une question) … je préfère ne pas en parler.",
+      reactionSiBon: "(un temps) … bon. Peut-être un peu, alors, mais pas tout.",
+      modele:
+        "C'est tout à fait votre droit, on n'ira pas là où vous ne voulez pas. Si un jour vous le souhaitez, on pourra y revenir — c'est vous qui menez.",
+    },
+    // --- Explorer le motif de consultation ---
+    {
+      id: "DRL-ANA-MOT-03",
+      competencyId: "motif_consultation",
+      scenario: "ANA-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Explorer le motif = comprendre le retentissement et les attentes, pas seulement coter l'intensité.",
+      stimulus: "Je viens parce que je n'en peux plus, ces douleurs me gâchent la vie.",
+      modele:
+        "Qu'est-ce que ces douleurs vous empêchent de faire, concrètement, et qu'est-ce que vous espéreriez retrouver ?",
+      options: [
+        {
+          text: "Qu'est-ce que ces douleurs vous empêchent de faire au quotidien, et qu'est-ce que vous aimeriez pouvoir retrouver ?",
+          is_best: true,
+          score: 1,
+          feedback: "Explore le retentissement et les attentes : motif vivant.",
+        },
+        {
+          text: "Sur une échelle de 1 à 10, vous les situez où ?",
+          is_best: false,
+          score: 0.4,
+          feedback: "Factuel d'emblée : saute le sens et les attentes.",
+        },
+        {
+          text: "C'est souvent multifactoriel, ce genre de douleurs.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Explique avant d'avoir exploré.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-MOT-04",
+      competencyId: "motif_consultation",
+      scenario: "ANA-PREM-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "Face à un motif « délégué » (on m'a dit de venir), faire émerger la position propre du patient.",
+      stimulus: "On m'a dit que je devrais consulter, alors me voilà.",
+      modele:
+        "Et vous, qu'en pensez-vous ? Qu'est-ce qui, de votre côté, vous a décidé à venir malgré tout ?",
+      options: [
+        {
+          text: "Et vous, de votre côté, qu'est-ce qui vous a décidé à venir malgré tout ?",
+          is_best: true,
+          score: 1,
+          feedback: "Fait émerger sa motivation propre au-delà de l'injonction.",
+        },
+        {
+          text: "Qui vous a dit de consulter ?",
+          is_best: false,
+          score: 0.4,
+          feedback: "Factuel : s'écarte du sens pour lui.",
+        },
+        {
+          text: "C'est bien d'avoir fait la démarche.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Valorise mais n'explore pas le motif.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-MOT-05",
+      competencyId: "motif_consultation",
+      scenario: "ANA-ANX-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Aider une patiente débordée à faire émerger, parmi tout, ce qu'elle voudrait d'abord alléger.",
+      stimulus: "En vrai je sais même plus pourquoi je suis venue, y'a tellement de choses.",
+      reactionSiBon: "Ce qui me pèse le plus… c'est sans doute cette impression de ne jamais souffler.",
+      modele:
+        "Parmi tout ce qui vous préoccupe, s'il y avait une chose que vous aimeriez d'abord alléger en venant ici, ce serait laquelle ?",
+    },
+    // --- Histoire du problème ---
+    {
+      id: "DRL-ANA-HIS-03",
+      competencyId: "histoire_probleme",
+      scenario: "ANA-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Reconstruire l'histoire, c'est chercher un point de départ et l'évolution, plutôt que d'étiqueter « chronique » ou de changer de sujet.",
+      stimulus: "Ces douleurs, ça fait des années, ça a commencé je ne sais plus trop quand.",
+      modele:
+        "Essayons de retracer : vous souvenez-vous d'une période où vous vous sentiez encore bien, avant que ça s'installe ? Qu'est-ce qui se passait autour de ce moment-là ?",
+      options: [
+        {
+          text: "Retraçons ensemble : vous rappelez-vous une période où vous alliez encore bien, avant que ça s'installe, et ce qui se passait alors ?",
+          is_best: true,
+          score: 1,
+          feedback: "Cherche un point de bascule pour reconstruire l'évolution.",
+        },
+        {
+          text: "Donc c'est chronique, on va gérer ça comme tel.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Étiquette sans reconstruire l'histoire.",
+        },
+        {
+          text: "Des années, d'accord. Et à part ça, vous dormez comment ?",
+          is_best: false,
+          score: 0.2,
+          feedback: "Change de sujet : abandonne la chronologie.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-HIS-04",
+      competencyId: "histoire_probleme",
+      scenario: "ANA-ANX-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Face à un récit foisonnant, prendre un fil à la fois et situer le premier signe dans le temps.",
+      stimulus: "Le sommeil, le stress, ma mère, mon boulot… franchement je sais pas ce qui a commencé en premier.",
+      modele:
+        "Prenons un fil : si vous deviez situer le tout premier signe, lequel est apparu en premier, et quand ?",
+      options: [
+        {
+          text: "Prenons un fil à la fois : lequel de ces signes est apparu en premier, et à quel moment, selon vous ?",
+          is_best: true,
+          score: 1,
+          feedback: "Structure la chronologie sans casser le récit.",
+        },
+        {
+          text: "Tout est lié au stress, de toute façon.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Conclusion hâtive qui fige une cause.",
+        },
+        {
+          text: "On verra ça plus tard, parlez-moi de votre travail.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Disperse au lieu de reconstruire.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-HIS-05",
+      competencyId: "histoire_probleme",
+      scenario: "ANA-PREM-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Aider un patient à dater une évolution insidieuse en cherchant un moment de bascule concret.",
+      stimulus: "La baisse de moral, c'est venu progressivement, difficile à dater.",
+      reactionSiBon: "Maintenant que j'y pense, ça s'est accentué quand mon poste a changé, il y a un an.",
+      modele:
+        "Progressivement, d'accord. Y a-t-il eu un moment, même léger, où vous avez senti que ça se creusait davantage — un événement, une période ?",
+    },
+    // --- Antécédents ---
+    {
+      id: "DRL-ANA-ANT-03",
+      competencyId: "antecedents",
+      scenario: "ANA-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Explorer les antécédents avec tact : annoncer l'utilité, s'appuyer sur le dossier existant, ne pas tout refaire mécaniquement.",
+      stimulus: "Mon dossier médical est épais comme ça, vous n'allez pas me refaire tout l'interrogatoire ?",
+      modele:
+        "Je ne vais pas tout reprendre inutilement. Je vais juste vérifier quelques points qui peuvent éclairer vos douleurs — dites-moi si certains ont déjà été explorés.",
+      options: [
+        {
+          text: "Je ne vais pas tout refaire. Je vérifie juste quelques éléments utiles pour comprendre vos douleurs — dites-moi ce qui a déjà été exploré.",
+          is_best: true,
+          score: 1,
+          feedback: "Donne du sens et respecte le parcours déjà fait.",
+        },
+        {
+          text: "Il faut bien que je reprenne depuis le début pour mon dossier.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Justifie par l'administratif : dévalorise la question.",
+        },
+        {
+          text: "D'accord, on saute les antécédents alors.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Renonce sans tact ni recherche de sens.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-ANT-04",
+      competencyId: "antecedents",
+      scenario: "ANA-PREM-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Aborder les antécédents familiaux en expliquant pourquoi, et en respectant la liberté du patient d'en parler ou non.",
+      stimulus: "Dans ma famille ? Je ne vois pas ce que ça vient faire là.",
+      modele:
+        "Question légitime : je la pose parce que certaines fragilités familiales, de moral ou de santé, éclairent parfois ce qu'on traverse. On n'aborde que ce que vous voulez bien.",
+      options: [
+        {
+          text: "C'est légitime. Si je la pose, c'est que des fragilités familiales éclairent parfois ce qu'on vit ; on n'ira que là où vous êtes d'accord.",
+          is_best: true,
+          score: 1,
+          feedback: "Explique le sens et respecte la pudeur.",
+        },
+        {
+          text: "C'est systématique, tout le monde y passe.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Justifie par la routine administrative.",
+        },
+        {
+          text: "Laissez tomber alors.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Renonce sèchement, sans tact.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-ANT-05",
+      competencyId: "antecedents",
+      scenario: "ANA-ANX-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Explorer les antécédents familiaux pertinents avec tact, en s'appuyant sur ce que la patiente vient d'évoquer.",
+      stimulus: "L'anxiété, dans ma famille, il y en a partout, surtout du côté de ma mère.",
+      reactionSiBon: "Ma mère a fait une grosse dépression quand j'étais ado, ça m'a marquée.",
+      modele:
+        "Vous évoquez votre mère et ce côté familial — y a-t-il eu, chez elle ou d'autres proches, des difficultés de moral ou d'anxiété qui ont été suivies ? Ça m'aide à situer votre histoire.",
+    },
+    // --- Reformulation & synthèse ---
+    {
+      id: "DRL-ANA-SYN-03",
+      competencyId: "reformulation_synthese",
+      scenario: "ANA-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Une synthèse fidèle relie les éléments ET fait valider par la patiente, plutôt que de conclure ou de rassurer à vide.",
+      stimulus: "Voilà, vous savez tout maintenant. J'espère que vous, vous allez trouver.",
+      modele:
+        "Je récapitule pour être sûr de vous avoir bien comprise : des douleurs diffuses depuis plusieurs années, une fatigue constante, et le sentiment de ne pas avoir été entendue jusqu'ici. C'est fidèle, ou j'ai laissé de côté quelque chose d'important ?",
+      options: [
+        {
+          text: "Je récapitule pour vérifier : des douleurs diffuses depuis des années, une fatigue constante, et le sentiment de ne pas avoir été entendue. C'est fidèle, ou j'oublie quelque chose ?",
+          is_best: true,
+          score: 1,
+          feedback: "Synthèse fidèle qui relie et fait valider.",
+        },
+        {
+          text: "Bon, je pense avoir tout ce qu'il me faut.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Conclut sans reformuler ni faire valider.",
+        },
+        {
+          text: "Rassurez-vous, on va trouver une solution.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Rassure sans synthèse partagée.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-SYN-04",
+      competencyId: "reformulation_synthese",
+      scenario: "ANA-ANX-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Remettre de l'ordre dans un récit décousu et faire valider, sans réduire à une cause unique.",
+      stimulus: "(après un long récit décousu) Voilà, en gros c'est ça, ma vie en ce moment.",
+      modele:
+        "Si je remets de l'ordre : un sommeil très perturbé depuis le changement de poste, des angoisses qui montent, et l'inquiétude pour votre mère qui pèse en fond. Est-ce que je résume juste ?",
+      options: [
+        {
+          text: "Si je remets de l'ordre : un sommeil perturbé depuis votre changement de poste, des angoisses, et l'inquiétude pour votre mère en fond. C'est juste ?",
+          is_best: true,
+          score: 1,
+          feedback: "Structure le récit et fait valider.",
+        },
+        {
+          text: "Il y a beaucoup de choses, difficile de tout retenir.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Ne synthétise pas.",
+        },
+        {
+          text: "L'essentiel c'est le stress, on est d'accord.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Réduit à une cause unique et impose.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-SYN-05",
+      competencyId: "reformulation_synthese",
+      scenario: "ANA-PREM-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "En fin d'entretien, restituer l'essentiel avec les mots du patient et faire valider avant d'ouvrir sur la suite.",
+      stimulus: "(en fin d'entretien) Bon. Je crois que j'ai dit ce que j'avais à dire.",
+      reactionSiBon: "Oui, c'est bien résumé. Ça fait quelque chose de l'entendre dit comme ça.",
+      modele:
+        "Alors si je reprends l'essentiel : une fatigue installée depuis le changement de poste il y a un an, une baisse de moral, et le sentiment de tenir sans plus y trouver de plaisir. Est-ce que ça reflète bien ce que vous vouliez me faire comprendre ?",
     },
   ],
 };
