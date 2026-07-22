@@ -1028,6 +1028,62 @@ tous supprimés avant commit. Prêt à pousser.
 
 ---
 
+## Session — 22 juillet 2026 : 3 articles de blog + growth (entonnoir + conseiller IA)
+
+### 3 nouveaux articles de blog (SEO)
+Demande porteur : écrire ET publier 3 articles optimisés SEO. Publiés directement sur `main`
+(flux validé, pas de PR) : ACT (praticien), premier entretien/anamnèse (praticien),
+simulation en formation (ecole). Chacun frontmatter valide (desc. 150-160 car., calibrée au
+`node -e`), composants custom + tableaux GFM, CTA par audience. Rendu serveur vérifié en
+local (curl sur `next start`) avant push — pas seulement build/tsc, vu les pièges MDX passés.
+
+### Growth : mesure de l'entonnoir + conseiller d'optimisation IA
+Demande porteur : automatiser l'acquisition, A/B testing auto, page qui « évolue jusqu'à
+l'optimum ». **Réponse franche donnée avant de coder** : l'A/B testing autonome est
+inapplicable sans trafic (aucune signification statistique ; une boucle auto optimiserait
+vers du bruit) et l'auto-publication par IA sur une page d'acquisition est risquée (RGPD +
+mise en ligne d'une version pire). Proposé le socle réellement utile : **mesurer l'entonnoir
+d'abord**. Porteur a choisi cette option (AskUserQuestion). Puis, en cours de build, a
+demandé une **section « Optimisation »** : bouton pour lancer une analyse IA qui propose des
+optimisations, chacune avec un prompt à copier-coller dans l'IA de dev de son choix (« l'IA
+propose, je valide »).
+
+**Construit :**
+- `FunnelEvent` (Prisma) + `src/lib/funnel.ts` : cookie visiteur anonyme `ts_vid` (UUID, pas
+  d'IP/UA — RGPD), `recordFunnel`/`recordFunnelOncePerUser`, `funnelSummary` (taux
+  étape→étape). 7 étapes : landing_view/demo_start/signup_start (beacon client)
+  + signup_complete/activation/checkout_start/purchase (serveur).
+- `/api/track` (beacon) : **whitelist** des seuls événements anonymes → impossible de gonfler
+  une conversion depuis le client (testé : landing_view→204, purchase→400).
+- Points de conversion serveur branchés : register + callback (signup_complete, 1× ; callback
+  ne compte que si compte NOUVEAU), drill attempt (activation, 1×/user), credits/actions
+  (checkout_start), billing handleCheckoutCompleted (purchase, 1×/user, 3 branches
+  pack/framework/plan).
+- `/admin/funnel` : dashboard (compteurs, barres, taux, décrochage <30% en rouge, conversion
+  globale, bannière « volume faible » <100 visites).
+- `/admin/optimisation` + `src/lib/growth-advisor.ts` : `runAnalysis()` agrège l'entonnoir,
+  interroge `llmChat("generation", …, {json})`, parse défensif (fences/accolades), stocke la
+  dernière analyse en `AppConfig` (`growth.last_analysis`, pas de nouvelle table). Page :
+  bouton « Lancer l'analyse » (`useActionState`), synthèse + cartes reco (impact/effort) +
+  `CopyPrompt` (bouton copier client) par prompt de dev.
+- Nav admin : « Acquisition » + « Optimisation ».
+
+### Pièges / décisions
+- Beacon `keepalive: true` (survit à une navigation immédiate) + dédup module par event+path.
+- `recordFunnel` best-effort (try/catch avalé) : la mesure ne doit JAMAIS casser un parcours.
+- Réutilisé l'usage LLM « generation » existant plutôt que d'en ajouter un (évite de toucher
+  `/admin/modeles`).
+
+### 🔴 Action requise du porteur
+`npm run db:push` (table `funnel_events`). L'analyse IA marche si une clé LLM est déjà
+configurée (c'est le cas si le simulateur fonctionne).
+
+### État en fin de session
+Build OK, types OK, anti-triche + cookie RGPD vérifiés en local. Prêt à pousser. A/B testing
+réel = étape suivante séparée (attendre du trafic).
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA

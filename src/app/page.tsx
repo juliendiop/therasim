@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import DemoDrill from "./demo-drill";
+import Track from "./_components/track";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,8 @@ export default async function LandingPage() {
 
   return (
     <div className="animate-in">
+      {/* Mesure d'entonnoir (visiteur anonyme) */}
+      <Track event="landing_view" path="/" />
       {/* ---- Héro ---- */}
       <section className="mx-auto max-w-3xl pt-8 text-center sm:pt-14">
         <span className="text-xs font-semibold uppercase tracking-widest text-[var(--ochre)]">

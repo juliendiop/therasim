@@ -4,6 +4,7 @@ import { consumeMagicToken, createSessionToken, setSessionCookie } from "@/lib/a
 import { logAudit } from "@/lib/audit";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { createSubscriptionCheckout } from "@/lib/billing";
+import { recordFunnel, peekVisitorId } from "@/lib/funnel";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +22,17 @@ export async function GET(req: NextRequest) {
   }
 
   // Trouver ou créer l'utilisateur (apprenant par défaut dans son tenant).
+  // On note si le compte est NOUVEAU (pour la mesure d'entonnoir : un lien
+  // magique peut aussi bien créer un compte que connecter un compte existant).
+  const before = await prisma.user.findUnique({ where: { email: result.email } });
   const user = await prisma.user.upsert({
     where: { email: result.email },
     update: {},
     create: { email: result.email, tenantId: result.tenantId, role: "learner" },
   });
+  if (!before) {
+    await recordFunnel("signup_complete", { visitorId: await peekVisitorId(), userId: user.id });
+  }
 
   const sessionToken = await createSessionToken({
     userId: user.id,

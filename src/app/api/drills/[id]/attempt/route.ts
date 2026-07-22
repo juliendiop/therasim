@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { userCanAccess } from "@/lib/entitlements";
 import { recordAttempt, type RecordAttemptResult } from "@/lib/attempts";
+import { recordFunnelOncePerUser } from "@/lib/funnel";
 import { parseOptions } from "@/lib/drill-view";
 import { normalizeNote, PALIER_LABEL } from "@/lib/mastery";
 import {
@@ -49,6 +50,9 @@ export async function POST(
       score,
       raw: { mode: "reconnaissance", option_index: idx, feedback: chosen.feedback },
     });
+
+    // Mesure d'entonnoir : activation = 1er exercice complété (1× par user).
+    await recordFunnelOncePerUser("activation", user.id);
 
     return NextResponse.json({
       mode: "reconnaissance",
@@ -108,6 +112,9 @@ export async function POST(
         evidence: evaluation.evidence,
       },
     });
+
+    // Mesure d'entonnoir : activation = 1er exercice complété (1× par user).
+    await recordFunnelOncePerUser("activation", user.id);
 
     return NextResponse.json({
       mode: "production",

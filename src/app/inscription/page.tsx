@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Brain, Check, Mail, UserPlus } from "lucide-react";
+import { trackEvent } from "@/app/_components/track";
 
 type Mode = "password" | "magic";
 
@@ -18,6 +19,10 @@ export default function InscriptionPage() {
 function InscriptionForm() {
   // Forfait choisi sur /tarifs (repris après création de compte).
   const planId = useSearchParams().get("plan");
+  // Mesure d'entonnoir : arrivée sur la page d'inscription (visiteur anonyme).
+  useEffect(() => {
+    trackEvent("signup_start", "/inscription");
+  }, []);
   const [mode, setMode] = useState<Mode>("password");
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");

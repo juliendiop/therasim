@@ -5,6 +5,7 @@
 // aucun crédit consommé, rien n'est enregistré. Contenu adapté du référentiel EM.
 
 import { useState } from "react";
+import { trackEvent } from "./_components/track";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -166,7 +167,11 @@ export default function DemoDrill() {
           {drill.options.map((o, i) => (
             <button
               key={i}
-              onClick={() => setSelected(i)}
+              onClick={() => {
+                // Mesure d'entonnoir : 1er engagement avec la démo (dédupliqué).
+                trackEvent("demo_start", "/");
+                setSelected(i);
+              }}
               className="w-full rounded-lg border border-[var(--border)] bg-white px-4 py-3 text-left text-sm transition hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"
             >
               {o.text}

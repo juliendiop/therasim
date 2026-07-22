@@ -10,6 +10,7 @@ import {
   createFrameworkCheckout,
   createSubscriptionCheckout,
 } from "@/lib/billing";
+import { recordFunnel } from "@/lib/funnel";
 
 function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : "Une erreur est survenue.";
@@ -28,6 +29,7 @@ export async function checkoutPackAction(formData: FormData) {
   } catch (e) {
     redirect(`/credits?error=${encodeURIComponent(errorMessage(e))}`);
   }
+  await recordFunnel("checkout_start", { userId: user.id, meta: { kind: "pack", packId } });
   redirect(url);
 }
 
@@ -51,6 +53,7 @@ export async function checkoutPlanAction(formData: FormData) {
   } catch (e) {
     redirect(`/credits?error=${encodeURIComponent(errorMessage(e))}`);
   }
+  await recordFunnel("checkout_start", { userId: user.id, meta: { kind: "plan", planId } });
   redirect(url);
 }
 

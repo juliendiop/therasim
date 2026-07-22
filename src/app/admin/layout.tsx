@@ -6,10 +6,12 @@ import {
   Coins,
   Cpu,
   CreditCard,
+  Filter,
   KeyRound,
   LayoutGrid,
   Package,
   ShieldCheck,
+  Wand2,
 } from "lucide-react";
 import { requireSuperAdmin } from "@/lib/auth";
 
@@ -36,6 +38,8 @@ export default async function AdminLayout({
         <AdminLink href="/admin/modeles" icon={<Cpu className="h-4 w-4" />} label="Modèles IA" />
         <AdminLink href="/admin/credits" icon={<Coins className="h-4 w-4" />} label="Crédits & quotas" />
         <AdminLink href="/admin/facturation" icon={<CreditCard className="h-4 w-4" />} label="Facturation" />
+        <AdminLink href="/admin/funnel" icon={<Filter className="h-4 w-4" />} label="Acquisition" />
+        <AdminLink href="/admin/optimisation" icon={<Wand2 className="h-4 w-4" />} label="Optimisation" />
         <AdminLink href="/admin/activity" icon={<Activity className="h-4 w-4" />} label="Journal d'activité" />
         <AdminLink href="/admin/compte" icon={<KeyRound className="h-4 w-4" />} label="Mon compte" />
       </nav>

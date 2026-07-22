@@ -82,6 +82,27 @@ model AuditEvent {
   @@map("audit_events")
 }
 
+// Mesure de l'entonnoir d'acquisition (growth). First-party, sans donnée
+// personnelle : `visitorId` est un identifiant anonyme (cookie ts_vid), jamais
+// une IP ni un user-agent. `userId` est rempli dès qu'on connaît l'utilisateur
+// (permet de relier un parcours anonyme au compte créé).
+model FunnelEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  visitorId String   @map("visitor_id")
+  userId    String?  @map("user_id") @db.Uuid
+  // 'landing_view' | 'demo_start' | 'signup_start' | 'signup_complete'
+  //  | 'activation' | 'checkout_start' | 'purchase'
+  event     String
+  path      String?
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([event, createdAt])
+  @@index([visitorId])
+  @@index([userId])
+  @@map("funnel_events")
+}
+
 // Journal des mouvements de crédits (traçabilité : bienvenue, recharge, consommation, octroi).
 model CreditLedger {
   id           String   @id @default(uuid()) @db.Uuid

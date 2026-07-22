@@ -8,6 +8,7 @@ import { getConfig } from "./config";
 import { grant } from "./credits";
 import { CREDIT_PACKS } from "./credits";
 import { ensureStripeCustomer, stripeClient } from "./stripe";
+import { recordFunnelOncePerUser } from "./funnel";
 
 // --- Création des sessions (checkout / portail) ----------------------------
 
@@ -164,6 +165,8 @@ export async function handleCheckoutCompleted(event: Stripe.Event): Promise<void
         update: {},
         create: { userId, frameworkId: session.metadata.frameworkId, source: "purchase" },
       });
+      // Mesure d'entonnoir : 1er paiement de ce visiteur (achat à l'unité).
+      await recordFunnelOncePerUser("purchase", userId, { meta: { kind: "framework" } });
       return;
     }
     // Pack de crédits.
@@ -173,6 +176,7 @@ export async function handleCheckoutCompleted(event: Stripe.Event): Promise<void
         sessionId: session.id,
         packId: session.metadata?.packId,
       });
+      await recordFunnelOncePerUser("purchase", userId, { meta: { kind: "pack" } });
     }
     return;
   }
@@ -186,6 +190,8 @@ export async function handleCheckoutCompleted(event: Stripe.Event): Promise<void
     if (!user) return;
     const sub = await stripeClient().subscriptions.retrieve(subscriptionId);
     await upsertUserSubscription(userId, user.tenantId, planId, sub);
+    // Mesure d'entonnoir : 1er paiement de ce visiteur (abonnement).
+    await recordFunnelOncePerUser("purchase", userId, { meta: { kind: "plan", planId } });
   }
 }
 

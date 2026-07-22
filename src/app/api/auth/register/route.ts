@@ -4,6 +4,7 @@ import { hashPassword } from "@/lib/password";
 import { createSessionToken, setSessionCookie, type Role } from "@/lib/auth";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { createSubscriptionCheckout } from "@/lib/billing";
+import { recordFunnel, peekVisitorId } from "@/lib/funnel";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,9 @@ export async function POST(req: NextRequest) {
     role: user.role as Role,
   });
   await setSessionCookie(token);
+
+  // Mesure d'entonnoir : relie le parcours anonyme (cookie visiteur) au compte créé.
+  await recordFunnel("signup_complete", { visitorId: await peekVisitorId(), userId: user.id });
 
   // Report du forfait choisi sur /tarifs : direct vers le checkout Stripe.
   // Un échec (Price ID manquant, Stripe non configuré) ne doit jamais bloquer

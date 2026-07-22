@@ -3,6 +3,32 @@
 Ordre indicatif. Le détail fonctionnel est dans la spec
 (`Conception/spec-v2-entrainement-progression (1).md`).
 
+## ⭐ Growth — mesure de l'entonnoir + conseiller d'optimisation IA — ✅ V1 FAITE (22 juillet)
+
+Demande porteur : « automatiser l'acquisition », growth basé sur des mesures concrètes.
+**A/B testing autonome écarté** (à froid, honnêtement) : sans trafic → aucune signification
+statistique ; une boucle « qui optimise seule » optimiserait vers du bruit. On a construit
+le socle utile dès maintenant.
+- ✅ **Mesure d'entonnoir first-party, sans PII** (`FunnelEvent`, cookie `ts_vid` anonyme) :
+  landing_view / demo_start / signup_start (beacon client `/api/track`, whitelist anti-triche)
+  + signup_complete / activation / checkout_start / purchase (écrits **côté serveur** aux
+  points de conversion déjà existants). `src/lib/funnel.ts`, dashboard `/admin/funnel`
+  (compteurs, taux étape→étape, décrochages en rouge, bannière honnête « volume faible »).
+- ✅ **Section « Optimisation » (`/admin/optimisation`)** : le porteur clique « Lancer
+  l'analyse » → l'IA (via `llmChat("generation")`) lit les mesures d'entonnoir et rend 3-5
+  optimisations priorisées (constat / hypothèse / proposition / impact / effort), **chacune
+  avec un prompt prêt à copier-coller** dans l'IA de dev de son choix. L'IA PROPOSE, le
+  porteur VALIDE et déclenche — rien d'autonome. Dernière analyse stockée en `AppConfig`
+  (`growth.last_analysis`), pas de nouvelle table. `src/lib/growth-advisor.ts`.
+- 🔴 **Action requise du porteur** : `npm run db:push` (table `funnel_events`). L'analyse
+  IA nécessite une clé LLM configurée dans `/admin/modeles` (déjà le cas si le simulateur
+  marche). À mentionner dans la future politique de confidentialité (mesure d'audience
+  exemptée de consentement au sens CNIL car minimale et sans PII, mais à documenter).
+- ⏭️ **Étape suivante (non faite, séparée)** : A/B testing réel (affectation stable +
+  variantes) — se branchera SUR cette mesure une fois du trafic présent (viser ≥ ~100
+  visites/variante avant de conclure). Alternative « buy » possible : PostHog (sessions,
+  heatmaps) — écartée pour l'instant, à reconsidérer si besoin d'aller vite.
+
 ## ⭐ Visibilité des crédits + écran dédié "plus de crédits" — ✅ FAITE et validée (3 juillet)
 
 Demande porteur : audit du parcours d'essai (crédits de bienvenue, comportement à sec,

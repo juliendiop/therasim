@@ -16,6 +16,7 @@ import { canBuyIndividualOffers } from "@/lib/entitlements";
 import { isStripeConfigured } from "@/lib/stripe";
 import { planQuotaLabel } from "@/lib/ui";
 import { checkoutPackAction, checkoutPlanAction } from "@/app/credits/actions";
+import Track from "@/app/_components/track";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,7 @@ export default async function TarifsPage() {
 
   return (
     <div className="animate-in mx-auto max-w-5xl">
+      <Track event="landing_view" path="/tarifs" />
       <section className="mx-auto max-w-2xl pt-4 text-center sm:pt-8">
         <span className="text-xs font-semibold uppercase tracking-widest text-[var(--ochre)]">
           Tarifs
