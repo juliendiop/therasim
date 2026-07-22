@@ -103,11 +103,20 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 - Fichiers : `src/app/admin/referentiels/**`, `src/lib/generate.ts`.
 - ⚠️ Reste : ré-éditer une carte existante, gérer les cas (scenarios) dans l'UI.
 
-## 16. Contenu de démo — ACT & Anamnèse (session 2 suite)
+## 16. Contenu de démo — ACT & Anamnèse (session 2 suite ; enrichi le 22 juillet)
 **État : ✅ Seedé (à valider cliniquement)**
-- ACT (approche, 6 compétences, 3 drills) + Anamnèse (transversale, 6 compétences, 3 drills).
+- ACT (approche, 6 compétences) + Anamnèse (transversale, 6 compétences).
+- **Enrichi le 22 juillet : chaque compétence a désormais 2 cartes** (1 reconnaissance
+  + 1 production), soit **12 drills par référentiel** (contre 3 auparavant), et **2 cas
+  patients par référentiel** (ACT : Léa/anxiété + Karim/ruminations ; Anamnèse :
+  M. Dubois/réservé + Mme Bonnet/volubile). But : assez de contenu pour un parcours qui
+  donne envie de revenir (l'anamnèse, transversale, est le meilleur domaine « gratuit »
+  à l'inscription — cf. `04_RESTE_A_FAIRE.md`).
 - Pack « Praticien+ » (EM+ACT+Anamnèse) accordé au tenant public.
-- Fichier : `prisma/seed.ts`.
+- Fichier : `prisma/seed.ts`. Idempotent (upsert par id) → re-`npm run db:seed` sûr en prod
+  (ajoute les nouvelles cartes sans toucher aux données existantes).
+- ⚠️ Contenu clinique rédigé par Claude, réaliste mais **à relire par un clinicien** avant
+  usage sérieux (comme les drills initiaux).
 
 ## 17. Simulateur N3 — entretien simulé (session 2 suite)
 **État : ✅ Fait (nécessite MISTRAL_API_KEY pour fonctionner)**

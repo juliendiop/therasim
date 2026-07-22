@@ -791,6 +791,12 @@ const ACT: RefDef = {
       contexte:
         "Léa, 29 ans, évite les situations sociales par peur du jugement. Elle voudrait « ne plus jamais être anxieuse ».",
     },
+    {
+      id: "ACT-DEP-01",
+      titre: "Karim — ruminations et perte d'élan",
+      contexte:
+        "Karim, 41 ans, se dit « bloqué » depuis une rupture : il rumine (« je suis un raté »), a délaissé ce qu'il aimait, et attend « d'aller mieux pour s'y remettre ».",
+    },
   ],
   drills: [
     {
@@ -889,6 +895,188 @@ const ACT: RefDef = {
         },
       ],
     },
+    {
+      id: "DRL-ACT-ACC-02",
+      competencyId: "acceptation",
+      scenario: "ACT-ANX-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "L'acceptation invite à faire de la place à l'émotion, sans lutte ni évitement — pas à l'aimer, juste à cesser la bagarre.",
+      stimulus:
+        "Dès que je sens l'angoisse monter avant une soirée, j'annule. Je ne supporte pas cette sensation.",
+      reactionSiBon:
+        "Dit comme ça… l'idée de ne pas me battre contre elle me soulage un peu, bizarrement.",
+      modele:
+        "Et si, avant la prochaine soirée, vous laissiez cette vague d'angoisse être là sans chercher à la faire partir — juste remarquer qu'elle monte puis redescend, pendant que vous y allez quand même ?",
+    },
+    {
+      id: "DRL-ACT-DEF-02",
+      competencyId: "defusion",
+      scenario: "ACT-DEP-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Défusionner, c'est aider à observer la pensée comme un produit de l'esprit (« je remarque que je pense que… »), sans la débattre ni la croire sur parole.",
+      stimulus: "À quoi bon essayer, je suis un raté, c'est comme ça.",
+      reactionSiBon:
+        "« Mon esprit me sert la phrase je suis un raté »… ouais, c'est vrai qu'il me la répète souvent.",
+      modele:
+        "Quand vous dites « je suis un raté », est-ce qu'on pourrait le poser autrement : « je remarque que mon esprit me sert la pensée que je suis un raté » ? Qu'est-ce que ça change de le formuler ainsi ?",
+    },
+    {
+      id: "DRL-ACT-PRE-01",
+      competencyId: "contact_present",
+      scenario: "ACT-ANX-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "Le contact avec le présent ramène, en douceur, à l'expérience de l'ici-maintenant (sensations, souffle, environnement), hors du film du passé ou du futur.",
+      stimulus: "Je passe mes journées à imaginer toutes les catastrophes possibles pour ce week-end.",
+      modele:
+        "Là, tout de suite, dans cette pièce, qu'est-ce que vous remarquez — votre respiration, les points d'appui de votre corps sur le siège ?",
+      options: [
+        {
+          text: "Là, maintenant, qu'est-ce que vous remarquez dans votre corps et autour de vous, dans cette pièce ?",
+          is_best: true,
+          score: 1,
+          feedback: "Ancre dans l'expérience présente, hors du film anticipatoire.",
+        },
+        {
+          text: "Ces catastrophes, quelle est la probabilité réelle qu'elles arrivent ?",
+          is_best: false,
+          score: 0.3,
+          feedback: "Débat le contenu des pensées : reste dans le futur, pas dans le présent.",
+        },
+        {
+          text: "Il faut arrêter de penser à tout ça.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Injonction à supprimer : renforce la lutte, n'ancre pas au présent.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-PRE-02",
+      competencyId: "contact_present",
+      scenario: "ACT-DEP-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Ramener au présent aide à sortir de la rumination, en portant l'attention sur l'expérience directe du moment.",
+      stimulus: "Je repasse en boucle tout ce que j'ai raté ces deux dernières années.",
+      reactionSiBon:
+        "(il souffle) … c'est vrai que, juste à sentir mes pieds au sol, ça fait une petite pause dans la boucle.",
+      modele:
+        "On peut faire une pause une seconde : sentez le contact de vos pieds sur le sol, l'air qui entre et sort. Qu'est-ce que vous remarquez, juste maintenant, pendant que l'esprit continue ses boucles à côté ?",
+    },
+    {
+      id: "DRL-ACT-SOI-01",
+      competencyId: "soi_observateur",
+      scenario: "ACT-DEP-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Le soi-observateur aide à prendre la place de celui qui remarque ses pensées et émotions, distinct de leur contenu — un « vous qui observe », stable.",
+      stimulus: "Je SUIS déprimé, c'est devenu ce que je suis, point.",
+      modele:
+        "Il y a la déprime que vous traversez… et il y a un vous qui la remarque, qui m'en parle là. Ce « vous qui observe », il n'est pas la déprime, si ?",
+      options: [
+        {
+          text: "Il y a la déprime que vous ressentez, et il y a un vous qui la remarque, ici, maintenant. Ce vous-là est-il la déprime, ou celui qui l'observe ?",
+          is_best: true,
+          score: 1,
+          feedback: "Distingue la personne du contenu : ouvre la position d'observateur.",
+        },
+        {
+          text: "Vous n'êtes pas déprimé, vous traversez juste une passe difficile.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Rassure et recadre le contenu, sans installer le soi-observateur.",
+        },
+        {
+          text: "Depuis quand vous sentez-vous comme ça ?",
+          is_best: false,
+          score: 0.2,
+          feedback: "Question d'anamnèse utile ailleurs, mais qui n'ouvre pas la prise de recul.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-SOI-02",
+      competencyId: "soi_observateur",
+      scenario: "ACT-ANX-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Aider à adopter la perspective du « moi qui observe » : ce qui note les pensées et sensations reste constant, même quand elles changent.",
+      stimulus:
+        "Quand l'angoisse est là, c'est comme si j'étais entièrement l'angoisse, il n'y a plus que ça.",
+      reactionSiBon:
+        "Vu comme ça… il y a bien une partie de moi qui, même à ce moment-là, regarde ce qui se passe.",
+      modele:
+        "Quand la vague est au plus fort, est-ce qu'il reste, quelque part, un point de vue qui remarque « voilà, l'angoisse est très forte là » ? Ce point qui observe, il est emporté, ou il regarde la vague passer ?",
+    },
+    {
+      id: "DRL-ACT-VAL-02",
+      competencyId: "valeurs",
+      scenario: "ACT-DEP-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Clarifier les valeurs = faire émerger ce qui compte vraiment (le type de vie, de relations qu'on veut incarner), distinct d'un objectif à cocher.",
+      stimulus: "Mon objectif, c'est de redevenir productif, comme avant.",
+      reactionSiBon:
+        "Au fond, ce que je veux… c'est retrouver du lien avec mes proches. J'avais un peu oublié ça.",
+      modele:
+        "« Productif » — si on regarde derrière : productif au service de quoi qui compte pour vous ? Quel genre de personne, dans vos relations ou vos activités, aimeriez-vous être à nouveau ?",
+    },
+    {
+      id: "DRL-ACT-ENG-01",
+      competencyId: "action_engagee",
+      scenario: "ACT-DEP-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "L'action engagée aide à choisir un petit pas concret, réaliste, relié à une valeur — sans attendre que l'émotion change d'abord.",
+      stimulus: "Je m'y remettrai quand j'irai mieux et que j'aurai retrouvé la motivation.",
+      modele:
+        "Et si un tout petit pas, cette semaine, allait vers ce qui compte pour vous — quelque chose de faisable même sans motivation ? Qu'est-ce que ça pourrait être ?",
+      options: [
+        {
+          text: "Quel tout petit pas, faisable cette semaine même sans motivation, irait vers ce qui compte pour vous ?",
+          is_best: true,
+          score: 1,
+          feedback: "Relie une action concrète à la valeur, sans attendre que l'émotion change.",
+        },
+        {
+          text: "Il faut vous forcer, la motivation viendra après.",
+          is_best: false,
+          score: 0.4,
+          feedback: "En partie juste, mais assené et sans lien aux valeurs ni pas concret.",
+        },
+        {
+          text: "Reposez-vous d'abord, on verra les actions plus tard.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Conforte l'attente et l'évitement : à rebours de l'action engagée.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-ENG-02",
+      competencyId: "action_engagee",
+      scenario: "ACT-ANX-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Aider à formuler un pas concret et réaliste, aligné sur une valeur, que la personne peut vraiment tenter d'ici la prochaine fois.",
+      stimulus: "J'aimerais avoir de nouveau une vie sociale, mais je ne sais pas par où commencer.",
+      reactionSiBon:
+        "Écrire à une seule amie pour un café… oui, ça, je pourrais le faire cette semaine.",
+      modele:
+        "Si « avoir des liens » compte pour vous, quel serait le plus petit pas possible cette semaine — pas la grande soirée, mais un geste minuscule qui va dans ce sens ?",
+    },
   ],
 };
 
@@ -966,6 +1154,12 @@ const ANAMNESE: RefDef = {
       titre: "M. Dubois — premier entretien",
       contexte:
         "M. Dubois, 52 ans, consulte pour la première fois, adressé pour « fatigue et baisse de moral ». Plutôt réservé.",
+    },
+    {
+      id: "ANA-ANX-01",
+      titre: "Mme Bonnet — anxiété, premier entretien",
+      contexte:
+        "Mme Bonnet, 38 ans, consulte pour « angoisses ». Volubile, elle passe d'un sujet à l'autre (travail, sommeil, sa mère) et livre spontanément beaucoup d'éléments.",
     },
   ],
   drills: [
@@ -1064,6 +1258,186 @@ const ANAMNESE: RefDef = {
           feedback: "Ignore le ressenti exprimé : occasion d'alliance manquée.",
         },
       ],
+    },
+    {
+      id: "DRL-ANA-OUV-02",
+      competencyId: "ouverture_entretien",
+      scenario: "ANA-ANX-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Ouvrir, c'est poser en quelques mots le cadre (temps, déroulé, confidentialité) et inviter à commencer — surtout face à un patient qui déborde d'emblée.",
+      stimulus:
+        "Bonjour, alors voilà, je ne sais pas par où commencer, il y a tellement de choses, le travail, ma mère, je ne dors plus…",
+      reactionSiBon: "D'accord, oui, ça me rassure de savoir comment ça va se passer. Bon. Alors…",
+      modele:
+        "Je vois qu'il y a beaucoup à dire — et on a le temps, environ 45 minutes. Je vous propose de commencer par ce qui vous pèse le plus aujourd'hui, puis je poserai quelques questions. Tout reste confidentiel ici.",
+    },
+    {
+      id: "DRL-ANA-ALL-02",
+      competencyId: "alliance",
+      scenario: "ANA-PREM-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "L'alliance se soutient en accueillant ce que le patient réservé laisse filtrer, sans forcer, et en lui laissant la main.",
+      stimulus: "Je ne suis pas du genre à parler de moi, vous savez. Ça ne va pas être simple.",
+      reactionSiBon: "(un temps) … c'est vrai que, là, je me sens un peu moins sur la défensive.",
+      modele:
+        "Merci de me le dire — rien ne vous oblige à aller plus loin que ce qui vous met à l'aise. On avance à votre rythme, et c'est vous qui choisissez ce qu'on aborde.",
+    },
+    {
+      id: "DRL-ANA-MOT-02",
+      competencyId: "motif_consultation",
+      scenario: "ANA-ANX-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Explorer le motif, c'est comprendre, derrière la plainte, le sens qu'elle a pour le patient et ce qu'il attend de la démarche.",
+      stimulus: "En fait c'est mon médecin qui m'a dit de consulter pour mes angoisses.",
+      reactionSiBon:
+        "Ce que j'attends… arrêter d'avoir cette boule au ventre en permanence, et comprendre pourquoi maintenant.",
+      modele:
+        "Votre médecin vous a orientée — et vous, qu'est-ce qui, de votre côté, vous a décidée à venir maintenant, et qu'aimeriez-vous que ça change ?",
+    },
+    {
+      id: "DRL-ANA-HIS-01",
+      competencyId: "histoire_probleme",
+      scenario: "ANA-ANX-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Retracer l'histoire du problème, c'est en reconstruire la chronologie (début, évolution, facteurs, retentissement) — surtout quand le récit part dans tous les sens.",
+      stimulus:
+        "Ça a commencé… enfin je ne sais plus, il y a eu le déménagement, puis mon poste qui a changé, et ma mère qui est tombée malade, tout s'est mélangé.",
+      modele:
+        "Pour m'y retrouver, est-ce qu'on peut reprendre dans l'ordre : à quel moment les angoisses sont-elles apparues la première fois, et que se passait-il dans votre vie à ce moment-là ?",
+      options: [
+        {
+          text: "Reprenons dans l'ordre si vous voulez bien : quand les angoisses ont-elles commencé, et que se passait-il dans votre vie à ce moment-là ?",
+          is_best: true,
+          score: 1,
+          feedback: "Structure la chronologie sans casser le récit : reconstruit l'histoire.",
+        },
+        {
+          text: "Donc c'est le déménagement qui a tout déclenché.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Conclusion hâtive : fige une cause avant d'avoir retracé l'évolution.",
+        },
+        {
+          text: "Parlons plutôt de votre sommeil, c'est plus concret.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Change de sujet : abandonne la reconstruction de l'histoire.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-HIS-02",
+      competencyId: "histoire_probleme",
+      scenario: "ANA-PREM-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Reconstruire l'évolution : préciser depuis quand, comment ça a progressé, et ce que ça a changé concrètement dans le quotidien.",
+      stimulus: "La fatigue, ça fait un moment. Je ne saurais pas dire depuis quand exactement.",
+      reactionSiBon:
+        "Maintenant que vous le demandez… c'est depuis le printemps dernier, après la réorganisation au travail, que ça s'est vraiment installé.",
+      modele:
+        "Si vous essayez de remonter : y a-t-il eu un moment où vous vous êtes senti nettement moins en forme qu'avant, une période où ça a basculé ?",
+    },
+    {
+      id: "DRL-ANA-ANT-01",
+      competencyId: "antecedents",
+      scenario: "ANA-PREM-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Explorer les antécédents (personnels et familiaux) demande du tact : on annonce pourquoi on les aborde et on respecte la pudeur.",
+      stimulus: "Ma famille, mes histoires de santé… je ne vois pas le rapport avec ma fatigue.",
+      modele:
+        "C'est une bonne question. Si je vous demande cela, c'est que des éléments passés ou familiaux éclairent parfois ce qu'on vit aujourd'hui — mais on n'ira que là où vous êtes d'accord d'aller.",
+      options: [
+        {
+          text: "Je comprends. Si je pose ces questions, c'est que des éléments personnels ou familiaux éclairent parfois ce qu'on vit aujourd'hui ; on n'ira que là où vous le voulez bien.",
+          is_best: true,
+          score: 1,
+          feedback: "Explique le sens de la question et respecte la pudeur : maintient l'alliance.",
+        },
+        {
+          text: "C'est la procédure, il faut bien que je remplisse le dossier.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Justifie par l'administratif : dévalorise la question et ferme le patient.",
+        },
+        {
+          text: "On peut passer si vous préférez.",
+          is_best: false,
+          score: 0.4,
+          feedback: "Respecte le refus, mais renonce sans avoir donné de sens ni tenté avec tact.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-ANT-02",
+      competencyId: "antecedents",
+      scenario: "ANA-ANX-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Aborder les antécédents familiaux pertinents avec tact, en reliant à ce que le patient a déjà évoqué.",
+      stimulus:
+        "Vous savez, des angoisses, dans ma famille, il y en a toujours eu, ma mère surtout.",
+      reactionSiBon:
+        "Ma mère a été suivie pour ça il y a longtemps, oui. On n'en parlait pas vraiment à la maison.",
+      modele:
+        "Vous évoquez votre mère — est-ce qu'il y a eu, chez elle ou d'autres proches, des difficultés d'anxiété ou de moral qui ont été suivies ou traitées ? Ça m'aide à mieux comprendre votre histoire.",
+    },
+    {
+      id: "DRL-ANA-SYN-01",
+      competencyId: "reformulation_synthese",
+      scenario: "ANA-ANX-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Une bonne synthèse relie fidèlement les éléments recueillis et fait valider la compréhension par le patient, avant de conclure.",
+      stimulus: "Voilà, en gros c'est tout ça qui fait que je ne vais pas bien.",
+      modele:
+        "Si je résume pour vérifier que je vous ai bien suivie : les angoisses ont pris de l'ampleur depuis le changement de poste et la maladie de votre mère, avec un sommeil très perturbé — c'est bien ça, ou j'ai laissé de côté quelque chose d'important ?",
+      options: [
+        {
+          text: "Je résume pour vérifier : les angoisses se sont intensifiées depuis votre changement de poste et la maladie de votre mère, avec un sommeil perturbé — c'est juste, ou j'ai oublié quelque chose ?",
+          is_best: true,
+          score: 1,
+          feedback: "Synthèse fidèle qui relie les éléments et fait valider : sécurise et structure.",
+        },
+        {
+          text: "Bon, on a fait le tour, je pense avoir compris.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Conclut sans reformuler ni faire valider : le patient n'est pas confirmé.",
+        },
+        {
+          text: "Tout ça, c'est clairement du stress, il faut vous détendre.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Interprétation et conseil hâtifs à la place d'une synthèse partagée.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ANA-SYN-02",
+      competencyId: "reformulation_synthese",
+      scenario: "ANA-PREM-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Reformuler-synthétiser en fin d'entretien : restituer l'essentiel avec les mots du patient et ouvrir sur la suite, en validant.",
+      stimulus: "Bon, voilà à peu près où j'en suis, je crois que j'ai tout dit.",
+      reactionSiBon: "Oui… c'est exactement ça. Ça fait du bien de l'entendre résumé comme ça.",
+      modele:
+        "Si je reprends l'essentiel : une fatigue installée depuis le printemps, après la réorganisation, avec une baisse de moral et l'impression de tenir sans plus vraiment y trouver de plaisir. Est-ce que ça reflète bien ce que vous vouliez me faire comprendre ?",
     },
   ],
 };
