@@ -559,6 +559,49 @@ model UserCompetencyState {
   @@map("user_competency_state")
 }
 
+// --- Support client ---------------------------------------------------------
+// Un ticket est OUVERT ou CLOS, sans état intermédiaire. Qui doit répondre ne se
+// déclare pas : cela se lit à l'auteur du dernier message.
+
+model SupportTicket {
+  id       String @id @default(uuid()) @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  type    String // 'bug' | 'idea'
+  subject String
+  status  String @default("open") // 'open' | 'closed'
+
+  // Contexte technique relevé automatiquement à l'envoi (page, navigateur, version
+  // de l'app, forfait, statut d'abonnement, solde). Ne contient JAMAIS de contenu de
+  // simulation ni de donnée clinique.
+  context Json?
+
+  // Dénormalisé : la liste admin trie par activité et repère « en attente de moi »
+  // sans une requête par ligne.
+  lastMessageAt   DateTime @default(now()) @map("last_message_at")
+  lastMessageFrom String   @default("client") @map("last_message_from") // 'client' | 'admin'
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, lastMessageAt])
+  @@index([status, lastMessageAt])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id         String   @id @default(uuid()) @db.Uuid
+  ticketId   String   @map("ticket_id") @db.Uuid
+  authorRole String   @map("author_role") // 'client' | 'admin'
+  authorId   String?  @map("author_id") @db.Uuid
+  body       String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([ticketId, createdAt])
+  @@map("support_messages")
+}
+
 // Limitation de débit générique (une ligne = une tentative horodatée).
 // En base plutôt qu'en mémoire : sur Vercel, chaque instance de fonction a sa
 // propre mémoire, un compteur en RAM ne limiterait donc rien.

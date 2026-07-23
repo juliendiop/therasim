@@ -8,6 +8,7 @@ import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { logAudit } from "@/lib/audit";
 import { isEmailConfigured, sendInvitation } from "@/lib/email";
 import { ASSIGNABLE_ROLES, ROLE_LABELS, canManageMembers } from "@/lib/roles";
+import { deleteTicketsForUser } from "@/lib/support";
 
 async function requireManager() {
   const user = await requireUser();
@@ -150,6 +151,9 @@ export async function removeMember(formData: FormData) {
   if (id === manager.id) return; // pas soi-même
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target || target.tenantId !== manager.tenantId || target.role === "super_admin") return;
+  // La suppression d'un compte entraîne celle de ses tickets (et de leurs messages).
+  // Le schéma ne déclare aucune relation, donc aucune cascade : c'est explicite ici.
+  await deleteTicketsForUser(id);
   await prisma.user.delete({ where: { id } });
   await logAudit({
     action: "member_removed",

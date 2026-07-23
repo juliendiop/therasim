@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { stopImpersonation } from "./admin/impersonate-actions";
 import MobileNav from "./_components/mobile-nav";
 import LowCreditsBanner from "./_components/low-credits-banner";
+import SupportWidget from "./_components/support-widget";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -210,6 +211,8 @@ export default async function RootLayout({
                     <ShieldCheck className="h-4 w-4" /> <span className="hidden sm:inline">Admin</span>
                   </Link>
                 )}
+                {/* Ouverture d'un ticket depuis n'importe quelle page (modale). */}
+                <SupportWidget />
                 <span className="hidden text-[var(--muted)] lg:inline">{user.email}</span>
                 <form action="/api/auth/logout" method="post">
                   <button

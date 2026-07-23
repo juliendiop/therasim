@@ -1,10 +1,11 @@
-import { Cpu } from "lucide-react";
+import { Cpu, Lock } from "lucide-react";
 import {
   LLM_USAGES,
   MODELES_SUGGESTS,
   MODELES_SUGGESTS_ANTHROPIC,
   PROVIDERS,
   getAllLlm,
+  isEuOnlyUsage,
 } from "@/lib/config";
 import { setModelsAction } from "./actions";
 
@@ -77,29 +78,48 @@ export default async function ModelesPage() {
             <label className="text-sm font-medium">{u.label}</label>
             <p className="text-xs text-[var(--muted)]">{u.desc}</p>
             <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-              <select
-                name={`provider.${u.key}`}
-                defaultValue={llm[u.key].provider}
-                className="rounded-lg border border-[var(--border)] p-2 text-sm sm:w-48"
-              >
-                {PROVIDERS.map((p) => (
-                  <option key={p.key} value={p.key}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
+              {isEuOnlyUsage(u.key) ? (
+                // Pas de sélecteur : offrir un choix sans effet serait trompeur.
+                <div className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-tint)] p-2 text-sm text-[var(--muted)] sm:w-48">
+                  <Lock className="h-3.5 w-3.5 shrink-0" /> Mistral (UE)
+                </div>
+              ) : (
+                <select
+                  name={`provider.${u.key}`}
+                  defaultValue={llm[u.key].provider}
+                  className="rounded-lg border border-[var(--border)] p-2 text-sm sm:w-48"
+                >
+                  {PROVIDERS.map((p) => (
+                    <option key={p.key} value={p.key}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              )}
               <input
                 name={`model.${u.key}`}
-                list="modeles-tous"
+                list={isEuOnlyUsage(u.key) ? "modeles-mistral" : "modeles-tous"}
                 defaultValue={llm[u.key].model}
-                placeholder="claude-opus-4-8 ou mistral-small-latest"
+                placeholder={
+                  isEuOnlyUsage(u.key) ? "mistral-small-latest" : "claude-opus-4-8 ou mistral-small-latest"
+                }
                 className="flex-1 rounded-lg border border-[var(--border)] p-2 text-sm"
               />
             </div>
-            <p className="mt-1.5 text-xs text-[var(--muted)]">
-              Claude : {MODELES_SUGGESTS_ANTHROPIC.join(" · ")} — Mistral :{" "}
-              {MODELES_SUGGESTS.slice(0, 3).join(" · ")}
-            </p>
+            {isEuOnlyUsage(u.key) ? (
+              <p className="mt-1.5 text-xs text-[var(--muted)]">
+                Le <b>modèle</b> reste réglable ({MODELES_SUGGESTS.slice(0, 3).join(" · ")}) — monte
+                en gamme si la qualité te déçoit. Le <b>fournisseur</b>, lui, est verrouillé : le
+                contenu d&apos;un ticket se rapporte à une personne identifiée, il ne peut pas
+                sortir de l&apos;UE. Pour Claude ici, il faudrait une résidence européenne
+                (Bedrock ou Vertex en région UE), pas l&apos;API directe.
+              </p>
+            ) : (
+              <p className="mt-1.5 text-xs text-[var(--muted)]">
+                Claude : {MODELES_SUGGESTS_ANTHROPIC.join(" · ")} — Mistral :{" "}
+                {MODELES_SUGGESTS.slice(0, 3).join(" · ")}
+              </p>
+            )}
           </div>
         ))}
 

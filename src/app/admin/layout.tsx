@@ -11,6 +11,7 @@ import {
   Gift,
   KeyRound,
   LayoutGrid,
+  LifeBuoy,
   Package,
   ShieldCheck,
   Wand2,
@@ -44,6 +45,7 @@ export default async function AdminLayout({
         <AdminLink href="/admin/optimisation" icon={<Wand2 className="h-4 w-4" />} label="Optimisation" />
         <AdminLink href="/admin/affiliation" icon={<Gift className="h-4 w-4" />} label="Affiliation" />
         <AdminLink href="/admin/beta" icon={<FlaskConical className="h-4 w-4" />} label="Bêta" />
+        <AdminLink href="/admin/support" icon={<LifeBuoy className="h-4 w-4" />} label="Support" />
         <AdminLink href="/admin/activity" icon={<Activity className="h-4 w-4" />} label="Journal d'activité" />
         <AdminLink href="/admin/compte" icon={<KeyRound className="h-4 w-4" />} label="Mon compte" />
       </nav>

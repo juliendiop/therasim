@@ -127,6 +127,73 @@ async function send(
   }
 }
 
+// --- Support client ---------------------------------------------------------
+
+const NO_REPLY_NOTE =
+  "Répondre à cet email ne poursuit pas la conversation : l'échange se fait dans l'application.";
+
+/**
+ * Prévient l'administrateur d'un nouveau ticket ou d'une réponse client.
+ * NE CONTIENT PAS le contexte technique (forfait, abonnement, crédits, navigateur) :
+ * il reste consultable dans l'administration. Un email circule et se conserve hors
+ * de l'application — autant ne pas y recopier des données de compte.
+ */
+export async function sendSupportAdminNotice(
+  to: string,
+  input: {
+    kind: "new" | "reply";
+    ticketId: string;
+    subject: string;
+    typeLabel: string;
+    clientEmail: string;
+    body: string;
+  },
+): Promise<void> {
+  const base = emailBaseUrl();
+  const title = input.kind === "new" ? "Nouveau ticket" : "Réponse d'un client";
+
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1d23;line-height:1.6">
+    <h2 style="color:#0e5a54">${title}</h2>
+    <p><b>${escapeHtml(input.typeLabel)}</b> — ${escapeHtml(input.subject)}<br>
+       <span style="color:#6b7280">de ${escapeHtml(input.clientEmail)}</span></p>
+    <div style="white-space:pre-line;border-left:3px solid #e5e7eb;padding-left:12px;margin:16px 0">${escapeHtml(input.body)}</div>
+    <p style="margin:24px 0">
+      <a href="${base}/admin/support/${input.ticketId}" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
+        Ouvrir le ticket
+      </a>
+    </p>
+    <p style="font-size:13px;color:#6b7280">Le contexte technique (page, navigateur, version, forfait) est visible sur le ticket.</p>
+  </div>`;
+
+  await send(to, `[Support] ${input.subject}`, html);
+}
+
+/** Prévient le client d'une réponse, avec le contenu et le lien vers le fil. */
+export async function sendSupportClientReply(
+  to: string,
+  input: { ticketId: string; subject: string; body: string; firstName: string | null },
+): Promise<void> {
+  const base = emailBaseUrl();
+  const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
+
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1d23;line-height:1.6">
+    <h2 style="color:#0e5a54">Réponse à ta demande</h2>
+    <p>${hello}</p>
+    <p style="color:#6b7280">À propos de : ${escapeHtml(input.subject)}</p>
+    <div style="white-space:pre-line;border-left:3px solid #e5e7eb;padding-left:12px;margin:16px 0">${escapeHtml(input.body)}</div>
+    <p style="margin:24px 0">
+      <a href="${base}/support/${input.ticketId}" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
+        Voir la discussion
+      </a>
+    </p>
+    <p style="font-size:13px;color:#6b7280">${NO_REPLY_NOTE}</p>
+  </div>`;
+
+  await send(to, `Réponse — ${input.subject}`, html);
+}
+
 // --- Bêta fermée -----------------------------------------------------------
 
 const CONTACT_EMAIL = "contact@meleta.app";
