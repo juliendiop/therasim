@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/auth";
 import { claimBetaInvite } from "@/lib/beta";
 import { callerIp, rateLimit } from "@/lib/rate-limit";
@@ -39,6 +40,12 @@ export async function claimBetaInviteAction(
     email: user.email,
   });
   if (!result.ok) return { ok: false, message: result.message };
+
+  // Le badge de crédits vit dans le LAYOUT racine. Après une Server Action, le
+  // `redirect` ci-dessous provoque une navigation côté client : Next ne re-rend que
+  // le segment de page, pas le layout, qui resterait affiché avec le solde d'AVANT
+  // l'activation. On invalide donc explicitement la racine et tout ce qu'elle porte.
+  revalidatePath("/", "layout");
 
   // `redirect` lève : à laisser hors du bloc try de la logique métier.
   redirect(result.redirectTo);
