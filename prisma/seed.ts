@@ -4254,6 +4254,2137 @@ const MENOPAUSE: RefDef = {
   ],
 };
 
+// ⚠️ CONTENU SENSIBLE. Ce référentiel aborde la mort, le suicide, le deuil
+// périnatal. Les cartes modélisent une posture d'accompagnement, JAMAIS un acte
+// médical. La compétence « risque suicidaire » enseigne à questionner directement
+// (ce qui protège, contrairement à l'idée reçue) et à ORIENTER — jamais à évaluer
+// seul. Relecture par un clinicien indispensable avant usage réel.
+const DEUIL: RefDef = {
+  fw: "deuil",
+  gridId: "deuil-v1",
+  nom: "Accompagner le deuil",
+  type: "situation",
+  description:
+    "Accompagner une personne endeuillée : accueillir le récit de la perte, traverser les émotions ambivalentes, soutenir le lien continu, repérer ce qui relève de l'orientation — et travailler ses propres résonances face à la mort.",
+  categories: [
+    { code: "accueil", nom: "Accueil & repérage", ordre: 1 },
+    { code: "processus", nom: "Traversée du deuil", ordre: 2 },
+    { code: "specifiques", nom: "Situations spécifiques", ordre: 3 },
+    { code: "posture", nom: "Posture du praticien", ordre: 4 },
+  ],
+  competencies: [
+    {
+      code: "accueil_recit",
+      cat: "accueil",
+      nom: "Accueillir le récit de la perte",
+      ordre: 1,
+      a1: "Coupe le récit, rassure trop vite ou enchaîne sur des questions factuelles.",
+      a3: "Laisse raconter, sans soutenir vraiment le récit.",
+      a5: "Ouvre un espace sûr où le récit peut se déployer au rythme de la personne.",
+    },
+    {
+      code: "deuil_prolonge",
+      cat: "accueil",
+      nom: "Distinguer deuil ordinaire et deuil prolongé",
+      ordre: 2,
+      a1: "Pathologise un deuil ordinaire, ou banalise un tableau qui s'enkyste.",
+      a3: "Perçoit l'intensité sans la situer dans le temps ni le fonctionnement.",
+      a5: "Situe l'évolution (durée, retentissement, sidération du quotidien) et pose l'orientation quand elle s'impose.",
+    },
+    {
+      code: "emotions_ambivalentes",
+      cat: "processus",
+      nom: "Accompagner les émotions ambivalentes",
+      ordre: 3,
+      a1: "Corrige ou moralise la colère, le soulagement ou la culpabilité.",
+      a3: "Accepte l'émotion sans lui donner de place réelle.",
+      a5: "Légitime la coexistence d'émotions contradictoires et la rend pensable.",
+    },
+    {
+      code: "lien_continu",
+      cat: "processus",
+      nom: "Travailler le lien continu",
+      ordre: 4,
+      a1: "Pousse à « tourner la page », « couper les ponts », « passer à autre chose ».",
+      a3: "Ne s'oppose pas au lien maintenu, sans le travailler.",
+      a5: "Aide à transformer le lien plutôt qu'à le rompre : une place vivante pour le défunt.",
+    },
+    {
+      code: "dates_rituels",
+      cat: "processus",
+      nom: "Accompagner les dates, lieux et rituels",
+      ordre: 5,
+      a1: "Néglige les échéances, ou impose un rituel tout fait.",
+      a3: "Reconnaît l'importance des dates sans préparation concrète.",
+      a5: "Anticipe les échéances et co-construit des gestes qui ont du sens pour la personne.",
+    },
+    {
+      code: "perinatal",
+      cat: "specifiques",
+      nom: "Deuil périnatal et deuil d'enfant",
+      ordre: 6,
+      a1: "Minimise (« vous êtes jeune », « vous en aurez d'autres ») ou évite de nommer l'enfant.",
+      a3: "Accueille la douleur sans reconnaître la parentalité.",
+      a5: "Reconnaît l'enfant et la parentalité, y compris quand l'entourage les nie.",
+    },
+    {
+      code: "mort_violente",
+      cat: "specifiques",
+      nom: "Deuil après mort violente ou suicide",
+      ordre: 7,
+      a1: "Cherche des explications, désigne des responsables ou évite le sujet.",
+      a3: "Accueille sans distinguer le deuil du traumatisme.",
+      a5: "Distingue le traumatique du deuil, accueille la question du « pourquoi » sans y répondre à la place.",
+    },
+    {
+      code: "entourage_enfants",
+      cat: "specifiques",
+      nom: "Accompagner l'entourage et les enfants",
+      ordre: 8,
+      a1: "Conseille de protéger les enfants en leur cachant la mort.",
+      a3: "Encourage à parler, sans repères d'âge ni de formulation.",
+      a5: "Aide à dire la vérité avec des mots justes selon l'âge, et soutient l'adulte qui portera ces mots.",
+    },
+    {
+      code: "risque_suicidaire",
+      cat: "accueil",
+      nom: "Repérer le risque suicidaire et orienter",
+      ordre: 9,
+      a1: "Évite la question, se rassure sur des signes indirects, ou promet le secret.",
+      a3: "Aborde le sujet de façon allusive et sans suite concrète.",
+      a5: "Questionne DIRECTEMENT les idées suicidaires, évalue avec tact et organise l'orientation.",
+    },
+    {
+      code: "resonances",
+      cat: "posture",
+      nom: "Travailler ses propres résonances",
+      ordre: 10,
+      a1: "Se protège en fuyant l'émotion, ou déverse son propre vécu sur la personne.",
+      a3: "Perçoit son trouble sans savoir quoi en faire dans l'entretien.",
+      a5: "Reconnaît sa résonance, la contient, et s'en sert comme information clinique.",
+    },
+  ],
+  scenarios: [
+    {
+      id: "DEU-CONJ-01",
+      titre: "Mme Lambert — perte du conjoint",
+      contexte:
+        "Mme Lambert, 68 ans, a perdu son mari il y a huit mois après 40 ans de mariage. Elle dit « fonctionner » mais ne touche plus à rien dans la maison.",
+    },
+    {
+      id: "DEU-SUIC-01",
+      titre: "Yann — frère décédé par suicide",
+      contexte:
+        "Yann, 34 ans, a perdu son frère par suicide il y a cinq mois. Il tourne en boucle sur les signes qu'il aurait « dû voir » et dort peu.",
+    },
+    {
+      id: "DEU-PERI-01",
+      titre: "Clara — deuil périnatal",
+      contexte:
+        "Clara, 31 ans, a accouché d'un enfant mort-né à 34 semaines il y a trois mois. Son entourage lui parle déjà d'une prochaine grossesse.",
+    },
+    {
+      id: "DEU-PARENT-01",
+      titre: "M. Ferreira — mère décédée après une longue maladie",
+      contexte:
+        "M. Ferreira, 52 ans, a accompagné sa mère pendant quatre ans de maladie. Depuis son décès, il éprouve un soulagement qui le remplit de honte.",
+    },
+    {
+      id: "DEU-ENF-01",
+      titre: "Sophie — expliquer la mort du père à ses enfants",
+      contexte:
+        "Sophie, 39 ans, veuve depuis six semaines. Ses enfants ont 5 et 9 ans. Elle ne sait pas quoi leur dire et craint de « les traumatiser ».",
+    },
+  ],
+  drills: [
+    // --- Accueillir le récit de la perte ---
+    {
+      id: "DRL-DEU-ACC-01",
+      competencyId: "accueil_recit",
+      scenario: "DEU-CONJ-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "Accueillir le récit, c'est ouvrir un espace où il peut se déployer — sans rassurer trop vite ni enchaîner sur du factuel.",
+      stimulus: "Je ne sais pas par où commencer… ça fait huit mois et j'ai l'impression que c'était hier.",
+      modele:
+        "Prenez le temps qu'il vous faut. Commencez par où vous voulez — il n'y a pas de bon ordre pour raconter ça.",
+      options: [
+        {
+          text: "Prenez le temps qu'il vous faut, commencez par où vous voulez. Il n'y a pas de bon ordre pour raconter ça.",
+          is_best: true,
+          score: 1,
+          feedback: "Ouvre l'espace et lève l'exigence de bien raconter : le récit peut venir.",
+        },
+        {
+          text: "Huit mois, c'est encore très récent, c'est normal.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Rassure vite : referme le récit avant qu'il ne s'ouvre.",
+        },
+        {
+          text: "De quoi est-il décédé exactement ?",
+          is_best: false,
+          score: 0.2,
+          feedback: "Bascule sur le factuel : la personne n'était pas là.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-ACC-02",
+      competencyId: "accueil_recit",
+      scenario: "DEU-PARENT-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Un silence, dans un récit de perte, n'est pas un vide à combler : c'est souvent le moment où quelque chose se dit.",
+      stimulus: "(il s'interrompt, regarde par la fenêtre, se tait une dizaine de secondes)",
+      modele: "(laisser le silence, puis, doucement) Prenez votre temps.",
+      options: [
+        {
+          text: "(laisser le silence s'installer, puis doucement) Prenez votre temps.",
+          is_best: true,
+          score: 1,
+          feedback: "Le silence est habité, pas abandonné : il autorise ce qui vient.",
+        },
+        {
+          text: "Vous voulez qu'on parle d'autre chose ?",
+          is_best: false,
+          score: 0.2,
+          feedback: "Interprète le silence comme une gêne et détourne du sujet.",
+        },
+        {
+          text: "À quoi pensez-vous là, tout de suite ?",
+          is_best: false,
+          score: 0.5,
+          feedback: "Question juste, mais posée trop tôt : elle coupe le silence.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-ACC-03",
+      competencyId: "accueil_recit",
+      scenario: "DEU-CONJ-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Accueillir, c'est aussi accepter que la personne raconte la mort elle-même, sans la presser ni s'en protéger.",
+      stimulus: "Vous voulez que je vous raconte comment ça s'est passé ? Les gens n'aiment pas entendre ça.",
+      reactionSiBon: "(un temps) Merci… c'est la première fois qu'on ne change pas de sujet.",
+      modele:
+        "Je peux l'entendre, et je ne vais pas détourner le regard. Racontez-moi ce que vous voulez me faire comprendre de ce moment-là.",
+    },
+    {
+      id: "DRL-DEU-ACC-04",
+      competencyId: "accueil_recit",
+      scenario: "DEU-ENF-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Le premier entretien pose un cadre : ce qui se dit ici, le rythme, et le droit de s'arrêter.",
+      stimulus: "Je préviens, si je commence à pleurer je ne pourrai plus parler et ce sera ridicule.",
+      reactionSiBon: "D'accord. Bon… alors je vais essayer de vous dire comment c'est arrivé.",
+      modele:
+        "Pleurer ici n'a rien de ridicule, et ça n'arrête pas l'entretien. Si c'est trop, on s'arrête un moment et on reprend quand vous voulez — c'est vous qui décidez du rythme.",
+    },
+    // --- Distinguer deuil ordinaire et deuil prolongé ---
+    {
+      id: "DRL-DEU-PRO-01",
+      competencyId: "deuil_prolonge",
+      scenario: "DEU-CONJ-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Ce qui distingue un deuil qui s'enkyste, ce n'est pas l'intensité du chagrin mais le figement : le quotidien qui ne redémarre pas du tout.",
+      stimulus: "Sa chambre est exactement comme il l'a laissée. Je n'ai touché à rien, et je n'y arriverai jamais.",
+      modele:
+        "Beaucoup de personnes gardent les choses en l'état, parfois longtemps. Ce qui m'intéresse, c'est comment va le reste : est-ce que d'autres pans de votre vie ont repris, ou est-ce que tout est à l'arrêt ?",
+      options: [
+        {
+          text: "Garder les choses en l'état est fréquent. Ce qui m'importe, c'est le reste : d'autres pans de votre vie ont-ils repris, ou tout est-il à l'arrêt ?",
+          is_best: true,
+          score: 1,
+          feedback: "Situe le symptôme dans le fonctionnement global : c'est là que se lit l'évolution.",
+        },
+        {
+          text: "Il faudrait commencer à trier ses affaires, ça vous aiderait à avancer.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Prescrit un « avancement » : confond deuil et rangement.",
+        },
+        {
+          text: "Huit mois sans rien toucher, c'est le signe d'un deuil pathologique.",
+          is_best: false,
+          score: 0,
+          feedback: "Étiquette hâtive sur un seul indice : pathologise un deuil ordinaire.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-PRO-02",
+      competencyId: "deuil_prolonge",
+      scenario: "DEU-SUIC-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "L'orientation se pose quand la souffrance fige durablement le fonctionnement — elle s'annonce comme un renfort, pas comme un dessaisissement.",
+      stimulus: "Ça fait cinq mois. Je ne travaille plus, je ne vois plus personne, je passe mes nuits à relire ses messages.",
+      modele:
+        "Ce que vous décrivez va au-delà du chagrin : votre vie est à l'arrêt depuis plusieurs mois. Je continue de vous accompagner, et je pense qu'un avis spécialisé vous apporterait un renfort utile. Qu'en pensez-vous ?",
+      options: [
+        {
+          text: "Votre vie est à l'arrêt depuis des mois. Je continue de vous accompagner, et un avis spécialisé serait un renfort utile — qu'en pensez-vous ?",
+          is_best: true,
+          score: 1,
+          feedback: "Nomme le retentissement et propose l'orientation sans abandonner la personne.",
+        },
+        {
+          text: "C'est normal après un suicide, laissez faire le temps.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Banalise un tableau qui s'enkyste : occasion d'orientation manquée.",
+        },
+        {
+          text: "Il faut voir un psychiatre, je ne peux plus rien pour vous.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Oriente en se dessaisissant : la personne s'entend congédier.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-PRO-03",
+      competencyId: "deuil_prolonge",
+      scenario: "DEU-CONJ-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Explorer l'évolution dans le temps : ce qui a bougé, même un peu, informe mieux qu'un instantané.",
+      stimulus: "C'est pareil qu'au premier jour. Rien ne change, rien ne changera.",
+      reactionSiBon: "(elle réfléchit) … si, c'est vrai. Je revois ma sœur depuis le printemps. Je n'y avais pas pensé.",
+      modele:
+        "Si je vous demandais de comparer avec le premier mois — pas avec avant sa mort, mais avec les toutes premières semaines — est-ce que quelque chose, même minuscule, a bougé ?",
+    },
+    {
+      id: "DRL-DEU-PRO-04",
+      competencyId: "deuil_prolonge",
+      scenario: "DEU-PARENT-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Le deuil qui s'enkyste se repère aussi au retentissement concret : sommeil, alimentation, travail, liens.",
+      stimulus: "Je gère, je vais bien. C'est juste que je ne dors plus beaucoup.",
+      reactionSiBon: "Trois heures par nuit peut-être. Et j'ai arrêté de voir mes amis, oui.",
+      modele:
+        "Vous dites que ça va, et en même temps le sommeil est touché. Concrètement, sur une nuit type, vous dormez combien d'heures ? Et côté repas, travail, amis — qu'est-ce qui a changé depuis ?",
+    },
+    // --- Émotions ambivalentes ---
+    {
+      id: "DRL-DEU-AMB-01",
+      competencyId: "emotions_ambivalentes",
+      scenario: "DEU-PARENT-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Le soulagement après une longue maladie est fréquent et ne contredit pas l'amour. Le légitimer désamorce la honte.",
+      stimulus: "Quand elle est morte, j'ai ressenti du soulagement. Quel fils fait ça ?",
+      modele:
+        "Un fils épuisé par quatre ans d'accompagnement. Le soulagement dit la fin d'une épreuve, pas l'absence d'amour — les deux tiennent ensemble.",
+      options: [
+        {
+          text: "Un fils épuisé par quatre ans. Le soulagement dit la fin d'une épreuve, pas l'absence d'amour : les deux tiennent ensemble.",
+          is_best: true,
+          score: 1,
+          feedback: "Légitime le soulagement et le relie à l'épuisement : la honte se desserre.",
+        },
+        {
+          text: "Il ne faut pas culpabiliser, c'est humain.",
+          is_best: false,
+          score: 0.4,
+          feedback: "Intention juste, mais générique : ne travaille pas la contradiction ressentie.",
+        },
+        {
+          text: "Vous vous êtes bien occupé d'elle, vous n'avez rien à vous reprocher.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Rassure sur les faits, à côté de ce qui se joue : le sentiment, lui, reste.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-AMB-02",
+      competencyId: "emotions_ambivalentes",
+      scenario: "DEU-CONJ-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "La colère contre le défunt est une émotion de deuil ordinaire. La corriger la fait taire sans la faire disparaître.",
+      stimulus: "Parfois je lui en veux. Il fumait, il savait. Il m'a laissée seule et je lui en veux.",
+      modele:
+        "Vous lui en voulez de vous avoir laissée. C'est une colère qui a sa place ici — elle ne retire rien à ce que vous avez vécu ensemble.",
+      options: [
+        {
+          text: "Vous lui en voulez de vous avoir laissée. Cette colère a sa place ici, elle ne retire rien à ce que vous avez vécu.",
+          is_best: true,
+          score: 1,
+          feedback: "Accueille la colère sans la corriger : elle devient dicible.",
+        },
+        {
+          text: "Il ne l'a pas fait exprès, vous savez.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Défend le défunt : la colère devient injuste, donc indicible.",
+        },
+        {
+          text: "C'est une étape du deuil, ça passera.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Étiquette théorique qui évacue l'émotion présente.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-AMB-03",
+      competencyId: "emotions_ambivalentes",
+      scenario: "DEU-SUIC-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Faire tenir ensemble deux sentiments contradictoires, sans en éliminer un, est le cœur du travail sur l'ambivalence.",
+      stimulus: "Je l'aime et je le déteste de nous avoir fait ça. Les deux en même temps, c'est n'importe quoi.",
+      reactionSiBon: "Ça me soulage que ce ne soit pas incompatible. J'avais l'impression d'être un monstre.",
+      modele:
+        "Ce n'est pas n'importe quoi : c'est exactement ce que produit une mort comme celle-là. L'amour et la colère ne s'annulent pas, ils cohabitent. On peut faire de la place aux deux ici, sans choisir.",
+    },
+    {
+      id: "DRL-DEU-AMB-04",
+      competencyId: "emotions_ambivalentes",
+      scenario: "DEU-PERI-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "La culpabilité du deuil cherche souvent une faute là où il n'y en a pas. On accueille le sentiment sans valider l'accusation.",
+      stimulus: "J'ai porté une valise trop lourde la semaine d'avant. C'est peut-être ça.",
+      reactionSiBon: "Je sais bien que ce n'est pas rationnel… mais mon esprit cherche quand même.",
+      modele:
+        "Votre esprit cherche une cause, et il se retourne contre vous. Je ne vais pas vous dire que c'est absurde — mais je remarque que cette recherche vous désigne toujours, vous. Qu'est-ce qu'elle vous évite de ressentir, cette culpabilité ?",
+    },
+    // --- Lien continu ---
+    {
+      id: "DRL-DEU-LIE-01",
+      competencyId: "lien_continu",
+      scenario: "DEU-CONJ-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "L'accompagnement contemporain du deuil ne vise pas le détachement mais la transformation du lien : trouver au défunt une place vivable.",
+      stimulus: "Je lui parle encore, tous les soirs. Ma fille dit que ce n'est pas sain.",
+      modele:
+        "Beaucoup de personnes gardent ce dialogue, et ce n'est pas un symptôme. Qu'est-ce que ça vous apporte, ces moments-là ?",
+      options: [
+        {
+          text: "Beaucoup de personnes gardent ce dialogue, ce n'est pas un symptôme. Qu'est-ce que ça vous apporte, ces moments ?",
+          is_best: true,
+          score: 1,
+          feedback: "Normalise le lien continu et l'explore : il devient une ressource.",
+        },
+        {
+          text: "Votre fille n'a pas tort, il faudra apprendre à lâcher.",
+          is_best: false,
+          score: 0,
+          feedback: "Prescrit le détachement : contraire à l'accompagnement du lien.",
+        },
+        {
+          text: "Tant que ça ne vous empêche pas de vivre, ce n'est pas grave.",
+          is_best: false,
+          score: 0.4,
+          feedback: "Tolère sans travailler : le lien reste suspect au lieu d'être soutenu.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-LIE-02",
+      competencyId: "lien_continu",
+      scenario: "DEU-PARENT-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Transformer le lien, c'est aider à trouver ce qui se transmet et se poursuit, plutôt qu'à clore.",
+      stimulus: "Tout le monde me dit de tourner la page. Mais je ne veux pas l'oublier.",
+      modele:
+        "Il ne s'agit pas de choisir entre l'oublier et rester bloqué. Qu'est-ce que vous aimeriez garder d'elle, qui continue avec vous ?",
+      options: [
+        {
+          text: "Il ne s'agit pas de choisir entre l'oublier et rester bloqué. Qu'aimeriez-vous garder d'elle, qui continue avec vous ?",
+          is_best: true,
+          score: 1,
+          feedback: "Sort de l'alternative oublier/souffrir et ouvre la transformation du lien.",
+        },
+        {
+          text: "Tourner la page ne veut pas dire oublier, rassurez-vous.",
+          is_best: false,
+          score: 0.4,
+          feedback: "Nuance la formule sans ouvrir de travail concret.",
+        },
+        {
+          text: "Vos proches veulent votre bien, ils ont sans doute raison.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Prend le parti de l'entourage contre le vécu de la personne.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-LIE-03",
+      competencyId: "lien_continu",
+      scenario: "DEU-PERI-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Pour un enfant mort avant de vivre, le lien se construit avec très peu de matière : un prénom, des gestes, une place à nommer.",
+      stimulus: "Je n'ai rien de lui. Pas de souvenir, pas d'histoire. Juste trois heures à l'hôpital.",
+      reactionSiBon: "Il s'appelle Elias. Personne ne le dit jamais à voix haute.",
+      modele:
+        "Vous avez ces trois heures, et vous avez été sa mère pendant huit mois. Est-ce qu'il a un prénom ? J'aimerais pouvoir le nommer avec vous.",
+    },
+    {
+      id: "DRL-DEU-LIE-04",
+      competencyId: "lien_continu",
+      scenario: "DEU-CONJ-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Donner une place au défunt dans le présent : que dirait-il, que garderait-on de lui dans les choix d'aujourd'hui.",
+      stimulus: "Je dois décider si je vends la maison. Avant, on décidait à deux.",
+      reactionSiBon: "Il m'aurait dit de ne pas rester par devoir. C'est vrai que ça m'aide de le formuler.",
+      modele:
+        "Vous décidez seule maintenant, et c'est lourd. Si vous l'imaginez à côté de vous pour cette décision-là, qu'est-ce qu'il vous dirait ?",
+    },
+    // --- Dates, lieux et rituels ---
+    {
+      id: "DRL-DEU-RIT-01",
+      competencyId: "dates_rituels",
+      scenario: "DEU-CONJ-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Les échéances (anniversaires, fêtes, date du décès) se préparent : anticiper évite d'être submergé sans l'avoir vu venir.",
+      stimulus: "Noël approche. C'était sa fête préférée. Je crois que je vais me coucher et attendre que ça passe.",
+      modele:
+        "C'est une option, et elle en vaut une autre. On peut aussi y réfléchir avant, pour que ce soit vous qui choisissiez plutôt que la date qui décide : à quoi ressemblerait un 25 décembre supportable ?",
+      options: [
+        {
+          text: "C'est une option qui en vaut une autre. On peut aussi y réfléchir avant, pour que ce soit vous qui choisissiez : à quoi ressemblerait un 25 décembre supportable ?",
+          is_best: true,
+          score: 1,
+          feedback: "Anticipe l'échéance et rend la personne active de son choix.",
+        },
+        {
+          text: "Il ne faut pas rester seule à Noël, entourez-vous.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Prescrit une solution standard sans partir de la personne.",
+        },
+        {
+          text: "On en reparlera en janvier, si ça a été difficile.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Renonce à préparer : l'échéance arrivera sans travail préalable.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-RIT-02",
+      competencyId: "dates_rituels",
+      scenario: "DEU-PERI-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Un rituel n'a d'effet que s'il fait sens pour la personne : on le co-construit, on ne le prescrit pas.",
+      stimulus: "On m'a dit de planter un arbre. Ça ne me parle pas du tout, mais je me sens obligée.",
+      modele:
+        "Alors ne le faites pas. Un geste qui ne vous parle pas n'apportera rien. Qu'est-ce qui, pour vous, dirait quelque chose de juste — même quelque chose de tout petit, ou d'inattendu ?",
+      options: [
+        {
+          text: "Alors ne le faites pas : un geste qui ne vous parle pas n'apportera rien. Qu'est-ce qui, pour vous, dirait quelque chose de juste ?",
+          is_best: true,
+          score: 1,
+          feedback: "Libère de l'obligation et part de ce qui a du sens pour elle.",
+        },
+        {
+          text: "Essayez quand même, souvent ça aide sur le moment.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Maintient l'obligation : le rituel restera creux.",
+        },
+        {
+          text: "Vous pourriez plutôt écrire une lettre, c'est très efficace.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Remplace un rituel imposé par un autre, sans partir d'elle.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-RIT-03",
+      competencyId: "dates_rituels",
+      scenario: "DEU-SUIC-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Les lieux (domicile, cimetière, lieu du décès) portent une charge propre : les aborder concrètement aide à reprendre la main.",
+      stimulus: "Je n'ai pas remis les pieds chez lui. Il faudrait vider l'appartement, la famille attend.",
+      reactionSiBon: "Y aller une première fois juste dix minutes, avec ma cousine… ça je pourrais peut-être.",
+      modele:
+        "Vider l'appartement et y retourner une première fois, ce sont deux choses différentes. Est-ce qu'on peut réfléchir seulement à la première visite : avec qui, combien de temps, et ce que vous vous autorisez à ne pas faire ce jour-là ?",
+    },
+    {
+      id: "DRL-DEU-RIT-04",
+      competencyId: "dates_rituels",
+      scenario: "DEU-PARENT-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Anticiper une date, c'est aussi prévoir un après : comment on se remet en mouvement une fois l'échéance passée.",
+      stimulus: "Le premier anniversaire de sa mort tombe dans trois semaines. J'appréhende.",
+      reactionSiBon: "Ça me rassure d'y penser avant plutôt que de subir. Je vais peut-être prendre ma journée.",
+      modele:
+        "Trois semaines, c'est assez pour préparer. Comment aimeriez-vous que cette journée se passe — seul, entouré, à faire quelque chose de précis ? Et le lendemain, qu'est-ce qui vous aiderait à reprendre ?",
+    },
+    // --- Deuil périnatal et deuil d'enfant ---
+    {
+      id: "DRL-DEU-PER-01",
+      competencyId: "perinatal",
+      scenario: "DEU-PERI-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Le deuil périnatal est souvent nié socialement. Reconnaître l'enfant ET la parentalité est le premier acte d'accompagnement.",
+      stimulus: "Ma belle-mère m'a dit : « au moins tu ne l'as pas connu ».",
+      modele:
+        "Vous l'avez porté huit mois, vous l'avez attendu, vous êtes sa mère. Cette phrase efface tout ça d'un coup — c'est violent à entendre.",
+      options: [
+        {
+          text: "Vous l'avez porté huit mois, vous l'avez attendu : vous êtes sa mère. Cette phrase efface tout ça d'un coup, c'est violent.",
+          is_best: true,
+          score: 1,
+          feedback: "Reconnaît l'enfant et la parentalité, et nomme la violence du déni.",
+        },
+        {
+          text: "Elle a voulu vous consoler, elle s'y est mal prise.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Excuse l'entourage : la reconnaissance attendue n'arrive pas.",
+        },
+        {
+          text: "Il ne faut pas lui en vouloir, les gens ne savent pas quoi dire.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Déplace vers l'indulgence : le vécu de Clara passe au second plan.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-PER-02",
+      competencyId: "perinatal",
+      scenario: "DEU-PERI-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "La grossesse suivante n'est pas une réparation. Le sujet se traite sans presser ni interdire.",
+      stimulus: "Mon mari veut réessayer tout de suite. Moi j'ai l'impression qu'on le remplacerait.",
+      modele:
+        "Un autre enfant ne remplacerait pas celui-ci — ce sont deux histoires distinctes. Vous n'êtes pas obligée d'être prête au même moment que lui ; qu'est-ce que ça vous ferait, d'être enceinte maintenant ?",
+      options: [
+        {
+          text: "Un autre enfant ne remplacerait pas celui-ci, ce sont deux histoires. Vous n'êtes pas tenue d'être prête en même temps que lui — qu'est-ce que ça vous ferait, maintenant ?",
+          is_best: true,
+          score: 1,
+          feedback: "Sépare les deux enfants, autorise un rythme propre, explore.",
+        },
+        {
+          text: "Il est souvent conseillé d'attendre au moins un an.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Norme extérieure : impose un calendrier à la place du couple.",
+        },
+        {
+          text: "Une nouvelle grossesse vous ferait sûrement du bien.",
+          is_best: false,
+          score: 0,
+          feedback: "Fait de l'enfant à venir un remède : exactement la crainte exprimée.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-PER-03",
+      competencyId: "perinatal",
+      scenario: "DEU-PERI-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Nommer l'enfant, employer son prénom, lui donner une existence dans l'entretien : geste simple et rare.",
+      stimulus: "Personne ne prononce jamais son prénom. Comme s'il n'avait pas existé.",
+      reactionSiBon: "(elle pleure) Merci. Ça fait trois mois que j'attends que quelqu'un le dise.",
+      modele:
+        "Elias. Il a existé, il a un prénom, et vous pouvez le dire ici autant que vous voulez. Parlez-moi de lui.",
+    },
+    {
+      id: "DRL-DEU-PER-04",
+      competencyId: "perinatal",
+      scenario: "DEU-ENF-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Le deuil d'un enfant bouleverse le couple, souvent de façon désynchronisée : chacun traverse à son rythme.",
+      stimulus: "Mon mari ne pleure jamais. Il range, il bricole, il repart au travail. Je crois qu'il s'en fiche.",
+      reactionSiBon: "Vu comme ça… c'est vrai qu'il a repeint la chambre tout seul, une nuit. Je n'avais pas compris.",
+      modele:
+        "Deux personnes peuvent porter la même perte de façons très différentes, sans que l'une aime moins. Le bricolage, le travail, ça peut être une façon de tenir. Qu'est-ce que vous savez de ce qu'il traverse, quand il ne parle pas ?",
+    },
+    // --- Mort violente ou suicide ---
+    {
+      id: "DRL-DEU-VIO-01",
+      competencyId: "mort_violente",
+      scenario: "DEU-SUIC-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Après un suicide, la question du « pourquoi » est sans réponse. On l'accueille comme une souffrance, sans y répondre à la place de la personne.",
+      stimulus: "Pourquoi il a fait ça ? Il avait tout pour lui. Je ne comprendrai jamais.",
+      modele:
+        "Non, vous ne comprendrez sans doute jamais complètement — et c'est une des choses les plus dures. Cette question, vous allez sûrement la porter longtemps. Racontez-moi ce qu'elle vous fait, quand elle revient.",
+      options: [
+        {
+          text: "Vous ne comprendrez sans doute jamais complètement, et c'est une des choses les plus dures. Racontez-moi ce que cette question vous fait quand elle revient.",
+          is_best: true,
+          score: 1,
+          feedback: "Accueille l'insoluble sans le combler : la question devient partageable.",
+        },
+        {
+          text: "C'était la maladie qui parlait, pas lui.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Fournit une explication toute faite : ferme un questionnement vital.",
+        },
+        {
+          text: "Chercher pourquoi ne vous mènera nulle part, essayez de lâcher cette question.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Interdit la question centrale du deuil après suicide.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-VIO-02",
+      competencyId: "mort_violente",
+      scenario: "DEU-SUIC-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Après une mort violente, le traumatisme (images intrusives, sursauts, évitement) se distingue du deuil et peut demander une prise en charge propre.",
+      stimulus: "C'est moi qui l'ai trouvé. Je revois la scène plusieurs fois par jour, sans prévenir.",
+      modele:
+        "Ces images qui reviennent sans que vous les appeliez, c'est différent du chagrin : c'est la marque du choc. Ça se travaille spécifiquement, et ça se soulage. Est-ce que ça vous arrive aussi la nuit ?",
+      options: [
+        {
+          text: "Ces images qui reviennent sans que vous les appeliez, c'est différent du chagrin : c'est la marque du choc, et ça se travaille spécifiquement.",
+          is_best: true,
+          score: 1,
+          feedback: "Distingue traumatisme et deuil, et ouvre une prise en charge adaptée.",
+        },
+        {
+          text: "C'est normal, ça s'estompera avec le temps.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Confond le traumatique avec le chagrin ordinaire : laisse sans soin.",
+        },
+        {
+          text: "Essayez de penser à autre chose quand ça revient.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Conseille l'évitement, qui entretient les intrusions.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-VIO-03",
+      competencyId: "mort_violente",
+      scenario: "DEU-SUIC-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "La culpabilité des « signes qu'on aurait dû voir » est quasi constante après un suicide. On l'accueille sans l'absoudre d'un mot.",
+      stimulus: "Il m'avait appelé la veille. J'ai écourté, j'étais pressé. Si j'avais parlé cinq minutes de plus…",
+      reactionSiBon: "(long silence) Je sais que je ne pouvais pas deviner. Mais je continue de rejouer cet appel.",
+      modele:
+        "Vous rejouez cet appel en cherchant l'endroit où vous auriez pu changer le cours des choses. Je ne vais pas vous dire que c'est faux d'y penser — mais avec ce que vous saviez ce jour-là, qu'est-ce que vous auriez pu voir ?",
+    },
+    {
+      id: "DRL-DEU-VIO-04",
+      competencyId: "mort_violente",
+      scenario: "DEU-SUIC-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Le deuil après suicide s'accompagne souvent de honte et de silence social : nommer ce poids allège l'isolement.",
+      stimulus: "Aux gens, je dis que c'était un accident. Je n'arrive pas à dire le mot.",
+      reactionSiBon: "Ici je peux le dire alors. Il s'est suicidé. Voilà, je l'ai dit.",
+      modele:
+        "Vous portez la mort et, en plus, le silence autour. Ici vous n'avez pas à choisir vos mots pour protéger les autres — vous pouvez le dire comme c'est, ou pas du tout.",
+    },
+    // --- Entourage et enfants ---
+    {
+      id: "DRL-DEU-ENT-01",
+      competencyId: "entourage_enfants",
+      scenario: "DEU-ENF-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Aux enfants, on dit la vérité avec des mots concrets et adaptés à l'âge. Les euphémismes (« parti », « endormi ») créent confusion et angoisse.",
+      stimulus: "Je leur ai dit que papa était parti pour un long voyage. C'était plus doux, non ?",
+      modele:
+        "L'intention est protectrice, mais un enfant prend les mots au pied de la lettre : il attendra le retour, ou aura peur des voyages. Les mots « mort », « son corps a arrêté de fonctionner » sont plus durs à dire, et plus sûrs pour eux.",
+      options: [
+        {
+          text: "Un enfant prend les mots au pied de la lettre : il attendra le retour, ou aura peur des voyages. Dire « mort », « son corps a arrêté de fonctionner » est plus dur, et plus sûr pour eux.",
+          is_best: true,
+          score: 1,
+          feedback: "Explique le risque des euphémismes et propose des mots concrets.",
+        },
+        {
+          text: "Oui, à cet âge-là il vaut mieux les protéger.",
+          is_best: false,
+          score: 0,
+          feedback: "Conforte un évitement qui produira confusion et perte de confiance.",
+        },
+        {
+          text: "Il faudra bien leur dire la vérité un jour.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Juste sur le fond, mais laisse la mère sans aide pour le faire.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-ENT-02",
+      competencyId: "entourage_enfants",
+      scenario: "DEU-ENF-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Un adulte endeuillé qui pleure devant son enfant ne lui nuit pas : il lui montre que la tristesse est dicible. Ce qui inquiète l'enfant, c'est l'inexpliqué.",
+      stimulus: "Je me cache pour pleurer. Je ne veux pas qu'ils me voient m'effondrer.",
+      modele:
+        "Vous cacher demande une énergie folle, et les enfants sentent de toute façon. Pleurer devant eux en disant « je pleure parce que papa me manque, ce n'est pas à cause de toi » leur apprend que la tristesse se dit.",
+      options: [
+        {
+          text: "Les enfants sentent de toute façon. Pleurer devant eux en disant « je pleure parce que papa me manque, ce n'est pas à cause de toi » leur apprend que la tristesse se dit.",
+          is_best: true,
+          score: 1,
+          feedback: "Autorise l'émotion partagée et donne la formulation qui déculpabilise l'enfant.",
+        },
+        {
+          text: "Vous avez raison, il faut rester forte pour eux.",
+          is_best: false,
+          score: 0,
+          feedback: "Renforce le masque : coûteux pour elle, déroutant pour les enfants.",
+        },
+        {
+          text: "Pleurez devant eux, ça leur fera du bien.",
+          is_best: false,
+          score: 0.4,
+          feedback: "Bonne direction, mais sans la formulation qui évite que l'enfant se croie responsable.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-ENT-03",
+      competencyId: "entourage_enfants",
+      scenario: "DEU-ENF-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Les enfants font le deuil « par intermittence » : ils jouent, puis pleurent, puis rejouent. Ce n'est pas de l'indifférence.",
+      stimulus: "Le petit joue comme si de rien n'était. Le grand ne dit plus un mot. Je ne sais pas lequel m'inquiète le plus.",
+      reactionSiBon: "Alors le petit va peut-être bien, en fait. Et pour le grand, je vais essayer autrement qu'en le questionnant.",
+      modele:
+        "À 5 ans, on traverse le deuil par vagues courtes : jouer entre deux n'efface rien. À 9 ans, le silence protège souvent l'adulte qu'on voit souffrir. Pour l'aîné, un temps côte à côte sans le regarder — en marchant, en voiture — ouvre plus facilement qu'une question directe.",
+    },
+    {
+      id: "DRL-DEU-ENT-04",
+      competencyId: "entourage_enfants",
+      scenario: "DEU-CONJ-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "L'entourage veut aider et blesse souvent. Aider la personne à formuler ses besoins vaut mieux que de dénoncer les maladresses.",
+      stimulus: "Mes enfants m'appellent tous les jours pour vérifier que je mange. J'étouffe.",
+      reactionSiBon: "Je pourrais leur dire ça, oui. Qu'ils viennent le dimanche plutôt que d'appeler chaque soir.",
+      modele:
+        "Ils s'inquiètent, et ça vous pèse — les deux sont vrais. Si vous pouviez leur demander une chose précise à la place de ces appels, ce serait quoi ?",
+    },
+    // --- Risque suicidaire ---
+    {
+      id: "DRL-DEU-RIS-01",
+      competencyId: "risque_suicidaire",
+      scenario: "DEU-CONJ-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Questionner directement les idées suicidaires ne les provoque pas : c'est un facteur de protection. L'allusion, elle, laisse la personne seule.",
+      stimulus: "Parfois je me dis que ce serait plus simple de le rejoindre.",
+      modele:
+        "Je vais vous poser la question directement, parce qu'elle compte : est-ce que vous pensez à mettre fin à vos jours ?",
+      options: [
+        {
+          text: "Je vais vous poser la question directement, parce qu'elle compte : est-ce que vous pensez à mettre fin à vos jours ?",
+          is_best: true,
+          score: 1,
+          feedback: "Question directe, nommée comme telle : c'est ce qui protège et ouvre la parole.",
+        },
+        {
+          text: "Ne dites pas des choses pareilles, vos enfants ont besoin de vous.",
+          is_best: false,
+          score: 0,
+          feedback: "Culpabilise et fait taire : la personne ne reviendra pas sur le sujet.",
+        },
+        {
+          text: "Vous voulez dire que vous êtes fatiguée de tout ça ?",
+          is_best: false,
+          score: 0.2,
+          feedback: "Reformule en atténuant : l'allusion reste allusion, le risque non exploré.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-RIS-02",
+      competencyId: "risque_suicidaire",
+      scenario: "DEU-SUIC-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "On ne promet jamais un secret absolu sur un risque vital. Le cadre se pose avec franchise, sans menacer.",
+      stimulus: "Je vais vous dire quelque chose, mais vous jurez que ça reste entre nous ?",
+      modele:
+        "Je garde pour moi ce que vous me confiez, avec une limite que je vous dis d'avance : si votre vie est en danger, je ne resterai pas seul avec ça — on cherchera de l'aide ensemble. Je préfère que vous le sachiez avant de parler.",
+      options: [
+        {
+          text: "Je garde ce que vous me confiez, avec une limite que je vous dis d'avance : si votre vie est en danger, on cherchera de l'aide ensemble. Je préfère que vous le sachiez avant.",
+          is_best: true,
+          score: 1,
+          feedback: "Pose un cadre honnête et annoncé : la confiance repose sur la clarté.",
+        },
+        {
+          text: "Oui, bien sûr, tout ce qui se dit ici est confidentiel.",
+          is_best: false,
+          score: 0,
+          feedback: "Promesse intenable : elle se retournera au pire moment.",
+        },
+        {
+          text: "Ça dépend de ce que vous allez me dire.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Honnête mais anxiogène et flou : peut refermer la parole.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-RIS-03",
+      competencyId: "risque_suicidaire",
+      scenario: "DEU-CONJ-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Après une réponse positive, on explore concrètement (scénario, moyens, échéance) — calmement, sans dramatiser ni banaliser.",
+      stimulus: "Oui, ça m'arrive d'y penser. Surtout le soir, quand la maison est vide.",
+      reactionSiBon: "Non, je n'ai rien prévu. C'est plutôt… l'envie que ça s'arrête, le soir.",
+      modele:
+        "Merci de me le dire. J'ai besoin de mieux comprendre : quand ces pensées viennent le soir, est-ce que vous avez imaginé comment vous feriez ? Et est-ce que vous avez fait des démarches en ce sens ?",
+    },
+    {
+      id: "DRL-DEU-RIS-04",
+      competencyId: "risque_suicidaire",
+      scenario: "DEU-SUIC-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "L'orientation s'organise concrètement — qui, quand, comment — et le lien se maintient. On n'oriente jamais en se dessaisissant.",
+      stimulus: "J'y pense souvent depuis un mois. J'ai gardé ses médicaments, je ne sais pas pourquoi.",
+      reactionSiBon: "D'accord. Ma sœur peut venir ce soir. Et je veux bien qu'on appelle ensemble.",
+      modele:
+        "Ce que vous me dites est sérieux et je ne vais pas le laisser de côté. Deux choses maintenant : ces médicaments, à qui pouvez-vous les confier aujourd'hui ? Et je souhaite qu'on contacte un médecin ensemble, depuis ce bureau. On se revoit dans les jours qui viennent — je reste là.",
+    },
+    // --- Résonances du praticien ---
+    {
+      id: "DRL-DEU-RES-01",
+      competencyId: "resonances",
+      scenario: "DEU-PERI-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Quand l'histoire du patient réveille la nôtre, le risque est de parler de soi. Reconnaître l'écho en soi permet de rester avec l'autre.",
+      stimulus: "(Clara raconte son accouchement. Vous avez vécu une fausse couche il y a deux ans et vous sentez votre gorge se serrer.)",
+      modele:
+        "(reconnaître intérieurement l'écho, respirer, revenir à elle) Vous étiez seule à ce moment-là ?",
+      options: [
+        {
+          text: "(reconnaître intérieurement l'écho, respirer, et revenir à elle) Vous étiez seule à ce moment-là ?",
+          is_best: true,
+          score: 1,
+          feedback: "La résonance est repérée et contenue : la place reste à la patiente.",
+        },
+        {
+          text: "Je comprends, j'ai vécu quelque chose de similaire.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Déplace le centre vers le praticien : Clara devra gérer son émotion à lui.",
+        },
+        {
+          text: "(changer de sujet vers le suivi médical)",
+          is_best: false,
+          score: 0.1,
+          feedback: "Fuite : la patiente perçoit l'évitement et se censurera.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-RES-02",
+      competencyId: "resonances",
+      scenario: "DEU-SUIC-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Le malaise du praticien est une information clinique : il signale souvent ce que la personne ne peut pas encore dire.",
+      stimulus: "(Yann décrit la scène avec des détails crus, d'une voix plate. Vous ressentez un fort malaise et l'envie qu'il s'arrête.)",
+      modele:
+        "(noter le malaise comme un signal, sans l'agir) Vous racontez ça d'une voix très calme. Qu'est-ce qui se passe en vous pendant que vous me le racontez ?",
+      options: [
+        {
+          text: "(noter le malaise sans l'agir) Vous racontez ça d'une voix très calme. Qu'est-ce qui se passe en vous pendant que vous me le racontez ?",
+          is_best: true,
+          score: 1,
+          feedback: "Le malaise devient une hypothèse clinique (dissociation possible) au lieu d'un réflexe.",
+        },
+        {
+          text: "On peut passer les détails, l'essentiel est ailleurs.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Le praticien se protège : Yann comprend que c'est trop, et se tait.",
+        },
+        {
+          text: "Ça doit être terrible de revivre ça.",
+          is_best: false,
+          score: 0.5,
+          feedback: "Empathique, mais laisse de côté l'écart frappant entre le récit et le ton.",
+        },
+      ],
+    },
+    {
+      id: "DRL-DEU-RES-03",
+      competencyId: "resonances",
+      scenario: "DEU-PARENT-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Une résonance persistante entre les séances relève de la supervision, pas de l'entretien. La reconnaître est une compétence, pas un aveu de faiblesse.",
+      stimulus: "(Après trois séances avec M. Ferreira, vous pensez à votre propre mère malade, et vous appréhendez ce rendez-vous.)",
+      reactionSiBon: "(La séance se déroule ; vous restez disponible sans être envahi.)",
+      modele:
+        "(Avant la séance : nommer pour soi ce qui se joue — « sa situation touche ma peur pour ma mère » —, décider d'en parler en supervision, et poser l'intention de rester centré sur lui. Pendant : si l'émotion monte, revenir à sa respiration et à ce que M. Ferreira dit maintenant.)",
+    },
+    {
+      id: "DRL-DEU-RES-04",
+      competencyId: "resonances",
+      scenario: "DEU-ENF-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Face aux larmes, l'émotion du praticien peut être visible sans être envahissante : une émotion contenue est un appui, une émotion débordante est une charge.",
+      stimulus: "(Sophie s'effondre en parlant de ses enfants. Vous sentez vos propres larmes monter.)",
+      reactionSiBon: "(Elle pleure sans se sentir jugée, puis reprend d'elle-même.)",
+      modele:
+        "(Rester présent, ne pas se détourner, laisser une émotion sobre exister sans la commenter ni la cacher. Ne pas se précipiter sur les mouchoirs pour arrêter les larmes. Puis, quand elle ralentit :) Je suis là. Prenez le temps.",
+    },
+  ],
+};
+
+// Hypnose ericksonienne — 11 compétences, 40 cartes (4 sur les compétences
+// techniques centrales, 3 sur les autres). L'accent porte sur la POSTURE et le
+// LANGAGE, seuls éléments réellement travaillables par simulation écrite.
+const HYPNOSE: RefDef = {
+  fw: "hypnose",
+  gridId: "hypnose-v1",
+  nom: "Hypnose ericksonienne",
+  type: "approche",
+  description:
+    "Pratiquer l'hypnose selon l'approche ericksonienne : langage permissif, suggestions indirectes, induction conversationnelle, métaphores, utilisation de ce que le patient apporte — et clôture propre.",
+  categories: [
+    { code: "cadre", nom: "Cadre & observation", ordre: 1 },
+    { code: "langage", nom: "Langage hypnotique", ordre: 2 },
+    { code: "conduite", nom: "Conduite de séance", ordre: 3 },
+    { code: "suites", nom: "Clôture & suites", ordre: 4 },
+  ],
+  competencies: [
+    {
+      code: "cadre_idees_recues",
+      cat: "cadre",
+      nom: "Poser le cadre et défaire les idées reçues",
+      ordre: 1,
+      a1: "Entretient le mystère, ou promet un état spectaculaire.",
+      a3: "Rassure vaguement sans expliquer ce qui va se passer.",
+      a5: "Démystifie simplement, rend le patient acteur et co-responsable.",
+    },
+    {
+      code: "calibration",
+      cat: "cadre",
+      nom: "Observer et calibrer les signes d'absorption",
+      ordre: 2,
+      a1: "N'observe pas, ou décrète l'état sans indice.",
+      a3: "Note un ou deux signes sans en tenir compte.",
+      a5: "Observe finement (respiration, clignement, tonus, déglutition) et ajuste son rythme dessus.",
+    },
+    {
+      code: "langage_permissif",
+      cat: "langage",
+      nom: "Employer le langage permissif et les truismes",
+      ordre: 3,
+      a1: "Donne des ordres directs (« vous allez dormir »), invérifiables et contraignants.",
+      a3: "Mélange permissif et directif sans intention.",
+      a5: "Enchaîne des observations vérifiables et des formulations ouvertes qui laissent le choix.",
+    },
+    {
+      code: "suggestions_indirectes",
+      cat: "langage",
+      nom: "Construire des suggestions indirectes",
+      ordre: 4,
+      a1: "Suggère frontalement, ce qui déclenche la résistance.",
+      a3: "Tente l'indirect mais reste transparent et injonctif.",
+      a5: "Utilise implication, double lien, présupposition et liaisons de façon fluide.",
+    },
+    {
+      code: "induction_conversationnelle",
+      cat: "conduite",
+      nom: "Conduire une induction conversationnelle",
+      ordre: 5,
+      a1: "Rupture nette et solennelle (« fermez les yeux, détendez-vous »).",
+      a3: "Induction correcte mais mécanique, plaquée sur le patient.",
+      a5: "Glisse dans l'absorption depuis le récit du patient, sans rupture perceptible.",
+    },
+    {
+      code: "metaphore",
+      cat: "conduite",
+      nom: "Construire et livrer une métaphore",
+      ordre: 6,
+      a1: "Raconte une histoire sans lien, ou en explique aussitôt la morale.",
+      a3: "Métaphore pertinente mais livrée trop vite, sans espace.",
+      a5: "Construit un isomorphisme avec la situation et laisse le patient faire le lien lui-même.",
+    },
+    {
+      code: "ratification",
+      cat: "conduite",
+      nom: "Ratifier et approfondir",
+      ordre: 7,
+      a1: "Ignore ce qui se produit, ou interprète à la place du patient.",
+      a3: "Ratifie mécaniquement, sans approfondir.",
+      a5: "Renvoie ce qui se passe comme une confirmation, et l'utilise pour aller plus loin.",
+    },
+    {
+      code: "utilisation",
+      cat: "conduite",
+      nom: "Appliquer le principe d'utilisation",
+      ordre: 8,
+      a1: "Lutte contre la résistance ou insiste sur sa consigne.",
+      a3: "Contourne l'objection sans s'en servir.",
+      a5: "Intègre l'objection, le symptôme ou l'imprévu comme matériau de la transe.",
+    },
+    {
+      code: "reassociation",
+      cat: "suites",
+      nom: "Réassocier et clôturer proprement",
+      ordre: 9,
+      a1: "Termine brutalement ou laisse le patient dans un état flou.",
+      a3: "Ramène sans vérifier le retour effectif.",
+      a5: "Réassocie progressivement, vérifie l'orientation et la sécurité avant la sortie.",
+    },
+    {
+      code: "post_hypnotique",
+      cat: "suites",
+      nom: "Suggestions post-hypnotiques et tâches",
+      ordre: 10,
+      a1: "Prescrit une tâche arbitraire, sans lien ni ancrage.",
+      a3: "Propose une suggestion vague, non reliée au quotidien.",
+      a5: "Relie la suggestion à un déclencheur concret du quotidien, formulée de façon acceptable.",
+    },
+    {
+      code: "incidents",
+      cat: "suites",
+      nom: "Gérer les incidents de séance",
+      ordre: 11,
+      a1: "Panique, arrête brutalement, ou nie ce qui se passe.",
+      a3: "Gère l'incident sans le reprendre ensuite.",
+      a5: "Accueille l'abréaction ou la non-réponse avec calme, sécurise, et en fait un matériau.",
+    },
+  ],
+  scenarios: [
+    {
+      id: "HYP-ANX-01",
+      titre: "Mme Roux — anxiété avant prise de parole",
+      contexte:
+        "Mme Roux, 42 ans, cadre, vient pour l'angoisse qui la saisit avant chaque réunion. Curieuse mais méfiante : « je ne suis pas sûre d'être réceptive ».",
+    },
+    {
+      id: "HYP-DOUL-01",
+      titre: "M. Barbier — douleur chronique",
+      contexte:
+        "M. Barbier, 57 ans, douleurs lombaires depuis trois ans. Envoyé par son médecin, très rationnel, dit ne pas croire « à ce genre de choses ».",
+    },
+    {
+      id: "HYP-SOM-01",
+      titre: "Inès — endormissement difficile",
+      contexte:
+        "Inès, 29 ans, met deux heures à s'endormir depuis un an. Elle a « tout essayé » et contrôle beaucoup.",
+    },
+    {
+      id: "HYP-TAB-01",
+      titre: "Marc — arrêt du tabac",
+      contexte:
+        "Marc, 46 ans, veut arrêter de fumer. Il attend de l'hypnose qu'elle fasse le travail à sa place : « endormez-moi et enlevez-moi l'envie ».",
+    },
+  ],
+  drills: [
+    // --- Cadre et idées reçues ---
+    {
+      id: "DRL-HYP-CAD-01",
+      competencyId: "cadre_idees_recues",
+      scenario: "HYP-TAB-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "L'hypnose ericksonienne n'est pas un sommeil ni une prise de contrôle : le patient reste acteur. Le dire d'emblée évite d'entretenir une attente magique.",
+      stimulus: "Endormez-moi et enlevez-moi l'envie de fumer, c'est bien pour ça qu'on vient, non ?",
+      modele:
+        "Ce n'est pas tout à fait comme ça que ça marche : vous ne dormirez pas, vous entendrez tout, et vous garderez la main. Je ne vous enlève rien — on mobilise ce que vous avez déjà. Ça vous va comme cadre ?",
+      options: [
+        {
+          text: "Vous ne dormirez pas, vous entendrez tout et vous garderez la main. Je ne vous enlève rien : on mobilise ce que vous avez déjà. Ça vous va comme cadre ?",
+          is_best: true,
+          score: 1,
+          feedback: "Démystifie et rend le patient co-acteur : l'attente magique se dégonfle sans humilier.",
+        },
+        {
+          text: "Oui, on va travailler sur votre inconscient pour supprimer cette envie.",
+          is_best: false,
+          score: 0,
+          feedback: "Entretient l'illusion d'un acte subi : promesse intenable.",
+        },
+        {
+          text: "L'hypnose ne fait pas de miracles, il faudra y mettre du vôtre.",
+          is_best: false,
+          score: 0.4,
+          feedback: "Vrai, mais formulé en reproche anticipé : refroidit l'alliance.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-CAD-02",
+      competencyId: "cadre_idees_recues",
+      scenario: "HYP-ANX-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "La crainte de « ne pas être réceptif » se traite en supprimant le critère de réussite, pas en promettant que ça marchera.",
+      stimulus: "Je ne suis pas sûre d'être réceptive. Il paraît que ça ne marche pas sur tout le monde.",
+      modele:
+        "Il n'y a rien à réussir, donc rien à rater. Certaines personnes sentent beaucoup de choses, d'autres presque rien, et ça ne préjuge pas du résultat. On regarde simplement ce qui se passe pour vous.",
+      options: [
+        {
+          text: "Il n'y a rien à réussir, donc rien à rater. Certaines sentent beaucoup, d'autres presque rien, et ça ne préjuge pas du résultat.",
+          is_best: true,
+          score: 1,
+          feedback: "Retire l'enjeu de performance, qui est le principal obstacle.",
+        },
+        {
+          text: "Ne vous inquiétez pas, ça marche sur tout le monde.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Promesse fausse : elle crée exactement l'enjeu qu'on veut retirer.",
+        },
+        {
+          text: "On verra bien, certaines personnes résistent effectivement.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Installe la notion de résistance comme un défaut du patient.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-CAD-03",
+      competencyId: "cadre_idees_recues",
+      scenario: "HYP-DOUL-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Face à un patient rationnel, on s'appuie sur son scepticisme au lieu de le combattre : il n'a pas besoin de croire pour observer.",
+      stimulus: "Je vous préviens, je ne crois pas du tout à ces trucs. C'est mon médecin qui insiste.",
+      reactionSiBon: "Ah, ça me va mieux dit comme ça. Je veux bien essayer, pour voir.",
+      modele:
+        "Vous n'avez pas besoin d'y croire, et je ne vais pas essayer de vous convaincre. Vous avez juste à observer ce qui se passe, et à me dire ce que vous constatez — y compris s'il ne se passe rien. Votre esprit critique, gardez-le : il nous sera utile.",
+    },
+    // --- Calibration ---
+    {
+      id: "DRL-HYP-CAL-01",
+      competencyId: "calibration",
+      scenario: "HYP-SOM-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "L'absorption se lit sur des signes objectifs : ralentissement respiratoire, immobilité, clignement plus lent, déglutition. On les observe avant de poursuivre.",
+      stimulus: "(Inès a les yeux fermés depuis deux minutes ; sa respiration s'est ralentie, ses épaules sont retombées.)",
+      modele:
+        "(observer encore quelques secondes, adapter son propre débit à sa respiration, puis poursuivre plus lentement)",
+      options: [
+        {
+          text: "(observer encore quelques secondes, caler son débit sur sa respiration, poursuivre plus lentement)",
+          is_best: true,
+          score: 1,
+          feedback: "Utilise les signes pour ajuster le rythme : c'est ça, calibrer.",
+        },
+        {
+          text: "Voilà, vous êtes maintenant en état d'hypnose profonde.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Décrète un état et le nomme : risque de contredire le vécu réel.",
+        },
+        {
+          text: "Est-ce que vous vous sentez détendue ?",
+          is_best: false,
+          score: 0.3,
+          feedback: "Question qui ré-associe et interrompt l'absorption en cours.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-CAL-02",
+      competencyId: "calibration",
+      scenario: "HYP-ANX-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Des signes contraires (agitation, tension, respiration haute) indiquent qu'il faut ralentir ou revenir en arrière, pas insister.",
+      stimulus: "(Mme Roux fronce les sourcils, ses mains se crispent, sa respiration devient courte et haute.)",
+      modele:
+        "(ralentir, revenir à quelque chose de neutre et vérifiable) Et vous pouvez sentir simplement le contact de vos pieds sur le sol, sans rien avoir à changer.",
+      options: [
+        {
+          text: "(ralentir et revenir à du neutre et vérifiable) Vous pouvez sentir simplement le contact de vos pieds sur le sol, sans rien avoir à changer.",
+          is_best: true,
+          score: 1,
+          feedback: "Lit le signe de tension et redonne un appui sûr : on ne force pas.",
+        },
+        {
+          text: "(poursuivre l'induction comme prévu, plus fermement)",
+          is_best: false,
+          score: 0,
+          feedback: "Ignore le signal : la tension va monter et l'alliance se rompre.",
+        },
+        {
+          text: "Vous avez l'air tendue, qu'est-ce qui ne va pas ?",
+          is_best: false,
+          score: 0.4,
+          feedback: "Ré-associe brutalement et met la difficulté au centre.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-CAL-03",
+      competencyId: "calibration",
+      scenario: "HYP-DOUL-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "On calibre aussi en pré-séance : repérer comment ce patient-là parle de son expérience donne les mots à réutiliser.",
+      stimulus: "Quand ça va mieux, c'est comme si le dos se « desserrait », vous voyez ? Moins pris dans un étau.",
+      reactionSiBon: "Oui, exactement, « desserré ». C'est le mot.",
+      modele:
+        "« Desserré », « moins pris dans un étau » — je retiens vos mots, ce sont eux que j'utiliserai. Quand ça se desserre, ça commence par où, exactement ?",
+    },
+    // --- Langage permissif et truismes ---
+    {
+      id: "DRL-HYP-PER-01",
+      competencyId: "langage_permissif",
+      scenario: "HYP-SOM-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "Un truisme est une observation invérifiable-ment vraie. Enchaînés, les truismes installent un accord implicite avant toute suggestion.",
+      stimulus: "(Inès vient de s'installer, un peu sur ses gardes.)",
+      modele:
+        "Vous êtes assise là, vous entendez ma voix, et peut-être que vous remarquez déjà le contact du dossier dans votre dos.",
+      options: [
+        {
+          text: "Vous êtes assise là, vous entendez ma voix, et peut-être que vous remarquez déjà le contact du dossier dans votre dos.",
+          is_best: true,
+          score: 1,
+          feedback: "Trois observations invérifiables, dont une ouverte : l'accord s'installe.",
+        },
+        {
+          text: "Vous êtes complètement détendue et vous vous sentez très bien.",
+          is_best: false,
+          score: 0,
+          feedback: "Affirme un état qu'elle n'a pas : elle constate le décalage et se ferme.",
+        },
+        {
+          text: "Vous allez maintenant entrer en transe.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Ordre direct et invérifiable : contraignant, donc contre-productif.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-PER-02",
+      competencyId: "langage_permissif",
+      scenario: "HYP-ANX-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Le permissif laisse le choix (« vous pouvez », « peut-être », « à votre rythme ») : il rend l'échec impossible.",
+      stimulus: "(Il s'agit d'inviter Mme Roux à fermer les yeux, sans l'imposer.)",
+      modele:
+        "Vous pouvez laisser vos yeux se fermer quand ils en auront envie — maintenant, ou dans un instant, ou les garder ouverts si vous préférez.",
+      options: [
+        {
+          text: "Vous pouvez laisser vos yeux se fermer quand ils en auront envie — maintenant, dans un instant, ou les garder ouverts si vous préférez.",
+          is_best: true,
+          score: 1,
+          feedback: "Permissif complet : toutes les réponses sont recevables, donc aucune n'est un échec.",
+        },
+        {
+          text: "Fermez les yeux.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Directif : chez une patiente méfiante, appelle la résistance.",
+        },
+        {
+          text: "Fermez les yeux quand vous voulez, mais il vaut mieux tout de suite.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Ouvre puis referme : l'apparente liberté est contredite.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-PER-03",
+      competencyId: "langage_permissif",
+      scenario: "HYP-DOUL-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Face à un rationnel, le permissif s'appuie sur du strictement vérifiable : rien qui puisse être contredit.",
+      stimulus: "Si vous me dites que je suis détendu alors que je ne le suis pas, je vais décrocher.",
+      reactionSiBon: "Ça, effectivement, je peux le constater. Continuez.",
+      modele:
+        "Je ne vous dirai rien que vous ne puissiez vérifier. Par exemple : vous êtes assis, vos pieds touchent le sol, et vous entendez le bruit de fond de la pièce. Rien de plus pour l'instant.",
+    },
+    {
+      id: "DRL-HYP-PER-04",
+      competencyId: "langage_permissif",
+      scenario: "HYP-TAB-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Enchaîner : deux ou trois truismes vérifiables, puis une ouverture (« et peut-être que… ») qui n'oblige à rien.",
+      stimulus: "(Marc s'installe, un peu goguenard, bras croisés.)",
+      reactionSiBon: "(il décroise les bras et s'enfonce légèrement dans le fauteuil)",
+      modele:
+        "Vous êtes installé dans ce fauteuil, vos bras sont croisés, et vous m'entendez parler. Et peut-être que, sans rien faire de particulier, vous remarquerez que votre respiration prend son propre rythme.",
+    },
+    // --- Suggestions indirectes ---
+    {
+      id: "DRL-HYP-IND-01",
+      competencyId: "suggestions_indirectes",
+      scenario: "HYP-SOM-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Le double lien propose deux options qui vont dans le même sens : le choix porte sur la modalité, pas sur le principe.",
+      stimulus: "(Inès contrôle beaucoup ; on souhaite qu'elle relâche sans le lui ordonner.)",
+      modele:
+        "Je ne sais pas si c'est votre main droite ou votre main gauche qui se détendra la première.",
+      options: [
+        {
+          text: "Je ne sais pas si c'est votre main droite ou votre main gauche qui se détendra la première.",
+          is_best: true,
+          score: 1,
+          feedback: "Double lien : la détente est présupposée, le choix porte sur le détail.",
+        },
+        {
+          text: "Détendez vos mains maintenant.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Injonction directe : chez une patiente qui contrôle, appelle l'opposition.",
+        },
+        {
+          text: "Essayez de détendre vos mains, si vous y arrivez.",
+          is_best: false,
+          score: 0.2,
+          feedback: "« Essayez » et « si vous y arrivez » présupposent l'échec.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-IND-02",
+      competencyId: "suggestions_indirectes",
+      scenario: "HYP-ANX-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "La liaison relie une chose en train de se produire à celle qu'on suggère : « à mesure que…, vous pouvez… ».",
+      stimulus: "(La respiration de Mme Roux ralentit visiblement.)",
+      modele:
+        "Et à mesure que votre respiration ralentit, vous pouvez laisser vos épaules devenir un peu plus lourdes.",
+      options: [
+        {
+          text: "À mesure que votre respiration ralentit, vous pouvez laisser vos épaules devenir un peu plus lourdes.",
+          is_best: true,
+          score: 1,
+          feedback: "Liaison sur un fait observable : la suggestion s'appuie sur du réel.",
+        },
+        {
+          text: "Vos épaules deviennent lourdes.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Suggestion directe, sans appui : facilement contredite par le vécu.",
+        },
+        {
+          text: "Votre respiration ralentit, c'est le signe que ça marche.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Commente et évalue : ramène le patient à l'observation critique.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-IND-03",
+      competencyId: "suggestions_indirectes",
+      scenario: "HYP-DOUL-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "La présupposition place le changement dans la question elle-même : ce n'est plus « si » mais « comment ».",
+      stimulus: "Vous croyez vraiment que la douleur peut changer avec des mots ?",
+      reactionSiBon: "(il réfléchit) … c'est vrai que le soir, quand je bricole, j'y pense moins.",
+      modele:
+        "Je ne sais pas encore de quelle façon elle changera pour vous, ni si ce sera d'abord son intensité ou la place qu'elle prend dans votre journée. Dites-moi : dans quels moments est-elle déjà un peu moins présente ?",
+    },
+    {
+      id: "DRL-HYP-IND-04",
+      competencyId: "suggestions_indirectes",
+      scenario: "HYP-TAB-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "La suggestion par implication attribue le changement au patient et à son rythme, sans le lui promettre.",
+      stimulus: "Bon, et à la sortie, je n'aurai plus envie de fumer, c'est ça ?",
+      reactionSiBon: "Ok. Dit comme ça, ça me paraît moins magique et plus crédible.",
+      modele:
+        "Je ne peux pas vous dire quand votre rapport à la cigarette changera, ni par quel bout ça commencera. Ce que je sais, c'est que certaines personnes s'aperçoivent d'abord qu'elles oublient une cigarette dans la journée — et souvent elles s'en rendent compte après coup.",
+    },
+    // --- Induction conversationnelle ---
+    {
+      id: "DRL-HYP-INDU-01",
+      competencyId: "induction_conversationnelle",
+      scenario: "HYP-DOUL-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "L'induction conversationnelle part du récit du patient : on suit son contenu et on ralentit, sans annoncer qu'on commence.",
+      stimulus: "Le seul moment où j'oublie mon dos, c'est quand je pêche. Le matin, tôt, au bord de l'eau.",
+      modele:
+        "Le matin, tôt, au bord de l'eau… et pendant que vous me le racontez, vous pouvez y être un instant. La lumière, le bruit de l'eau, ce que vos mains font là-bas…",
+      options: [
+        {
+          text: "Le matin, tôt, au bord de l'eau… et pendant que vous me le racontez, vous pouvez y être un instant. La lumière, le bruit de l'eau, ce que vos mains font là-bas…",
+          is_best: true,
+          score: 1,
+          feedback: "L'absorption naît du récit même : aucune rupture, aucun rituel imposé.",
+        },
+        {
+          text: "Très bien. Maintenant on va commencer l'hypnose : fermez les yeux et détendez-vous.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Rupture solennelle qui abandonne le matériau que le patient venait d'offrir.",
+        },
+        {
+          text: "Intéressant. Et à part la pêche, qu'est-ce qui vous soulage ?",
+          is_best: false,
+          score: 0.3,
+          feedback: "Continue l'entretien : l'ouverture d'absorption est laissée passer.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-INDU-02",
+      competencyId: "induction_conversationnelle",
+      scenario: "HYP-ANX-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "On ralentit progressivement le débit, on allonge les silences, on descend le ton : la bascule se fait sans annonce.",
+      stimulus: "(Mme Roux raconte son trajet du matin, d'une voix rapide et tendue.)",
+      modele:
+        "(reprendre ses mots en ralentissant nettement, en laissant des silences) Ce trajet… le matin… et ce moment, juste avant d'entrer…",
+      options: [
+        {
+          text: "(reprendre ses mots en ralentissant nettement, en laissant des silences) Ce trajet… le matin… et ce moment, juste avant d'entrer…",
+          is_best: true,
+          score: 1,
+          feedback: "Le rythme fait l'induction : elle suit sans avoir à obéir.",
+        },
+        {
+          text: "(garder le même débit qu'elle pour rester en phase)",
+          is_best: false,
+          score: 0.3,
+          feedback: "Se synchroniser est juste, mais sans conduire ensuite : rien ne se passe.",
+        },
+        {
+          text: "Attendez, on va d'abord faire un exercice de respiration.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Interrompt et plaque un protocole : on perd le fil du patient.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-INDU-03",
+      competencyId: "induction_conversationnelle",
+      scenario: "HYP-SOM-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Une induction peut se faire les yeux ouverts, à partir d'un souvenir agréable et détaillé sensoriellement.",
+      stimulus: "Je ne veux pas fermer les yeux, ça m'angoisse. On peut faire sans ?",
+      reactionSiBon: "(son regard se fixe, son débit ralentit) … oui, l'odeur du sable chaud surtout.",
+      modele:
+        "Bien sûr, gardez-les ouverts. Regardez un point devant vous, n'importe lequel. Et racontez-moi un endroit où vous vous êtes sentie tranquille — ce que vous y voyiez, ce que vous entendiez, l'odeur qu'il y avait.",
+    },
+    {
+      id: "DRL-HYP-INDU-04",
+      competencyId: "induction_conversationnelle",
+      scenario: "HYP-TAB-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Le saupoudrage : accentuer légèrement certains mots dans une phrase ordinaire pour qu'ils agissent comme suggestions.",
+      stimulus: "Racontez-moi comment vous fumez le matin.",
+      reactionSiBon: "(il ralentit, le regard dans le vide) La première, c'est avec le café, dehors…",
+      modele:
+        "Racontez-moi cette première cigarette du matin. Le moment où vous sortez… où l'air est plus frais… où vous pouvez respirer plus profondément… et ce qui se passe, juste avant de l'allumer.",
+    },
+    // --- Métaphore ---
+    {
+      id: "DRL-HYP-MET-01",
+      competencyId: "metaphore",
+      scenario: "HYP-SOM-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Une métaphore agit par isomorphisme : même structure que le problème, contenu différent. On ne l'explique jamais.",
+      stimulus: "(Inès cherche à contrôler son endormissement, ce qui l'en empêche.)",
+      modele:
+        "Ça me fait penser à quelqu'un qui essaie de faire flotter un bouchon en appuyant dessus… et qui découvre un jour qu'il suffit de retirer la main.",
+      options: [
+        {
+          text: "Ça me fait penser à quelqu'un qui essaie de faire flotter un bouchon en appuyant dessus… et qui découvre un jour qu'il suffit de retirer la main.",
+          is_best: true,
+          score: 1,
+          feedback: "Isomorphe (l'effort empêche le résultat), livrée sans explication : le lien se fait seul.",
+        },
+        {
+          text: "C'est comme un bouchon : plus on appuie, moins ça flotte. Vous voyez, le sommeil c'est pareil, il ne faut pas forcer.",
+          is_best: false,
+          score: 0.3,
+          feedback: "L'explication finale annule l'effet : le travail est fait à la place de la patiente.",
+        },
+        {
+          text: "Il faut arrêter de vouloir contrôler votre sommeil.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Conseil direct : reçu comme une consigne de plus à réussir.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-MET-02",
+      competencyId: "metaphore",
+      scenario: "HYP-DOUL-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "La métaphore emprunte au monde du patient : ses métiers, ses passions, son vocabulaire.",
+      stimulus: "(M. Barbier est pêcheur et très concret ; on cherche à suggérer une modulation de la douleur.)",
+      modele:
+        "Un pêcheur sait qu'on ne remonte pas une belle prise en tirant d'un coup. On donne du fil, on reprend, on accompagne — et la ligne tient.",
+      options: [
+        {
+          text: "Un pêcheur sait qu'on ne remonte pas une belle prise en tirant d'un coup. On donne du fil, on reprend, on accompagne — et la ligne tient.",
+          is_best: true,
+          score: 1,
+          feedback: "Puise dans son univers : la métaphore lui parle sans traduction.",
+        },
+        {
+          text: "Imaginez un bouton de volume sur lequel vous pouvez baisser l'intensité.",
+          is_best: false,
+          score: 0.5,
+          feedback: "Métaphore classique et utile, mais étrangère à son monde : moins d'accroche.",
+        },
+        {
+          text: "La douleur, c'est comme un signal d'alarme mal réglé dans le cerveau.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Explication physiologique, pas une métaphore : s'adresse au raisonnement.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-MET-03",
+      competencyId: "metaphore",
+      scenario: "HYP-ANX-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Construire l'isomorphisme : reprendre la structure du problème (montée rapide, pic, retombée) dans un tout autre décor.",
+      stimulus: "Ça monte d'un coup, ça m'envahit, et après ça retombe aussi vite. Je subis.",
+      reactionSiBon: "(silence, puis) … c'est vrai qu'elle finit toujours par passer, en fait.",
+      modele:
+        "Vous savez, ceux qui vivent au bord de la mer connaissent les grains : le ciel noircit en quelques minutes, tout est balayé, on se met à l'abri — et vingt minutes plus tard, la lumière revient. Ils ne luttent pas contre le grain. Ils savent seulement où s'abriter, et qu'il passera.",
+    },
+    {
+      id: "DRL-HYP-MET-04",
+      competencyId: "metaphore",
+      scenario: "HYP-TAB-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Après une métaphore, on laisse un silence : c'est là que le lien se fait. Enchaîner l'annule.",
+      stimulus: "(Vous venez de livrer une métaphore sur un vieux chemin qu'on cesse d'emprunter et que la végétation recouvre.)",
+      reactionSiBon: "(long silence, il déglutit, puis hoche la tête lentement)",
+      modele:
+        "(laisser un silence long, ne rien expliquer, observer les signes) … et vous pouvez laisser cette image faire son chemin, à sa manière.",
+    },
+    // --- Ratification ---
+    {
+      id: "DRL-HYP-RAT-01",
+      competencyId: "ratification",
+      scenario: "HYP-ANX-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Ratifier, c'est renvoyer au patient ce qui vient de se produire comme une confirmation — sans l'interpréter.",
+      stimulus: "(Mme Roux déglutit, ses paupières frémissent, sa tête s'incline légèrement.)",
+      modele: "C'est ça… et vous pouvez continuer, exactement comme ça.",
+      options: [
+        {
+          text: "C'est ça… et vous pouvez continuer, exactement comme ça.",
+          is_best: true,
+          score: 1,
+          feedback: "Ratifie sans nommer ni interpréter : le processus se renforce.",
+        },
+        {
+          text: "Vous avez dégluti, c'est un signe de transe.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Explique le signe : ré-associe et met le patient en position d'évaluer.",
+        },
+        {
+          text: "(ne rien dire et poursuivre le script)",
+          is_best: false,
+          score: 0.3,
+          feedback: "Occasion manquée : ce qui se produisait n'est pas renforcé.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-RAT-02",
+      competencyId: "ratification",
+      scenario: "HYP-SOM-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Approfondir, c'est utiliser ce qui vient d'être ratifié comme point d'appui pour aller plus loin.",
+      stimulus: "(Après ratification, la respiration d'Inès s'est encore ralentie.)",
+      modele:
+        "Et à chaque expiration, vous pouvez laisser ça s'installer un peu plus… il n'y a rien à faire, juste à laisser faire.",
+      options: [
+        {
+          text: "Et à chaque expiration, vous pouvez laisser ça s'installer un peu plus… il n'y a rien à faire, juste à laisser faire.",
+          is_best: true,
+          score: 1,
+          feedback: "S'appuie sur le mouvement en cours pour approfondir : progression naturelle.",
+        },
+        {
+          text: "Descendez maintenant plus profondément, comptez de dix à un.",
+          is_best: false,
+          score: 0.4,
+          feedback: "Technique valable mais plaquée : abandonne ce qui se passait déjà.",
+        },
+        {
+          text: "Vous êtes bien détendue maintenant, on va pouvoir travailler.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Annonce une étape et ré-associe : casse l'approfondissement.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-RAT-03",
+      competencyId: "ratification",
+      scenario: "HYP-DOUL-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Ratifier vaut aussi pour de petits phénomènes rapportés après coup : ils confirment au patient que quelque chose s'est produit.",
+      stimulus: "C'est bizarre, j'ai eu l'impression que mon bras était plus lourd que l'autre. C'est normal ?",
+      reactionSiBon: "Ah, d'accord. C'est donc que ça a fonctionné, en fait.",
+      modele:
+        "C'est même un bon repère : votre corps a réagi différemment d'un côté, sans que vous l'ayez décidé. Retenez cette sensation de bras lourd — nous nous en resservirons.",
+    },
+    {
+      id: "DRL-HYP-RAT-04",
+      competencyId: "ratification",
+      scenario: "HYP-TAB-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Ratifier un phénomène minime évite que le patient conclue « il ne s'est rien passé ». On nomme le fait observé, sans le grossir.",
+      stimulus: "Franchement, à part que le temps est passé vite, je n'ai rien senti de spécial.",
+      reactionSiBon: "C'est vrai que vingt minutes, j'aurais dit dix. C'est déjà quelque chose, dit comme ça.",
+      modele:
+        "« Le temps est passé vite » — c'est précisément un des repères les plus fiables. Vous ne l'avez pas décidé, et pourtant votre perception de la durée a changé. Selon vous, il s'est écoulé combien de temps ?",
+    },
+    // --- Utilisation ---
+    {
+      id: "DRL-HYP-UTI-01",
+      competencyId: "utilisation",
+      scenario: "HYP-DOUL-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Le principe d'utilisation : tout ce que le patient apporte — objection, symptôme, bruit extérieur — devient matériau, jamais obstacle.",
+      stimulus: "Ça ne marche pas, je pense à ma liste de courses.",
+      modele:
+        "Parfait, gardez cette liste. Et pendant que votre esprit s'occupe des courses, votre corps, lui, peut continuer tranquillement de son côté.",
+      options: [
+        {
+          text: "Parfait, gardez cette liste. Et pendant que votre esprit s'occupe des courses, votre corps peut continuer tranquillement de son côté.",
+          is_best: true,
+          score: 1,
+          feedback: "Utilise la distraction au lieu de la combattre : plus rien ne peut faire échouer.",
+        },
+        {
+          text: "Essayez de chasser ces pensées et de vous concentrer sur ma voix.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Lutte contre : renforce ce qu'on veut écarter, et crée un échec.",
+        },
+        {
+          text: "Ce n'est pas grave, on va recommencer depuis le début.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Traite l'événement comme un raté : installe l'idée qu'il y a une réussite à obtenir.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-UTI-02",
+      competencyId: "utilisation",
+      scenario: "HYP-SOM-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Le besoin de contrôle s'utilise : on le confie explicitement au patient, ce qui le libère d'avoir à lutter.",
+      stimulus: "J'ai besoin de garder le contrôle, je n'aime pas me laisser aller.",
+      modele:
+        "Gardez-le entièrement. C'est vous qui décidez de ce que vous laissez venir, et de ce que vous gardez fermé. Vous pouvez même décider de ne rien laisser venir du tout aujourd'hui.",
+      options: [
+        {
+          text: "Gardez-le entièrement. C'est vous qui décidez de ce qui vient et de ce qui reste fermé — y compris de ne rien laisser venir aujourd'hui.",
+          is_best: true,
+          score: 1,
+          feedback: "Utilise le contrôle en le lui confiant : il n'a plus à le défendre.",
+        },
+        {
+          text: "Il faut accepter de lâcher prise, sinon ça ne marchera pas.",
+          is_best: false,
+          score: 0,
+          feedback: "Exige exactement ce qui l'inquiète, et conditionne le résultat.",
+        },
+        {
+          text: "Vous ne perdrez pas le contrôle, ne vous inquiétez pas.",
+          is_best: false,
+          score: 0.4,
+          feedback: "Rassure sans utiliser : le contrôle reste un obstacle à surmonter.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-UTI-03",
+      competencyId: "utilisation",
+      scenario: "HYP-TAB-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Même une provocation s'utilise : elle devient une ressource attribuée au patient.",
+      stimulus: "(ironique) Alors, vous allez faire votre petit numéro de balancier ?",
+      reactionSiBon: "(il sourit, puis se cale dans le fauteuil) Bon, allez-y, je vous écoute.",
+      modele:
+        "Aucun numéro, et surtout aucun balancier. Votre ironie me va très bien, d'ailleurs — elle montre que vous n'avalez pas n'importe quoi. Gardez-la : elle vous servira à vérifier, tout à l'heure, ce qui se passe vraiment pour vous.",
+    },
+    {
+      id: "DRL-HYP-UTI-04",
+      competencyId: "utilisation",
+      scenario: "HYP-ANX-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Un imprévu extérieur (bruit, sonnerie) s'intègre à la suggestion plutôt que d'être ignoré.",
+      stimulus: "(Une sirène passe dans la rue, forte, pendant l'induction. Mme Roux sursaute légèrement.)",
+      reactionSiBon: "(ses épaules retombent, sa respiration reprend son rythme lent)",
+      modele:
+        "Et ce bruit qui passe… et qui s'éloigne… vous montre que vous pouvez entendre ce qui vous entoure et rester là où vous êtes. Chaque bruit qui s'éloigne peut vous ramener un peu plus tranquillement à ma voix.",
+    },
+    // --- Réassociation et clôture ---
+    {
+      id: "DRL-HYP-REA-01",
+      competencyId: "reassociation",
+      scenario: "HYP-SOM-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "La sortie se fait progressivement et se vérifie : on ne laisse jamais quelqu'un partir dans un état flou.",
+      stimulus: "(Fin de séance ; Inès est très absorbée, immobile depuis plusieurs minutes.)",
+      modele:
+        "Dans un moment, à votre rythme, vous pourrez reprendre contact avec la pièce… sentir vos appuis, bouger vos doigts… et quand vous serez prête, ouvrir les yeux, complètement présente.",
+      options: [
+        {
+          text: "Dans un moment, à votre rythme, vous pourrez reprendre contact avec la pièce… sentir vos appuis, bouger vos doigts… et quand vous serez prête, ouvrir les yeux, complètement présente.",
+          is_best: true,
+          score: 1,
+          feedback: "Réassociation progressive, corporelle, avec vérification implicite.",
+        },
+        {
+          text: "Voilà, c'est terminé, vous pouvez rouvrir les yeux.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Sortie abrupte : risque d'inconfort et de sensation de flottement.",
+        },
+        {
+          text: "(attendre en silence qu'elle rouvre les yeux d'elle-même)",
+          is_best: false,
+          score: 0.3,
+          feedback: "Laisse le retour au hasard, sans cadre ni vérification.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-REA-02",
+      competencyId: "reassociation",
+      scenario: "HYP-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Avant qu'il reparte — surtout s'il conduit — on vérifie concrètement l'orientation et la vigilance.",
+      stimulus: "(M. Barbier vient de rouvrir les yeux, un peu lent, et se lève déjà pour partir. Il est venu en voiture.)",
+      modele:
+        "Prenez encore une minute assis. Vous êtes bien revenu ? Vous vous sentez d'attaque pour conduire, ou vous préférez rester un moment ?",
+      options: [
+        {
+          text: "Prenez encore une minute assis. Vous êtes bien revenu ? D'attaque pour conduire, ou vous préférez rester un moment ?",
+          is_best: true,
+          score: 1,
+          feedback: "Vérifie le retour effectif et la sécurité : responsabilité élémentaire.",
+        },
+        {
+          text: "Parfait, à la semaine prochaine !",
+          is_best: false,
+          score: 0.1,
+          feedback: "Laisse partir sans vérifier : risque réel s'il conduit encore ralenti.",
+        },
+        {
+          text: "Vous vous sentez comment ?",
+          is_best: false,
+          score: 0.5,
+          feedback: "Bonne intention, mais trop vague pour vérifier la vigilance.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-REA-03",
+      competencyId: "reassociation",
+      scenario: "HYP-ANX-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Après la sortie, on recueille l'expérience sans l'évaluer : ce que la personne a remarqué, pas si « ça a marché ».",
+      stimulus: "Je ne sais pas si j'étais vraiment hypnotisée. J'entendais tout.",
+      reactionSiBon: "C'est vrai que je n'ai pas vu le temps passer. Et mes mains étaient bizarres.",
+      modele:
+        "Entendre est normal, ce n'est pas un critère. Dites-moi plutôt ce que vous avez remarqué : le temps, votre corps, vos pensées — qu'est-ce qui était différent de d'habitude ?",
+    },
+    // --- Suggestions post-hypnotiques ---
+    {
+      id: "DRL-HYP-POS-01",
+      competencyId: "post_hypnotique",
+      scenario: "HYP-ANX-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Une suggestion post-hypnotique s'accroche à un déclencheur concret et déjà présent dans le quotidien.",
+      stimulus: "(On veut que le calme travaillé en séance soit disponible avant ses réunions.)",
+      modele:
+        "Et chaque fois que votre main se posera sur la poignée de la salle de réunion, ce contact pourra vous rappeler ce que vous avez trouvé ici.",
+      options: [
+        {
+          text: "Chaque fois que votre main se posera sur la poignée de la salle de réunion, ce contact pourra vous rappeler ce que vous avez trouvé ici.",
+          is_best: true,
+          score: 1,
+          feedback: "Déclencheur concret, inévitable, et formulation permissive.",
+        },
+        {
+          text: "Vous serez désormais calme dans toutes vos réunions.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Promesse globale, sans ancrage : invérifiable et fragile.",
+        },
+        {
+          text: "Pensez à respirer avant chaque réunion.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Conseil conscient, pas une suggestion post-hypnotique.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-POS-02",
+      competencyId: "post_hypnotique",
+      scenario: "HYP-SOM-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "La tâche doit être petite, réalisable, et formulée de façon à ne pas créer d'enjeu de performance.",
+      stimulus: "Vous me donnez un exercice à faire tous les soirs ?",
+      reactionSiBon: "Ça, je peux le faire. Et ça ne me met pas la pression d'y arriver.",
+      modele:
+        "Quelque chose de très léger : en vous couchant, prenez trente secondes pour remarquer trois points de contact entre votre corps et le lit. Sans chercher à vous endormir — juste remarquer. Que ça marche ou pas ce soir-là n'a aucune importance.",
+    },
+    {
+      id: "DRL-HYP-POS-03",
+      competencyId: "post_hypnotique",
+      scenario: "HYP-TAB-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "On relie la suggestion à un geste que le patient fait déjà, sans lui demander d'arrêter quoi que ce soit.",
+      stimulus: "Et entre les séances, je fais quoi ? J'arrête de fumer d'un coup ?",
+      reactionSiBon: "D'accord, ça je peux tenir. Ça ne me demande pas d'arrêter tout de suite.",
+      modele:
+        "Non, vous ne changez rien pour l'instant. Une seule chose : avant d'allumer chaque cigarette, vous la gardez une dizaine de secondes entre vos doigts, sans rien décider. Vous remarquez simplement ce qui se passe pendant ces secondes-là.",
+    },
+    // --- Incidents ---
+    {
+      id: "DRL-HYP-INC-01",
+      competencyId: "incidents",
+      scenario: "HYP-ANX-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Abréaction : émotion intense qui surgit. On sécurise, on accompagne, on ne sort pas brutalement de l'état.",
+      stimulus: "(Mme Roux se met soudain à pleurer fortement, les yeux fermés, le corps secoué.)",
+      modele:
+        "Je suis là, vous êtes en sécurité. Laissez venir ce qui vient, ça peut passer… et vous pouvez continuer à respirer tranquillement pendant que ça se traverse.",
+      options: [
+        {
+          text: "Je suis là, vous êtes en sécurité. Laissez venir ce qui vient, ça peut passer… et vous pouvez continuer à respirer tranquillement pendant que ça se traverse.",
+          is_best: true,
+          score: 1,
+          feedback: "Sécurise et accompagne sans interrompre : l'émotion peut se traverser.",
+        },
+        {
+          text: "(claquer des doigts) Revenez tout de suite, ouvrez les yeux !",
+          is_best: false,
+          score: 0,
+          feedback: "Sortie brutale sur une émotion vive : effraction, risque de la laisser en plan.",
+        },
+        {
+          text: "(rester silencieux et attendre que ça s'arrête)",
+          is_best: false,
+          score: 0.3,
+          feedback: "L'absence de voix peut être vécue comme un abandon en plein débordement.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-INC-02",
+      competencyId: "incidents",
+      scenario: "HYP-DOUL-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Non-réponse : rien ne se passe. On la traite comme une information, jamais comme un échec du patient.",
+      stimulus: "Bon, il ne s'est rien passé du tout. Je vous l'avais dit, ça ne marche pas sur moi.",
+      modele:
+        "Ça arrive, et ça ne dit rien de vous : ça me dit que cette entrée-là n'était pas la bonne. On en essaiera une autre, plus proche de votre façon de fonctionner.",
+      options: [
+        {
+          text: "Ça arrive, et ça ne dit rien de vous : ça me dit que cette entrée-là n'était pas la bonne. On en essaiera une autre.",
+          is_best: true,
+          score: 1,
+          feedback: "Reprend la responsabilité côté praticien : le patient n'a rien raté.",
+        },
+        {
+          text: "Vous n'étiez peut-être pas assez réceptif aujourd'hui.",
+          is_best: false,
+          score: 0,
+          feedback: "Renvoie l'échec au patient : confirme sa crainte et casse l'alliance.",
+        },
+        {
+          text: "Il s'est sûrement passé des choses sans que vous vous en rendiez compte.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Contredit son vécu : il se sent nié plutôt qu'entendu.",
+        },
+      ],
+    },
+    {
+      id: "DRL-HYP-INC-03",
+      competencyId: "incidents",
+      scenario: "HYP-SOM-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Sortie spontanée : le patient rouvre les yeux de lui-même. On l'accueille comme un acte légitime.",
+      stimulus: "(Inès rouvre brusquement les yeux au milieu de la séance.) Pardon, j'ai eu un moment de panique.",
+      reactionSiBon: "Oui… je crois que j'ai eu peur de m'endormir vraiment.",
+      modele:
+        "Vous avez très bien fait — vous avez repris la main quand vous en aviez besoin, c'est exactement ce qui doit rester possible. Qu'est-ce qui s'est passé juste avant que vous ouvriez les yeux ?",
+    },
+    {
+      id: "DRL-HYP-INC-04",
+      competencyId: "incidents",
+      scenario: "HYP-TAB-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Un incident se reprend en fin de séance : on le nomme, on l'explique simplement, on vérifie l'état avant le départ.",
+      stimulus: "(En fin de séance, après une abréaction traversée.) Je suis gêné, je ne m'attendais pas à craquer comme ça.",
+      reactionSiBon: "Ça va mieux, oui. Je me sens même plus léger qu'en arrivant.",
+      modele:
+        "Il n'y a rien de gênant : quand l'attention se pose autrement, des choses mises de côté remontent parfois. Ça s'est traversé, et vous êtes revenu. Comment vous sentez-vous là, maintenant, avant de repartir ?",
+    },
+  ],
+};
+
 async function seedRef(def: RefDef) {
   await prisma.competencyGrid.upsert({
     where: { id: def.gridId },
@@ -4482,6 +6613,8 @@ async function main() {
   await seedRef(ACT);
   await seedRef(ANAMNESE);
   await seedRef(MENOPAUSE);
+  await seedRef(DEUIL);
+  await seedRef(HYPNOSE);
 
   // --- Packs ------------------------------------------------------------
   // Helper local : crée un pack, le compose, et l'accorde au tenant public.
@@ -4527,6 +6660,20 @@ async function main() {
     "Ménopause",
     "Accompagner la transition ménopausique (formation pluridisciplinaire).",
     [MENOPAUSE.fw],
+    true,
+  );
+  await seedPack(
+    "deuil",
+    "Deuil",
+    "Accompagner le deuil : accueil du récit, émotions ambivalentes, situations spécifiques, résonances du praticien.",
+    [DEUIL.fw],
+    true,
+  );
+  await seedPack(
+    "hypnose",
+    "Hypnose ericksonienne",
+    "Langage permissif, suggestions indirectes, induction conversationnelle, métaphores et clôture.",
+    [HYPNOSE.fw],
     true,
   );
 
