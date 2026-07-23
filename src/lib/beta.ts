@@ -15,12 +15,11 @@ import { isSubscriptionEntitled } from "./entitlements";
 import { normalizeBetaCode } from "./beta-code";
 import { parseBetaInviteStatus, type BetaInviteStatus } from "./beta-status";
 import { sendBetaWelcome } from "./email";
+import { BETA_PLAN_KEY, BETA_TRIAL_DAYS } from "./beta-constants";
 
-/** `key` du forfait offert aux bêta-testeurs (table subscription_plans). */
-export const BETA_PLAN_KEY = "intensif";
-
-/** Durée de l'essai offert, en jours. */
-export const BETA_TRIAL_DAYS = 90;
+// Constantes dans un module pur (beta-constants.ts) : les scripts ne peuvent pas
+// importer ce fichier-ci, qui est `server-only`. Ré-exportées pour les appelants existants.
+export { BETA_PLAN_KEY, BETA_TRIAL_DAYS } from "./beta-constants";
 
 export type BetaInviteView = {
   id: string;

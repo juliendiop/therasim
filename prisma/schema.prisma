@@ -595,6 +595,10 @@ model BetaInvite {
 
   stripeSubscriptionId String? @map("stripe_subscription_id")
 
+  // Dernier envoi de l'email d'invitation (null = jamais envoyée). Permet de
+  // distinguer « code créé » de « code envoyé », et de relancer en connaissance de cause.
+  emailSentAt DateTime? @map("email_sent_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

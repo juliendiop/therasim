@@ -2,6 +2,8 @@ import { FlaskConical } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { parseBetaInviteStatus, BETA_INVITE_STATUS_LABEL } from "@/lib/beta-status";
 import { revokeBetaInviteAction } from "./actions";
+import InviteForm from "./invite-form";
+import ResendButton from "./resend-button";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +59,22 @@ export default async function AdminBetaPage() {
         </p>
       </div>
 
+      <section>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+          Inviter un praticien
+        </h3>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Crée un code à usage unique et envoie l&apos;email d&apos;invitation dans la foulée.
+          Pour un envoi en lot :{" "}
+          <code className="rounded bg-[var(--surface-tint)] px-1">
+            npm run beta:invites -- --send --from-file testeurs.txt
+          </code>
+        </p>
+        <div className="mt-3">
+          <InviteForm defaultCohort={invites[0]?.cohort ?? "beta-2026-01"} />
+        </div>
+      </section>
+
       <div className="flex flex-wrap gap-2 text-sm">
         {(["PENDING", "CLAIMED", "REVOKED", "EXPIRED"] as const).map((s) => (
           <span
@@ -76,6 +94,7 @@ export default async function AdminBetaPage() {
               <th className="px-4 py-2">Destinataire</th>
               <th className="px-4 py-2">Cohorte</th>
               <th className="px-4 py-2">Statut</th>
+              <th className="px-4 py-2">Envoyée</th>
               <th className="px-4 py-2">Réclamée le</th>
               <th className="px-4 py-2">Abonnement</th>
               <th className="px-4 py-2">Fin d&apos;essai</th>
@@ -85,7 +104,7 @@ export default async function AdminBetaPage() {
           <tbody className="divide-y divide-[var(--border)]">
             {invites.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-[var(--muted)]">
+                <td colSpan={9} className="px-4 py-8 text-center text-[var(--muted)]">
                   Aucune invitation. Générez-en avec{" "}
                   <code className="rounded bg-[var(--surface-tint)] px-1">
                     npm run beta:invites -- --count 25
@@ -131,6 +150,13 @@ export default async function AdminBetaPage() {
                       </span>
                     </td>
                     <td className="px-4 py-2 text-xs text-[var(--muted)]">
+                      {invite.emailSentAt ? (
+                        fmt(invite.emailSentAt)
+                      ) : (
+                        <span className="text-[var(--ochre)]">non envoyée</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-xs text-[var(--muted)]">
                       {fmt(invite.claimedAt)}
                     </td>
                     <td className="px-4 py-2 text-xs">
@@ -143,16 +169,24 @@ export default async function AdminBetaPage() {
                     <td className="px-4 py-2 text-xs text-[var(--muted)]">
                       {fmt(sub?.trialEndsAt ?? null)}
                     </td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-2">
                       {status === "PENDING" && !expired ? (
-                        <form action={revokeBetaInviteAction}>
-                          <input type="hidden" name="inviteId" value={invite.id} />
-                          <button className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--muted)] hover:border-red-300 hover:text-red-700">
-                            Révoquer
-                          </button>
-                        </form>
+                        <div className="flex items-center justify-end gap-2">
+                          {invite.email && (
+                            <ResendButton
+                              inviteId={invite.id}
+                              alreadySent={Boolean(invite.emailSentAt)}
+                            />
+                          )}
+                          <form action={revokeBetaInviteAction}>
+                            <input type="hidden" name="inviteId" value={invite.id} />
+                            <button className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--muted)] hover:border-red-300 hover:text-red-700">
+                              Révoquer
+                            </button>
+                          </form>
+                        </div>
                       ) : (
-                        <span className="text-xs text-[var(--muted)]">—</span>
+                        <span className="block text-right text-xs text-[var(--muted)]">—</span>
                       )}
                     </td>
                   </tr>

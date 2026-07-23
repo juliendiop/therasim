@@ -147,6 +147,50 @@ function frDate(d: Date | null): string {
     : "la fin de la période";
 }
 
+/**
+ * Email d'INVITATION : contient le lien personnel à usage unique.
+ * Envoyé par le script (`--send`) ou depuis /admin/beta.
+ */
+export async function sendBetaInvitation(
+  to: string,
+  input: {
+    url: string;
+    firstName: string | null;
+    planLabel: string;
+    monthlyCredits: number | null;
+    trialDays: number;
+  },
+): Promise<void> {
+  const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
+  const credits =
+    input.monthlyCredits !== null
+      ? ` avec <b>${input.monthlyCredits} crédits</b> par mois`
+      : "";
+
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1d23;line-height:1.6">
+    <h2 style="color:#0e5a54">Votre invitation à la bêta MELETA</h2>
+    <p>${hello}</p>
+    <p>Je vous invite à éprouver MELETA en conditions réelles. MELETA est un outil
+       d'entraînement à la relation clinique : exercices ciblés, mises en situation avec un
+       patient simulé, et un suivi de progression compétence par compétence.</p>
+    <p>Le forfait <b>${escapeHtml(input.planLabel)}</b> vous est offert pendant
+       <b>${input.trialDays} jours</b>${credits}. <b>Aucune carte bancaire n'est demandée</b>,
+       ni maintenant ni à la fin : au terme, l'accès s'arrête et rien ne vous est prélevé.</p>
+    <p style="margin:24px 0">
+      <a href="${input.url}" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
+        Activer mon accès
+      </a>
+    </p>
+    <p style="font-size:13px;color:#6b7280">Si le bouton ne marche pas, copiez ce lien :<br>${escapeHtml(input.url)}</p>
+    <p style="font-size:13px;color:#6b7280">Ce lien vous est personnel et ne fonctionne qu'une fois.</p>
+    <p>En échange, tout ce que je vous demande, c'est de me dire ce qui coince. Répondez
+       directement à cet email.</p>
+  </div>`;
+
+  await send(to, "Votre invitation à la bêta MELETA", html, { replyTo: CONTACT_EMAIL });
+}
+
 /** Email de bienvenue, envoyé à la réclamation réussie d'une invitation. */
 export async function sendBetaWelcome(
   to: string,
