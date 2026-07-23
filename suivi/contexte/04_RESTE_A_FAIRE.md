@@ -3,6 +3,25 @@
 Ordre indicatif. Le détail fonctionnel est dans la spec
 (`Conception/spec-v2-entrainement-progression (1).md`).
 
+## ⭐ Migrations Prisma (baseline) — ✅ FAIT (23 juillet)
+
+La production ne passe plus par `db:push` mais par des **migrations relues et
+historisées**. Baseline dans `prisma/migrations/0_init/` (38 tables), flux et pièges
+documentés dans `03_DECISIONS.md` et `00_DEMARRAGE.md`.
+- ⚠️ **`db:push` ne doit plus viser la production.**
+- Le `build` applique les migrations en attente (`prisma migrate deploy`).
+
+## 🔴 Suppression de compte incomplète — À TRAITER
+
+`removeMember` (`src/app/gestion/actions.ts`) supprime un utilisateur **sans nettoyer
+les tables liées** : le schéma ne déclare aucune relation, donc aucune cascade. Restent
+orphelins : `credit_ledger`, `user_subscriptions`, `attempts`, `user_competency_state`,
+`sim_sessions`/`sim_messages`, `user_framework_access`, `commission_ledger`,
+`funnel_events`, `audit_events`…
+- Seuls les **tickets de support** sont supprimés explicitement (exigence de la spec support).
+- Enjeu RGPD (droit à l'effacement) et hygiène de données. À traiter avant d'avoir
+  beaucoup de comptes réels.
+
 ## ⭐ Programme d'affiliation « Ambassadeurs » — ✅ V1 FAITE (22 juillet)
 
 Demande porteur : parrainage avec commission récurrente à vie (2 niveaux), espace ambassadeur,

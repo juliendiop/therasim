@@ -118,10 +118,30 @@ paiements (packs de crédits + abonnements) :
 ```bash
 npm run dev        # serveur de dev (localhost:3000)
 npm run build      # build de prod — À LANCER AVANT CHAQUE PUSH (Vercel est strict)
-npm run db:push    # crée/met à jour les tables depuis le schéma Prisma
-npm run db:seed    # (re)charge le référentiel EM — idempotent
+npm run test       # tests (vitest)
+npm run db:seed    # (re)charge les référentiels — idempotent
 npm run db:studio  # explorer la base visuellement
 ```
+
+### Modifier la base de données
+
+Depuis le 23 juillet, la production passe par des **migrations** et non plus par
+`db:push` : chaque changement devient un fichier SQL relu puis enregistré, ce qui
+donne un historique et évite qu'un renommage ne supprime silencieusement une colonne.
+
+```bash
+# 1. modifier prisma/schema.prisma, puis :
+npm run db:migrate:new -- "ajout du champ machin"   # écrit le SQL, n'applique RIEN
+# 2. RELIRE le SQL affiché — surveiller DROP, ALTER COLUMN, RENAME
+npm run db:migrate:deploy                            # applique et enregistre
+npm run db:migrate:status                            # où en est l'historique
+```
+
+⚠️ **`npm run db:push` ne doit plus être lancé sur la production.** Il reste utile
+contre une base jetable, mais il n'écrit aucun historique et ne se relit pas.
+
+Le `build` applique automatiquement les migrations en attente : le code ne peut pas
+partir en ligne en attendant des colonnes qui n'existent pas encore.
 
 ## Parcours de démonstration (pour vérifier que tout marche)
 

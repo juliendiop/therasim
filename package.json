@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
@@ -15,7 +15,10 @@
     "beta:invites": "tsx scripts/generate-beta-invites.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "beta:testclock": "tsx scripts/beta-test-clock.ts"
+    "beta:testclock": "tsx scripts/beta-test-clock.ts",
+    "db:migrate:new": "tsx scripts/new-migration.ts",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",

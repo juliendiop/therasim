@@ -13,6 +13,35 @@
 
 ## Décisions & pièges TECHNIQUES (à connaître pour ne pas se reperdre)
 
+### MIGRATIONS — `prisma migrate` remplace `db:push` sur la production (23 juillet)
+**Avant** : tout passait par `db:push`, qui aligne la base sur le schéma sans laisser
+de trace. Aucun historique, aucune relecture possible, aucun retour en arrière. Le
+danger n'était pas la commande mais **l'habitude** : `--accept-data-loss` avait été
+accepté deux fois (à raison), et le jour où le changement contient un renommage,
+`db:push` supprime la colonne et son contenu avec le même avertissement anodin.
+
+**Baseline effectué** : `prisma/migrations/0_init/` décrit l'état de la base au
+23 juillet (38 tables), marqué comme déjà appliqué via `prisma migrate resolve`.
+
+**Flux désormais** :
+```bash
+# 1. modifier prisma/schema.prisma, puis :
+npm run db:migrate:new -- "ajout du champ machin"   # écrit le SQL, n'applique RIEN
+# 2. RELIRE le SQL (chercher DROP / ALTER COLUMN / RENAME)
+npm run db:migrate:deploy                            # applique et enregistre
+npm run db:migrate:status                            # état de l'historique
+```
+
+- **`db:push` ne doit plus viser la production** — il reste utile sur une base jetable.
+- **`prisma migrate dev` n'est pas utilisable ici** : sur Neon il exige une « base
+  fantôme » (seconde base). D'où `db:migrate:new`, qui diffe la base réelle contre le
+  schéma et obtient le même résultat sans base supplémentaire.
+- **Le build applique les migrations** (`prisma migrate deploy` dans `build`) : le code
+  ne peut pas partir en production en attendant des colonnes absentes.
+  ⚠️ Conséquence : un déploiement de PREVIEW appliquerait aussi les migrations à la base
+  de production (une seule base). Sans importance tant qu'on déploie depuis `main` ;
+  à revoir le jour où des branches de préversion sont utilisées.
+
 ### CONVENTION — les champs de statut sont des `String`, jamais des enums Prisma (23 juillet)
 **S'applique à TOUT nouveau modèle**, y compris les chantiers à venir (ex. ticketing :
 `TicketStatus` et consorts → `String`, pas enum).
