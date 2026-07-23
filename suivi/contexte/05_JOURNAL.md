@@ -1235,6 +1235,10 @@ Demande porteur : au moins 5 questions différentes par compétence pour EM et A
 - Vérifié : 5 cartes/compétence exactement, 0 doublon d'id, tous les scénarios référencés
   existent, seed parse. `npm run db:seed` reste à relancer en prod (idempotent).
 - ⚠️ +36 drills rédigés par Claude → relecture clinique d'autant plus utile.
+- **ACT porté aussi à 5 cartes/compétence** (23 juillet, demande porteur : nombreux étudiants
+  formés à l'ACT) : 12 → **30 drills** (6 × 5), 3ᵉ cas **Sofiane/douleur chronique** (cas ACT
+  emblématique) en plus de Léa/Karim. Vérifié : 5/compétence, 0 doublon, scénarios valides.
+  Les 3 référentiels EM (50) / Anamnèse (30) / ACT (30) ont maintenant 5 cartes/compétence.
 
 ### Prochaine étape suggérée
 - Faire relire ACT/Anamnèse/EM + le gold set par un clinicien.

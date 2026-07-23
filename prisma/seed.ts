@@ -1456,6 +1456,12 @@ const ACT: RefDef = {
       contexte:
         "Karim, 41 ans, se dit « bloqué » depuis une rupture : il rumine (« je suis un raté »), a délaissé ce qu'il aimait, et attend « d'aller mieux pour s'y remettre ».",
     },
+    {
+      id: "ACT-DOUL-01",
+      titre: "Sofiane — douleur chronique et repli",
+      contexte:
+        "Sofiane, 47 ans, douleurs chroniques au dos depuis un accident. Il a mis sa vie « en pause » en attendant que la douleur parte, s'isole, et lutte en permanence contre les sensations.",
+    },
   ],
   drills: [
     {
@@ -1735,6 +1741,475 @@ const ACT: RefDef = {
         "Écrire à une seule amie pour un café… oui, ça, je pourrais le faire cette semaine.",
       modele:
         "Si « avoir des liens » compte pour vous, quel serait le plus petit pas possible cette semaine — pas la grande soirée, mais un geste minuscule qui va dans ce sens ?",
+    },
+    // ===== Compléments : 5 cartes par compétence =====
+    // --- Acceptation ---
+    {
+      id: "DRL-ACT-ACC-03",
+      competencyId: "acceptation",
+      scenario: "ACT-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "L'acceptation aide à faire de la place à l'expérience (ici la douleur) sans lutter contre elle ni l'éviter.",
+      stimulus: "Toute la journée je lutte contre cette douleur, je fais tout pour ne pas la sentir.",
+      modele:
+        "Et si, au lieu de vous épuiser à la combattre, on regardait ce que ça fait de lui laisser un peu de place, sans bagarre, quelques instants ?",
+      options: [
+        {
+          text: "Et si, au lieu de la combattre en permanence, on regardait ce que ça fait de lui laisser un peu de place, sans lutte ?",
+          is_best: true,
+          score: 1,
+          feedback: "Ouvre l'acceptation : faire de la place plutôt que combattre.",
+        },
+        {
+          text: "Il existe des techniques pour ne plus la sentir du tout.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Renforce l'évitement expérientiel.",
+        },
+        {
+          text: "Essayez de penser à autre chose quand elle arrive.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Distraction/suppression : entretient la lutte.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-ACC-04",
+      competencyId: "acceptation",
+      scenario: "ACT-DEP-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Faire de la place à une émotion n'est pas s'y noyer : c'est la laisser être là sans la fuir ni s'y abîmer.",
+      stimulus: "Quand la tristesse monte, je me change les idées à tout prix, sinon je coule.",
+      modele:
+        "Faire de la place à la tristesse, ce n'est pas s'y noyer : c'est la laisser être là un moment, en continuant ce que vous faites. On essaie de voir ?",
+      options: [
+        {
+          text: "Lui faire de la place, ce n'est pas s'y noyer : c'est la laisser être là un instant sans lutter. On tente l'expérience ?",
+          is_best: true,
+          score: 1,
+          feedback: "Distingue acceptation et submersion : ouvre l'expérience.",
+        },
+        {
+          text: "Vous avez raison, mieux vaut ne pas s'y attarder.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Renforce l'évitement.",
+        },
+        {
+          text: "Pourquoi cette tristesse vous fait-elle si peur ?",
+          is_best: false,
+          score: 0.4,
+          feedback: "Part dans l'analyse plutôt que l'expérience d'acceptation.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-ACC-05",
+      competencyId: "acceptation",
+      scenario: "ACT-ANX-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Accepter, c'est cesser la lutte contre l'émotion — pas l'approuver ni la juger fondée.",
+      stimulus: "L'angoisse est insupportable, je ne peux pas juste la laisser là.",
+      reactionSiBon: "C'est vrai que dit comme ça, ce n'est pas l'aimer, juste arrêter de me battre.",
+      modele:
+        "Faire de la place ne veut pas dire aimer l'angoisse, ni qu'elle a raison — juste cesser un instant la bagarre. Qu'est-ce qui se passerait si vous l'essayiez cinq secondes, pour voir ?",
+    },
+    // --- Défusion cognitive ---
+    {
+      id: "DRL-ACT-DEF-03",
+      competencyId: "defusion",
+      scenario: "ACT-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Défusionner, c'est observer la pensée comme un produit de l'esprit, au lieu de la débattre comme un verdict.",
+      stimulus: "Mon corps est foutu, je ne pourrai plus jamais rien faire.",
+      modele:
+        "« Je ne pourrai plus jamais rien faire » — et si on regardait cette phrase comme une pensée que l'esprit produit sous l'effet de la douleur, plutôt qu'un verdict ?",
+      options: [
+        {
+          text: "« Je ne pourrai plus jamais rien faire » — et si on la regardait comme une pensée que l'esprit fabrique, plutôt qu'un verdict définitif ?",
+          is_best: true,
+          score: 1,
+          feedback: "Observe la pensée comme un événement mental : défusion.",
+        },
+        {
+          text: "Ce n'est pas vrai, il y a plein de choses que vous pouvez encore faire.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Débat le contenu (fusion) au lieu de prendre de la distance.",
+        },
+        {
+          text: "Ne dites pas ça, restez positif.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Suppression : renforce la lutte avec la pensée.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-DEF-04",
+      competencyId: "defusion",
+      scenario: "ACT-ANX-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Nommer la pensée comme un commentaire de l'esprit (« je remarque que… ») aide à s'en désidentifier.",
+      stimulus: "Mon cerveau me répète « tout le monde va voir que tu paniques ».",
+      modele:
+        "Vous remarquez que l'esprit vous sert cette phrase « tout le monde va voir ». Que se passe-t-il si vous la nommez ainsi, comme un commentaire de l'esprit ?",
+      options: [
+        {
+          text: "Vous remarquez que l'esprit vous sert la phrase « tout le monde va voir » — et si vous la nommiez comme ça, un commentaire de l'esprit, pas un fait ?",
+          is_best: true,
+          score: 1,
+          feedback: "Met la pensée à distance en la nommant comme telle.",
+        },
+        {
+          text: "Personne ne remarque autant qu'on le croit, statistiquement.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Rassure/débat le contenu au lieu de défusionner.",
+        },
+        {
+          text: "Concentrez-vous sur autre chose que cette pensée.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Évitement expérientiel.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-DEF-05",
+      competencyId: "defusion",
+      scenario: "ACT-DEP-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Reformuler « je suis X » en « je remarque que je pense que je suis X » crée de la distance avec la pensée.",
+      stimulus: "« Je suis un raté », c'est pas une pensée, c'est la réalité.",
+      reactionSiBon: "Ok… « je remarque que je pense que je suis un raté ». C'est bizarre, ça met un peu de distance.",
+      modele:
+        "Essayons une petite manip : au lieu de « je suis un raté », dites « je remarque que je pense que je suis un raté ». Qu'est-ce que ça change quand vous le formulez comme ça ?",
+    },
+    // --- Contact avec le moment présent ---
+    {
+      id: "DRL-ACT-PRE-03",
+      competencyId: "contact_present",
+      scenario: "ACT-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Le contact avec le présent ramène à l'expérience directe (souffle, sensations, environnement), hors du film passé/futur.",
+      stimulus: "Je passe mes journées à ressasser l'accident et à redouter demain.",
+      modele:
+        "Là, maintenant, sans le film d'avant ni celui de demain : qu'est-ce que vous remarquez dans cette pièce, dans votre respiration ?",
+      options: [
+        {
+          text: "Là, maintenant, sans le film d'avant ni celui de demain : qu'est-ce que vous remarquez dans cette pièce, dans votre souffle ?",
+          is_best: true,
+          score: 1,
+          feedback: "Ancre dans le présent, hors de la rumination.",
+        },
+        {
+          text: "Il faut arrêter de ressasser le passé.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Injonction à supprimer : n'ancre pas au présent.",
+        },
+        {
+          text: "Qu'est-ce qui vous fait le plus peur pour demain ?",
+          is_best: false,
+          score: 0.3,
+          feedback: "Repart dans le futur.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-PRE-04",
+      competencyId: "contact_present",
+      scenario: "ACT-ANX-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "Porter l'attention sur des ancrages corporels concrets ramène du film anticipatoire à l'ici-maintenant.",
+      stimulus: "Avant chaque soirée je simule dans ma tête toutes les humiliations possibles.",
+      modele:
+        "On peut faire une pause : posez l'attention sur vos pieds au sol, l'air qui entre et sort. Qu'est-ce qui est vraiment là, maintenant, dans la pièce ?",
+      options: [
+        {
+          text: "Faisons une pause : l'attention sur vos pieds au sol, l'air qui entre et sort. Qu'est-ce qui est réellement là, maintenant ?",
+          is_best: true,
+          score: 1,
+          feedback: "Ancre au présent par les sensations.",
+        },
+        {
+          text: "Ces scénarios n'arriveront probablement pas, soyez réaliste.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Débat le futur au lieu d'ancrer au présent.",
+        },
+        {
+          text: "Vous vous faites du mal pour rien.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Jugement, sans ancrage présent.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-PRE-05",
+      competencyId: "contact_present",
+      scenario: "ACT-DEP-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Un exercice bref de présence (sons, souffle) aide à sortir de la rumination sans la combattre.",
+      stimulus: "Je ne suis jamais vraiment là, toujours dans mes ruminations.",
+      reactionSiBon: "(il souffle) C'est vrai que là, à écouter les bruits dehors, la boucle s'est un peu calmée.",
+      modele:
+        "Prenons dix secondes ensemble : qu'est-ce que vous entendez, juste là, autour de nous ? On laisse l'esprit tourner à côté, et on revient à ce qui est présent.",
+    },
+    // --- Soi-observateur ---
+    {
+      id: "DRL-ACT-SOI-03",
+      competencyId: "soi_observateur",
+      scenario: "ACT-DOUL-01",
+      difficulty: 3,
+      mode: "reconnaissance",
+      rappel:
+        "Le soi-observateur distingue la personne du contenu de son expérience (« un vous qui observe », stable).",
+      stimulus: "Je ne suis plus qu'un handicapé, c'est devenu toute mon identité.",
+      modele:
+        "Il y a la douleur et ses limites que vous vivez… et il y a un vous qui les remarque, qui m'en parle. Ce « vous qui observe » n'est pas réductible à un handicap, si ?",
+      options: [
+        {
+          text: "Il y a la douleur et ses limites que vous vivez, et il y a un vous qui les remarque, ici. Ce vous-là, il est le handicap, ou celui qui l'observe ?",
+          is_best: true,
+          score: 1,
+          feedback: "Distingue la personne du contenu : ouvre le soi-observateur.",
+        },
+        {
+          text: "Vous n'êtes pas qu'un handicapé, vous êtes bien plus que ça.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Rassure sur le contenu sans installer la position d'observateur.",
+        },
+        {
+          text: "Depuis quand vous voyez-vous ainsi ?",
+          is_best: false,
+          score: 0.2,
+          feedback: "Question qui n'ouvre pas la prise de perspective.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-SOI-04",
+      competencyId: "soi_observateur",
+      scenario: "ACT-DEP-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Aider à voir que la part qui observe l'humeur est plus stable que l'humeur elle-même.",
+      stimulus: "Cette dépression, c'est moi, un point c'est tout.",
+      modele:
+        "Vous traversez une dépression — et en même temps, une part de vous l'observe, la nomme, en parle. Cette part qui regarde, elle change moins que l'humeur, non ?",
+      options: [
+        {
+          text: "Vous traversez une dépression, et une part de vous l'observe et la nomme, là, avec moi. Cette part qui regarde, elle est plus stable que l'humeur, non ?",
+          is_best: true,
+          score: 1,
+          feedback: "Installe le point de vue observateur, distinct de l'humeur.",
+        },
+        {
+          text: "C'est une phase, ça va passer, vous n'êtes pas votre dépression.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Recadre le contenu sans ouvrir la position d'observateur.",
+        },
+        {
+          text: "Il faut vous accrocher, ne pas vous laisser définir par ça.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Injonction : ne travaille pas le soi-observateur.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-SOI-05",
+      competencyId: "soi_observateur",
+      scenario: "ACT-ANX-01",
+      difficulty: 3,
+      mode: "production",
+      rappel:
+        "Même au cœur d'une émotion intense, aider à repérer le point de vue qui observe, constant.",
+      stimulus: "Quand la panique me prend, je deviens la panique, il n'y a plus rien d'autre.",
+      reactionSiBon: "Si je cherche bien… oui, il reste un petit coin qui voit « ça y est, ça monte ».",
+      modele:
+        "Au cœur de la panique, y a-t-il encore un point de vue qui note « voilà, ça monte très fort là » ? Ce point qui observe, il est emporté par la vague, ou il la regarde passer ?",
+    },
+    // --- Clarification des valeurs ---
+    {
+      id: "DRL-ACT-VAL-03",
+      competencyId: "valeurs",
+      scenario: "ACT-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Clarifier les valeurs réoriente du contrôle du symptôme vers ce qui compte, dès maintenant.",
+      stimulus: "Ma seule priorité, c'est que la douleur parte, après je reprendrai ma vie.",
+      modele:
+        "Et si votre vie n'attendait pas que la douleur parte ? Qu'est-ce qui compte assez pour vous pour mériter un peu de place dès maintenant, même avec la douleur ?",
+      options: [
+        {
+          text: "Et si votre vie n'attendait pas que la douleur parte ? Qu'est-ce qui compte assez pour mériter un peu de place dès maintenant, malgré elle ?",
+          is_best: true,
+          score: 1,
+          feedback: "Réoriente du contrôle du symptôme vers les valeurs.",
+        },
+        {
+          text: "L'objectif prioritaire, c'est effectivement de faire baisser la douleur.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Renforce l'agenda de contrôle, à rebours de l'ACT.",
+        },
+        {
+          text: "Il faut être patient, ça finira par s'améliorer.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Rassure sans faire émerger ce qui compte.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-VAL-04",
+      competencyId: "valeurs",
+      scenario: "ACT-ANX-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Faire émerger ce qui compte pour la personne, en propre, plutôt que d'imposer une norme.",
+      stimulus: "Je ne sais même plus ce que je veux, à part que ça s'arrête.",
+      modele:
+        "Si l'anxiété n'était plus au centre, à quoi aimeriez-vous consacrer votre temps, vos liens — qu'est-ce qui aurait de la valeur pour vous ?",
+      options: [
+        {
+          text: "Si l'anxiété n'était plus au centre, à quoi aimeriez-vous consacrer votre temps et vos liens ? Qu'est-ce qui compterait vraiment ?",
+          is_best: true,
+          score: 1,
+          feedback: "Fait émerger les valeurs propres du patient.",
+        },
+        {
+          text: "Vous devriez vouloir reprendre une vie sociale normale.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Impose une norme extérieure.",
+        },
+        {
+          text: "C'est normal, l'anxiété brouille tout.",
+          is_best: false,
+          score: 0.3,
+          feedback: "Valide sans faire émerger ce qui compte.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-VAL-05",
+      competencyId: "valeurs",
+      scenario: "ACT-DEP-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Aller derrière l'objectif de performance pour toucher la valeur (relations, sens) qui l'anime.",
+      stimulus: "Redevenir performant au travail, c'est ça mon but.",
+      reactionSiBon: "Au fond, ce qui me manque vraiment, c'est de me sentir proche des gens que j'aime.",
+      modele:
+        "« Performant » — au service de quoi, qui compte pour vous ? Derrière la performance, quel genre de personne, dans vos relations ou vos activités, aimeriez-vous être ?",
+    },
+    // --- Action engagée ---
+    {
+      id: "DRL-ACT-ENG-03",
+      competencyId: "action_engagee",
+      scenario: "ACT-DOUL-01",
+      difficulty: 2,
+      mode: "reconnaissance",
+      rappel:
+        "Choisir un pas concret, adapté aux limites, relié à une valeur — sans attendre la disparition du symptôme.",
+      stimulus: "Reprendre une activité ? Impossible tant que j'ai mal.",
+      modele:
+        "Quel tout petit pas, adapté à la douleur, irait vers ce qui compte pour vous — quelque chose de faisable même un jour où ça fait mal ?",
+      options: [
+        {
+          text: "Quel tout petit pas, adapté à votre douleur, irait vers ce qui compte pour vous — faisable même un jour où ça fait mal ?",
+          is_best: true,
+          score: 1,
+          feedback: "Relie une action réaliste à la valeur, sans attendre l'absence de douleur.",
+        },
+        {
+          text: "Forcez-vous à bouger, la douleur finira par diminuer.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Action sans lien aux valeurs, un peu injonctive.",
+        },
+        {
+          text: "Attendez d'aller mieux avant de reprendre quoi que ce soit.",
+          is_best: false,
+          score: 0.1,
+          feedback: "Conforte l'évitement/attente.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-ENG-04",
+      competencyId: "action_engagee",
+      scenario: "ACT-DEP-01",
+      difficulty: 1,
+      mode: "reconnaissance",
+      rappel:
+        "En ACT, l'action peut précéder la motivation : un petit pas relié aux valeurs, sans attendre l'envie.",
+      stimulus: "Je m'y remettrai quand la motivation reviendra.",
+      modele:
+        "Et si l'action précédait la motivation ? Quel petit pas, relié à ce qui compte pour vous, pourriez-vous tenter cette semaine sans attendre d'en avoir envie ?",
+      options: [
+        {
+          text: "Et si l'action venait avant la motivation ? Quel petit pas, relié à ce qui compte, pourriez-vous tenter cette semaine sans attendre l'envie ?",
+          is_best: true,
+          score: 1,
+          feedback: "Découple l'action de l'humeur et la relie aux valeurs.",
+        },
+        {
+          text: "Il faut vous secouer un peu, quand même.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Injonction vague, sans lien aux valeurs.",
+        },
+        {
+          text: "Laissez venir, ne forcez rien.",
+          is_best: false,
+          score: 0.2,
+          feedback: "Conforte l'attente passive.",
+        },
+      ],
+    },
+    {
+      id: "DRL-ACT-ENG-05",
+      competencyId: "action_engagee",
+      scenario: "ACT-ANX-01",
+      difficulty: 2,
+      mode: "production",
+      rappel:
+        "Aider à formuler le plus petit pas possible, aligné sur une valeur, tentable dès cette semaine.",
+      stimulus: "J'aimerais me réinscrire à mon cours de danse, mais l'angoisse me bloque.",
+      reactionSiBon: "Juste envoyer un mail pour les horaires… ça, je peux le faire ce soir.",
+      modele:
+        "Si la danse touche à ce qui compte pour vous, quel serait le plus petit pas possible cette semaine — pas le cours entier, mais un geste minuscule dans cette direction ?",
     },
   ],
 };

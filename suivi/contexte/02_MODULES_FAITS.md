@@ -115,8 +115,10 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 ## 16. Contenu de démo — ACT & Anamnèse (session 2 suite ; enrichi le 22 juillet)
 **État : ✅ Seedé (à valider cliniquement)**
 - ACT (approche, 6 compétences) + Anamnèse (transversale, 6 compétences).
-- **ACT** (22 juillet) : **12 drills**, 2 cartes/compétence (1 reco + 1 production), **2 cas**
-  (Léa/anxiété + Karim/ruminations).
+- **ACT** (porté à **5 cartes/compétence** le 22 juillet, à la demande du porteur — beaucoup
+  d'étudiants formés à l'ACT) : **30 drills** (3 reconnaissance + 2 production par compétence),
+  **3 cas** : Léa/anxiété, Karim/ruminations, **Sofiane/douleur chronique** (nouveau, cas
+  ACT emblématique). (Étapes : 3 → 12 → 30.)
 - **Anamnèse** (produit d'appel, porté à **5 cartes/compétence** le 22 juillet) : **30 drills**
   (3 reconnaissance + 2 production par compétence), **3 cas** : M. Dubois/réservé,
   Mme Bonnet/volubile, **Mme Faure/douleurs chroniques** (nouveau). L'anamnèse est le
