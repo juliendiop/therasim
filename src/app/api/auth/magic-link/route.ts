@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createMagicToken } from "@/lib/auth";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { isEmailConfigured, sendMagicLink } from "@/lib/email";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const email = String(body.email ?? "").trim().toLowerCase();
   const planId = body.planId ? String(body.planId) : null;
+  const next = safeNextPath(body.next);
   if (!email || !email.includes("@")) {
     return NextResponse.json({ error: "email invalide" }, { status: 400 });
   }
@@ -31,7 +33,10 @@ export async function POST(req: NextRequest) {
   const base = await appBaseUrlFromRequest();
   // Report du forfait choisi sur /tarifs : encodé dans l'URL cible du lien
   // magique, lu par /api/auth/callback pour enchaîner sur le checkout Stripe.
-  const link = `${base}/api/auth/callback?token=${token}${planId ? `&plan=${encodeURIComponent(planId)}` : ""}`;
+  const link =
+    `${base}/api/auth/callback?token=${token}` +
+    (planId ? `&plan=${encodeURIComponent(planId)}` : "") +
+    (next ? `&next=${encodeURIComponent(next)}` : "");
 
   // eslint-disable-next-line no-console
   console.log(`[magic-link] ${email} -> ${link}`);

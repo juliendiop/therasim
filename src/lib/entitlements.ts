@@ -13,6 +13,37 @@ import { prisma } from "./prisma";
 import { getConfig } from "./config";
 import type { Role } from "./auth";
 
+/**
+ * Un abonnement donne-t-il droit aux avantages du forfait (domaines + crédits) ?
+ *
+ * SOURCE DE VÉRITÉ UNIQUE : aucune comparaison de statut d'abonnement ne doit
+ * exister ailleurs dans le code. `trialing` = essai en cours (bêta fermée, sans
+ * carte bancaire) : l'accès est identique à `active`, c'est tout l'intérêt.
+ * Statuts Stripe non ouvrants : `past_due`, `canceled`, `incomplete`,
+ * `incomplete_expired`, `unpaid`, `paused`.
+ */
+export const ENTITLED_SUBSCRIPTION_STATUSES = ["active", "trialing"] as const;
+
+export function isSubscriptionEntitled(status: string | null | undefined): boolean {
+  return ENTITLED_SUBSCRIPTION_STATUSES.includes(
+    status as (typeof ENTITLED_SUBSCRIPTION_STATUSES)[number],
+  );
+}
+
+/**
+ * L'abonnement génère-t-il du CHIFFRE D'AFFAIRES ? Question distincte de l'accès :
+ * un essai (`trialing`) ouvre les droits mais n'émet aucune facture, donc aucune
+ * commission d'affiliation. À utiliser pour tout ce qui touche au revenu, jamais
+ * pour décider d'un accès.
+ */
+export const BILLABLE_SUBSCRIPTION_STATUSES = ["active"] as const;
+
+export function isSubscriptionBillable(status: string | null | undefined): boolean {
+  return BILLABLE_SUBSCRIPTION_STATUSES.includes(
+    status as (typeof BILLABLE_SUBSCRIPTION_STATUSES)[number],
+  );
+}
+
 /** Ensemble des framework_id accessibles par un tenant (avant filtre de statut). */
 export async function effectiveFrameworkIds(tenantId: string): Promise<Set<string>> {
   const [tenantPacks, overrides] = await Promise.all([
@@ -133,7 +164,7 @@ export async function userFrameworkAccess(user: UserLike): Promise<FrameworkAcce
   );
 
   let subUnlocked = new Set<string>();
-  if (subscription && subscription.status === "active") {
+  if (subscription && isSubscriptionEntitled(subscription.status)) {
     const plan = await prisma.subscriptionPlan.findUnique({
       where: { id: subscription.planId },
     });
@@ -162,7 +193,7 @@ export async function subscriptionChoiceStatus(userId: string): Promise<{
   remaining: number | null;
 } | null> {
   const subscription = await prisma.userSubscription.findUnique({ where: { userId } });
-  if (!subscription || subscription.status !== "active") return null;
+  if (!subscription || !isSubscriptionEntitled(subscription.status)) return null;
   const plan = await prisma.subscriptionPlan.findUnique({
     where: { id: subscription.planId },
   });

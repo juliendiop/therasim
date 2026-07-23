@@ -422,6 +422,37 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   clawback best-effort dans `handleChargeRefunded`.
 - Spec : `Conception/spec-affiliation-ambassadeurs.md`.
 
+## 37. Bêta fermée — invitations + essai 90 j sans carte (23 juillet)
+**État : ✅ Code fait, `db:push` fait** — ⚠️ reste : 2 événements webhook Stripe + `CRON_SECRET`
+- **Invitations à usage unique** (`BetaInvite`, codes 24 car. base32 via `crypto`), générées par
+  `npm run beta:invites -- --count 25` (CSV `code,url,email`). Garde-fou si l'URL est localhost.
+- **`/beta/[code]`** : 5 états ; les 4 cas d'échec renvoient le **même** écran (sinon on peut
+  énumérer les codes valides). Retour post-auth via `?next=`, validé par `safeNextPath`.
+- **Server Action** : verrou atomique (`updateMany` conditionnel), rate limiting IP+user en base,
+  `subscriptions.create` avec `trial_period_days: 90` et
+  `trial_settings.end_behavior.missing_payment_method: "cancel"` (aucune facture au terme),
+  `idempotencyKey`, compensation en `PENDING` si Stripe échoue.
+- **Accès en essai** : `isSubscriptionEntitled()` (active **+ trialing**) remplace toutes les
+  comparaisons de statut. Prédicat distinct `isSubscriptionBillable()` pour le revenu
+  (un essai ne génère aucune commission d'affiliation).
+- **Crédits** : `grantSubscriptionCredits` à **idempotence structurelle** — contrainte unique
+  `(stripeSubscriptionId, reason, periodIndex)`, `periodIndex` relatif à l'ancre de l'abonnement
+  (jamais le mois calendaire). Recharge paresseuse cumulative avec rattrapage
+  (`syncSubscriptionCredits`), alignée sur le comportement du parcours payant.
+- **Webhooks** : `customer.subscription.created` (indispensable — sans lui un abonnement créé par
+  API n'existe pas côté app), `trial_will_end`, `updated` (+ synchro `planId` et différentiel
+  `plan_upgrade_topup`), `deleted`.
+- **Emails** : bienvenue, mi-parcours J+45 (cron quotidien `/api/cron/beta-mid-trial`), fin d'essai.
+- **Admin** `/admin/beta` : table, compteurs, révocation des `PENDING`.
+- **Tests** : vitest (17 unitaires) + 6 tests base ignorés sans `TEST_DATABASE_URL` +
+  `npm run beta:testclock` (Test Clock Stripe, refuse une clé LIVE).
+- Fichiers : `src/lib/{beta,beta-code,beta-status,billing-period,rate-limit,safe-redirect}.ts`,
+  `src/app/beta/[code]/**`, `src/app/admin/beta/**`, `src/app/api/cron/beta-mid-trial/`,
+  `scripts/{generate-beta-invites,beta-test-clock}.ts`, `tests/**`.
+- **Deux bugs préexistants corrigés au passage** : `handleSubscriptionUpdated` avalait
+  silencieusement le cas « pas de ligne locale » (`.catch(() => {})`), et ne mettait **jamais**
+  `planId` à jour — un changement de forfait au portail Stripe laissait l'app sur l'ancien forfait.
+
 ## 10. Contenu — référentiel EM (spec §2.5, §4.5 ; enrichi le 22 juillet)
 **État : ✅ Fait (seed)**
 - 1 référentiel **EM** (publié, type *approche*), grille `em-v1`, 3 catégories,

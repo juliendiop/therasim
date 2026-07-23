@@ -5,8 +5,11 @@ import "server-only";
 import type Stripe from "stripe";
 import { prisma } from "./prisma";
 import { getConfig } from "./config";
-import { grant } from "./credits";
+import { grant, grantSubscriptionCredits } from "./credits";
 import { CREDIT_PACKS } from "./credits";
+import { isSubscriptionEntitled } from "./entitlements";
+import { periodIndexFor } from "./billing-period";
+import { sendBetaTrialEnd } from "./email";
 import { ensureStripeCustomer, stripeClient } from "./stripe";
 import { recordFunnelOncePerUser } from "./funnel";
 import { recordCommissionsForInvoice, creditCommission } from "./affiliation";
@@ -227,9 +230,23 @@ export async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
   const plan = await prisma.subscriptionPlan.findUnique({ where: { id: userSub.planId } });
   if (!plan || plan.monthlyCredits <= 0) return;
 
-  await grant(userSub.userId, plan.monthlyCredits, "subscription_renewal", {
-    invoiceId: invoice.id,
-    planId: plan.id,
+  // Ancre de facturation : requise pour un periodIndex déterministe. Les abonnements
+  // antérieurs à la bêta n'en ont pas -> on la rétablit depuis Stripe, une fois.
+  const anchor = await ensurePeriodAnchor(userSub.stripeSubscriptionId, userSub.periodAnchorAt);
+
+  // Période FACTURÉE (et non « maintenant ») : c'est elle qui identifie l'allocation.
+  const lineStart = invoice.lines?.data?.[0]?.period?.start;
+  const periodDate = typeof lineStart === "number" ? new Date(lineStart * 1000) : new Date();
+
+  // Idempotence structurelle : la contrainte unique arbitre. Un rejeu de l'événement,
+  // ou le rechargement paresseux ayant déjà couvert cette période, deviennent des no-op.
+  await grantSubscriptionCredits({
+    userId: userSub.userId,
+    amount: plan.monthlyCredits,
+    reason: "subscription_renewal",
+    stripeSubscriptionId: userSub.stripeSubscriptionId,
+    periodIndex: periodIndexFor(anchor, periodDate),
+    meta: { invoiceId: invoice.id, planId: plan.id, source: "invoice" },
   });
 
   // Affiliation : commission niveau 1/2 sur ce paiement d'abonnement encaissé
@@ -315,32 +332,220 @@ export async function handleChargeRefunded(event: Stripe.Event): Promise<void> {
   }
 }
 
-/** `customer.subscription.updated` : synchronise statut/période/résiliation programmée. */
-export async function handleSubscriptionUpdated(event: Stripe.Event): Promise<void> {
-  const sub = event.data.object as Stripe.Subscription;
-  await prisma.userSubscription
-    .update({
-      where: { stripeSubscriptionId: sub.id },
-      data: {
-        status: sub.status,
-        currentPeriodEnd: subscriptionPeriodEnd(sub),
-        cancelAtPeriodEnd: sub.cancel_at_period_end,
-      },
-    })
-    .catch(() => {
-      // Pas encore d'enregistrement local (ex. abonnement créé hors Checkout) : rien à faire.
-    });
+// --- Résolution du forfait ---------------------------------------------------
+
+/** Price ID du 1er article de l'abonnement. */
+function subscriptionPriceId(sub: Stripe.Subscription): string | null {
+  return sub.items?.data?.[0]?.price?.id ?? null;
 }
 
-/** `customer.subscription.deleted` : abonnement résilié/expiré. */
+/**
+ * Forfait local correspondant à un abonnement Stripe.
+ *
+ * `metadata.planId` d'abord (posé par le Checkout et par la réclamation bêta), sinon
+ * résolution par Price ID — INDISPENSABLE : un changement de forfait fait depuis le
+ * portail Stripe ne met PAS à jour les metadata. Sans ce repli, `planId` restait
+ * éternellement figé sur l'ancien forfait (bug préexistant).
+ */
+async function resolvePlanForSubscription(sub: Stripe.Subscription) {
+  const metaPlanId = sub.metadata?.planId;
+  if (metaPlanId) {
+    const byMeta = await prisma.subscriptionPlan.findUnique({ where: { id: metaPlanId } });
+    if (byMeta) return byMeta;
+  }
+  const priceId = subscriptionPriceId(sub);
+  if (!priceId) return null;
+  return prisma.subscriptionPlan.findFirst({ where: { stripePriceId: priceId } });
+}
+
+/** Utilisateur rattaché à un abonnement : metadata, sinon Customer Stripe. */
+async function resolveUserForSubscription(sub: Stripe.Subscription) {
+  const userId = sub.metadata?.userId;
+  if (userId) {
+    const byMeta = await prisma.user.findUnique({ where: { id: userId } });
+    if (byMeta) return byMeta;
+  }
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+  if (!customerId) return null;
+  return prisma.user.findFirst({ where: { stripeCustomerId: customerId } });
+}
+
+/** Ancre de facturation, rétablie depuis Stripe si absente localement. */
+async function ensurePeriodAnchor(
+  stripeSubscriptionId: string,
+  current: Date | null,
+): Promise<Date> {
+  if (current) return current;
+  const sub = await stripeClient().subscriptions.retrieve(stripeSubscriptionId);
+  const anchor = new Date(sub.start_date * 1000);
+  await prisma.userSubscription
+    .update({ where: { stripeSubscriptionId }, data: { periodAnchorAt: anchor } })
+    .catch(() => {});
+  return anchor;
+}
+
+/**
+ * `customer.subscription.created` : indispensable pour les abonnements créés par API
+ * (bêta) et non par Checkout — sans ce handler, aucune ligne locale n'existerait.
+ * Crée l'état local ET crédite l'allocation de la première période, y compris en
+ * `trialing` où AUCUNE facture n'est émise.
+ */
+export async function handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
+  const sub = event.data.object as Stripe.Subscription;
+  const [user, plan] = await Promise.all([
+    resolveUserForSubscription(sub),
+    resolvePlanForSubscription(sub),
+  ]);
+  if (!user || !plan) {
+    console.warn("[billing] subscription.created non rattachable", sub.id);
+    return;
+  }
+
+  const anchor = new Date(sub.start_date * 1000);
+  const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
+
+  await prisma.userSubscription.upsert({
+    where: { userId: user.id },
+    update: {
+      tenantId: user.tenantId,
+      planId: plan.id,
+      stripeSubscriptionId: sub.id,
+      status: sub.status,
+      currentPeriodEnd: subscriptionPeriodEnd(sub),
+      cancelAtPeriodEnd: sub.cancel_at_period_end,
+      periodAnchorAt: anchor,
+      trialEndsAt: trialEnd,
+    },
+    create: {
+      userId: user.id,
+      tenantId: user.tenantId,
+      planId: plan.id,
+      stripeSubscriptionId: sub.id,
+      status: sub.status,
+      currentPeriodEnd: subscriptionPeriodEnd(sub),
+      cancelAtPeriodEnd: sub.cancel_at_period_end,
+      periodAnchorAt: anchor,
+      trialEndsAt: trialEnd,
+    },
+  });
+
+  if (plan.monthlyCredits > 0 && isSubscriptionEntitled(sub.status)) {
+    await grantSubscriptionCredits({
+      userId: user.id,
+      amount: plan.monthlyCredits,
+      reason: "subscription_renewal",
+      stripeSubscriptionId: sub.id,
+      periodIndex: periodIndexFor(anchor, new Date()),
+      meta: { planId: plan.id, source: "subscription.created", status: sub.status },
+    });
+  }
+}
+
+/**
+ * `customer.subscription.updated` : statut (trialing -> active/canceled), période,
+ * résiliation programmée, ET changement de forfait.
+ */
+export async function handleSubscriptionUpdated(event: Stripe.Event): Promise<void> {
+  const sub = event.data.object as Stripe.Subscription;
+  const local = await prisma.userSubscription.findUnique({
+    where: { stripeSubscriptionId: sub.id },
+  });
+
+  // Aucun enregistrement local : abonnement créé hors Checkout dont l'événement
+  // `created` a été manqué. On le traite comme une création plutôt que de l'ignorer
+  // silencieusement, comme le faisait le `.catch(() => {})` précédent.
+  if (!local) {
+    await handleSubscriptionCreated(event);
+    return;
+  }
+
+  const newPlan = await resolvePlanForSubscription(sub);
+  const anchor = local.periodAnchorAt ?? new Date(sub.start_date * 1000);
+
+  await prisma.userSubscription.update({
+    where: { stripeSubscriptionId: sub.id },
+    data: {
+      status: sub.status,
+      currentPeriodEnd: subscriptionPeriodEnd(sub),
+      cancelAtPeriodEnd: sub.cancel_at_period_end,
+      periodAnchorAt: anchor,
+      trialEndsAt: sub.trial_end ? new Date(sub.trial_end * 1000) : null,
+      ...(newPlan ? { planId: newPlan.id } : {}),
+    },
+  });
+
+  // Changement de forfait en cours de cycle : l'allocation de la période courante a
+  // déjà été versée sous `subscription_renewal`, la contrainte unique la bloquerait.
+  // Le différentiel a donc son propre `reason`, donc sa propre clé — sans quoi un
+  // abonné qui passe Essentiel -> Intensif paierait sans rien recevoir avant le cycle suivant.
+  if (newPlan && newPlan.id !== local.planId && isSubscriptionEntitled(sub.status)) {
+    const oldPlan = await prisma.subscriptionPlan.findUnique({ where: { id: local.planId } });
+    const diff = newPlan.monthlyCredits - (oldPlan?.monthlyCredits ?? 0);
+    if (diff > 0) {
+      await grantSubscriptionCredits({
+        userId: local.userId,
+        amount: diff,
+        reason: "plan_upgrade_topup",
+        stripeSubscriptionId: sub.id,
+        periodIndex: periodIndexFor(anchor, new Date()),
+        meta: { from: oldPlan?.key ?? local.planId, to: newPlan.key, diff },
+      });
+    }
+  }
+}
+
+/**
+ * `customer.subscription.trial_will_end` : émis par Stripe 3 jours avant la fin.
+ * Envoie l'email de fin d'essai, une seule fois (marqueur en base : Stripe rejoue).
+ */
+export async function handleTrialWillEnd(event: Stripe.Event): Promise<void> {
+  const sub = event.data.object as Stripe.Subscription;
+  const local = await prisma.userSubscription.findUnique({
+    where: { stripeSubscriptionId: sub.id },
+  });
+  if (!local || local.trialEndEmailAt) return; // déjà envoyé
+
+  const user = await prisma.user.findUnique({ where: { id: local.userId } });
+  if (!user) return;
+  const plan = await prisma.subscriptionPlan.findUnique({ where: { id: local.planId } });
+  const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : local.trialEndsAt;
+
+  // Marqueur posé AVANT l'envoi : en cas de rejeu concurrent, on préfère un email
+  // manquant à un email envoyé deux fois.
+  await prisma.userSubscription.update({
+    where: { stripeSubscriptionId: sub.id },
+    data: { trialEndEmailAt: new Date() },
+  });
+
+  try {
+    await sendBetaTrialEnd(user.email, {
+      firstName: user.firstName,
+      planLabel: plan?.label ?? "Intensif",
+      endsAt: trialEnd,
+      couponCode: process.env.BETA_CONVERSION_COUPON || null,
+    });
+  } catch (e) {
+    console.error("[billing] email de fin d'essai non envoyé", user.email, e);
+  }
+}
+
+/** `customer.subscription.deleted` : abonnement résilié/expiré, accès révoqué. */
 export async function handleSubscriptionDeleted(event: Stripe.Event): Promise<void> {
   const sub = event.data.object as Stripe.Subscription;
-  await prisma.userSubscription
+  const local = await prisma.userSubscription
     .update({
       where: { stripeSubscriptionId: sub.id },
       data: { status: "canceled" },
     })
-    .catch(() => {
-      /* déjà absent localement : rien à faire */
-    });
+    .catch(() => null);
+
+  if (!local) return; // déjà absent localement
+
+  // `isBetaTester` est conservé volontairement : c'est un marqueur HISTORIQUE, utile
+  // pour segmenter les stats et les relances. L'accès, lui, est déjà révoqué par le
+  // statut `canceled` (isSubscriptionEntitled renvoie false).
+  const user = await prisma.user.findUnique({ where: { id: local.userId } });
+  if (user?.isBetaTester) {
+    console.log(`[beta] fin d'accès bêta · ${user.email} · cohorte ${user.betaCohort ?? "?"}`);
+  }
 }

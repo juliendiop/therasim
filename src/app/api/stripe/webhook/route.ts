@@ -6,6 +6,8 @@ import {
   handleInvoicePaid,
   handleSubscriptionDeleted,
   handleSubscriptionUpdated,
+  handleSubscriptionCreated,
+  handleTrialWillEnd,
   handleChargeRefunded,
 } from "@/lib/billing";
 
@@ -48,8 +50,14 @@ export async function POST(req: NextRequest) {
       case "invoice.paid":
         await handleInvoicePaid(event);
         break;
+      case "customer.subscription.created":
+        await handleSubscriptionCreated(event);
+        break;
       case "customer.subscription.updated":
         await handleSubscriptionUpdated(event);
+        break;
+      case "customer.subscription.trial_will_end":
+        await handleTrialWillEnd(event);
         break;
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(event);

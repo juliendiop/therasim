@@ -11,7 +11,11 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "calibrate": "tsx scripts/calibrate-evaluator.ts"
+    "calibrate": "tsx scripts/calibrate-evaluator.ts",
+    "beta:invites": "tsx scripts/generate-beta-invites.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "beta:testclock": "tsx scripts/beta-test-clock.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",
@@ -51,6 +55,7 @@
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

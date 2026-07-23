@@ -65,6 +65,9 @@ model User {
   referredByUserId  String?   @map("referred_by_user_id") @db.Uuid // parrain DIRECT (niveau 1), figé à l'inscription
   ambassadorAt      DateTime? @map("ambassador_at") // date d'activation du statut ambassadeur (null = pas activé)
   ambassadorTermsAt DateTime? @map("ambassador_terms_at") // consentement CGU affiliation
+  // --- Bêta fermée (invitations) ---
+  isBetaTester Boolean @default(false) @map("is_beta_tester") // segmentation stats/emails
+  betaCohort   String? @map("beta_cohort") // ex. 'beta-2026-01'
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])
@@ -115,10 +118,22 @@ model CreditLedger {
   userId       String   @map("user_id") @db.Uuid
   delta        Int // +octroi / -consommation
   balanceAfter Int      @map("balance_after")
-  reason       String // 'welcome' | 'monthly' | 'consume_miniscene' | 'consume_simulation' | 'refund' | 'admin_grant' | 'purchase' | 'subscription_renewal'
+  reason       String // 'welcome' | 'monthly' | 'consume_miniscene' | 'consume_simulation' | 'refund' | 'admin_grant' | 'purchase' | 'subscription_renewal' | 'beta_initial' | 'plan_upgrade_topup'
   meta         Json?
   createdAt    DateTime @default(now()) @map("created_at")
 
+  // --- Idempotence STRUCTURELLE des octrois liés à un abonnement ---
+  // Le doublon est refusé par la base, pas par la coordination de deux chemins de
+  // code : peu importe lequel du webhook `invoice.paid` ou du rechargement paresseux
+  // se déclenche en premier, ou qu'un événement Stripe soit rejoué.
+  // `periodIndex` est RELATIF à l'ancre de l'abonnement (jamais le mois calendaire).
+  // Les deux colonnes restent NULL pour tous les autres mouvements (welcome, monthly,
+  // purchase, consume_*) : en Postgres, NULL n'entre jamais en conflit dans une
+  // contrainte unique -> ajout purement additif, aucune ligne existante impactée.
+  stripeSubscriptionId String? @map("stripe_subscription_id")
+  periodIndex          Int?    @map("period_index")
+
+  @@unique([stripeSubscriptionId, reason, periodIndex])
   @@index([userId])
   @@map("credit_ledger")
 }
@@ -154,9 +169,18 @@ model UserSubscription {
   tenantId             String    @map("tenant_id") @db.Uuid
   planId               String    @map("plan_id") @db.Uuid
   stripeSubscriptionId String    @unique @map("stripe_subscription_id")
-  status               String // 'active' | 'past_due' | 'canceled' | 'incomplete'
+  status               String // 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete'
   currentPeriodEnd     DateTime? @map("current_period_end")
   cancelAtPeriodEnd    Boolean   @default(false) @map("cancel_at_period_end")
+  // Ancre de facturation (Stripe `subscription.start_date`) : sert à calculer un
+  // periodIndex DÉTERMINISTE et relatif à l'abonnement (jamais le mois calendaire),
+  // partagé par le chemin paresseux et le chemin webhook. Voir src/lib/credits.ts.
+  periodAnchorAt       DateTime? @map("period_anchor_at")
+  // Fin de période d'essai (null hors essai). Alimenté depuis Stripe `trial_end`.
+  trialEndsAt          DateTime? @map("trial_ends_at")
+  // Suivi d'envoi des emails de cycle d'essai (anti-doublon sur rejeu/cron).
+  midTrialEmailAt      DateTime? @map("mid_trial_email_at")
+  trialEndEmailAt      DateTime? @map("trial_end_email_at")
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
@@ -533,4 +557,49 @@ model UserCompetencyState {
 
   @@id([userId, frameworkId, competencyId])
   @@map("user_competency_state")
+}
+
+// Limitation de débit générique (une ligne = une tentative horodatée).
+// En base plutôt qu'en mémoire : sur Vercel, chaque instance de fonction a sa
+// propre mémoire, un compteur en RAM ne limiterait donc rien.
+model RateLimitHit {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String // ex. 'beta-claim:ip:1.2.3.4' | 'beta-claim:user:<uuid>'
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([key, createdAt])
+  @@map("rate_limit_hits")
+}
+
+// --- Bêta fermée : invitations à usage unique ------------------------------
+// Un code envoyé par email ouvre un abonnement d'essai (plan Intensif, 90 j, sans
+// carte bancaire). Pas de code promo public : l'accès est nominatif et révocable.
+
+model BetaInvite {
+  id     String  @id @default(uuid()) @db.Uuid
+  // Code long (24 car. base32 sans ambiguïté) : un code court serait brute-forçable.
+  code   String  @unique
+  email  String? // destinataire prévu — indicatif, jamais une contrainte à la réclamation
+  note   String? // prénom, profession, cohorte…
+  cohort String  @default("beta-2026-01")
+
+  // 'PENDING' | 'CLAIMED' | 'REVOKED' | 'EXPIRED' — String et non enum natif :
+  // convention du schéma (aucun enum ici), et un enum Postgres se retire mal via
+  // `db:push`. Le typage vient du union TS + zod dans src/lib/beta-status.ts.
+  status          String    @default("PENDING")
+  claimedByUserId String?   @map("claimed_by_user_id") @db.Uuid
+  claimedAt       DateTime? @map("claimed_at")
+  // Expiration du CODE d'invitation (défaut : +30 j), à ne pas confondre avec la
+  // fin de l'essai de 90 jours qui, elle, court à partir de la réclamation.
+  expiresAt       DateTime         @map("expires_at")
+
+  stripeSubscriptionId String? @map("stripe_subscription_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([claimedByUserId])
+  @@index([cohort])
+  @@map("beta_invites")
 }

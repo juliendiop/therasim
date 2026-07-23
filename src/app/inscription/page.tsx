@@ -17,8 +17,11 @@ export default function InscriptionPage() {
 }
 
 function InscriptionForm() {
+  const params = useSearchParams();
   // Forfait choisi sur /tarifs (repris après création de compte).
-  const planId = useSearchParams().get("plan");
+  const planId = params.get("plan");
+  // Destination de retour (ex. /beta/CODE) — validée côté serveur avant usage.
+  const next = params.get("next");
   // Mesure d'entonnoir : arrivée sur la page d'inscription (visiteur anonyme).
   useEffect(() => {
     trackEvent("signup_start", "/inscription");
@@ -45,7 +48,7 @@ function InscriptionForm() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, email, password, consent, planId }),
+        body: JSON.stringify({ firstName, email, password, consent, planId, next }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -74,7 +77,7 @@ function InscriptionForm() {
       const res = await fetch("/api/auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, planId }),
+        body: JSON.stringify({ email, planId, next }),
       });
       const data = await res.json();
       if (!res.ok) {

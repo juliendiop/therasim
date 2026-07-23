@@ -12,6 +12,7 @@ import { cookies } from "next/headers";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { getConfig, setConfig } from "./config";
+import { BILLABLE_SUBSCRIPTION_STATUSES, isSubscriptionBillable } from "./entitlements";
 
 const REFERRAL_COOKIE = "ts_ref";
 
@@ -320,7 +321,8 @@ export async function getAmbassadorStats(userId: string): Promise<AmbassadorStat
   const activeReferredCount =
     tier1Ids.length > 0
       ? await prisma.userSubscription.count({
-          where: { userId: { in: tier1Ids }, status: "active" },
+          // Revenu, pas accès : un essai bêta n'émet aucune facture donc aucune commission.
+          where: { userId: { in: tier1Ids }, status: { in: [...BILLABLE_SUBSCRIPTION_STATUSES] } },
         })
       : 0;
 
@@ -358,7 +360,9 @@ export async function getReferralList(userId: string): Promise<ReferralRow[]> {
       where: { beneficiaryId: userId, sourceUserId: { in: ids }, delta: { gt: 0 } },
     }),
   ]);
-  const activeByUser = new Set(subs.filter((s) => s.status === "active").map((s) => s.userId));
+  const activeByUser = new Set(
+    subs.filter((s) => isSubscriptionBillable(s.status)).map((s) => s.userId),
+  );
   const commissionByUser = new Map<string, number>();
   for (const c of commissions) {
     commissionByUser.set(c.sourceUserId!, (commissionByUser.get(c.sourceUserId!) ?? 0) + c.delta);

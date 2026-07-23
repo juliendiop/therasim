@@ -13,6 +13,27 @@
 
 ## Décisions & pièges TECHNIQUES (à connaître pour ne pas se reperdre)
 
+### CONVENTION — les champs de statut sont des `String`, jamais des enums Prisma (23 juillet)
+**S'applique à TOUT nouveau modèle**, y compris les chantiers à venir (ex. ticketing :
+`TicketStatus` et consorts → `String`, pas enum).
+- Le schéma n'a **aucun enum natif** : `UserSubscription.status`, `Framework.statut`,
+  `Tenant.type`, `BetaInvite.status`… sont des `String` avec la liste des valeurs en commentaire.
+- **Pourquoi** : 1) une seule convention à maintenir ; 2) **enum Postgres + `db:push` est le
+  pire couple** — ajouter une valeur passe, mais en **retirer ou en renommer une** pousse
+  Prisma sur un chemin **destructif** ; 3) un statut est précisément ce qui gagne des valeurs
+  avec le temps (un ticketing voudra `DUPLICATE`, `WAITING_ON_RELEASE`…) — le figer en base
+  impose un `ALTER TYPE` en prod à chaque idée.
+- **Le typage ne se perd pas** : union TS `as const` + garde `zod` à la frontière donnent
+  l'autocomplétion, l'exhaustivité des `switch` et la validation des entrées. Ce qu'on perd
+  est la contrainte au niveau base — acceptable : **notre code est le seul écrivain**.
+- Gabarit de référence : `src/lib/beta-status.ts`.
+
+```ts
+export const BETA_INVITE_STATUS = ["PENDING", "CLAIMED", "REVOKED", "EXPIRED"] as const;
+export type BetaInviteStatus = (typeof BETA_INVITE_STATUS)[number];
+export const betaInviteStatusSchema = z.enum(BETA_INVITE_STATUS);
+```
+
 ### Choix de stack — pourquoi pas Go ?
 - La spec dit « Go (chi + pgx) + PostgreSQL + React/TS ». On a retenu **Next.js fullstack**
   (API routes + React) car : 1 seul service au lieu de 2, pas de Docker en local, tooling

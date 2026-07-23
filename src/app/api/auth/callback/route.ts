@@ -6,6 +6,7 @@ import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { createSubscriptionCheckout } from "@/lib/billing";
 import { recordFunnel, peekVisitorId } from "@/lib/funnel";
 import { attributeReferralForNewUser } from "@/lib/affiliation";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
   const planId = req.nextUrl.searchParams.get("plan");
+  const next = safeNextPath(req.nextUrl.searchParams.get("next"));
   if (!token) return NextResponse.redirect(new URL("/login?erreur=token", req.nextUrl.origin));
 
   const result = await consumeMagicToken(token);
@@ -50,6 +52,9 @@ export async function GET(req: NextRequest) {
     userId: user.id,
     meta: { method: "magic" },
   });
+
+  // Retour explicite demandé (ex. réclamation d'invitation bêta) : prioritaire.
+  if (next) return NextResponse.redirect(new URL(next, req.nextUrl.origin));
 
   // Report du forfait choisi : direct vers le checkout Stripe. Un échec
   // (Price ID manquant, Stripe non configuré) ne doit jamais bloquer la

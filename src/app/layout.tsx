@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Brain, ClipboardList, Coins, Eye, Gift, GraduationCap, LogOut, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { canManageLive, canSupervise } from "@/lib/roles";
-import { creditSettings, syncWallet } from "@/lib/credits";
+import { creditSettings, syncWallet, syncSubscriptionCredits } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
 import { stopImpersonation } from "./admin/impersonate-actions";
 import MobileNav from "./_components/mobile-nav";
@@ -33,6 +33,9 @@ export default async function RootLayout({
   const tenant = user
     ? await prisma.tenant.findUnique({ where: { id: user.tenantId } })
     : null;
+  // Crédits du forfait (abonnement OU essai) d'abord : `syncWallet` ne complète
+  // ensuite que si le solde est sous le plancher freemium, donc l'ordre compte.
+  if (user?.role === "learner") await syncSubscriptionCredits(user.id);
   // Solde de crédits pour les apprenants (initialise le pack de bienvenue au 1er accès).
   const credits = user && user.role === "learner" ? await syncWallet(user.id) : null;
   const settings = credits !== null ? await creditSettings() : null;

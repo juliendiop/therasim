@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { createSessionToken, setSessionCookie, type Role } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,8 @@ export async function POST(req: NextRequest) {
     meta: { method: "password" },
   });
 
-  const redirect = user.role === "super_admin" ? "/admin" : "/accueil";
+  // Retour explicite demandé (ex. /beta/CODE), sinon destination par défaut du rôle.
+  const next = safeNextPath(body.next);
+  const redirect = next ?? (user.role === "super_admin" ? "/admin" : "/accueil");
   return NextResponse.json({ ok: true, redirect });
 }

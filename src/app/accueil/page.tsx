@@ -29,9 +29,9 @@ export const dynamic = "force-dynamic";
 export default async function AccueilPage({
   searchParams,
 }: {
-  searchParams: Promise<{ bienvenue?: string }>;
+  searchParams: Promise<{ bienvenue?: string; beta?: string }>;
 }) {
-  const { bienvenue } = await searchParams;
+  const { bienvenue, beta } = await searchParams;
   const user = await requireUser();
   const access = await userFrameworkAccess(user);
   const d = await buildDashboard(user.id, user.tenantId, access.unlocked);
@@ -69,6 +69,16 @@ export default async function AccueilPage({
 
   return (
     <div>
+      {beta && (
+        <div className="mb-5 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-4">
+          <p className="text-sm font-semibold">Votre accès bêta est actif 🎉</p>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">
+            Vos crédits mensuels sont disponibles dès maintenant. Aucune carte bancaire n&apos;a
+            été demandée et rien ne vous sera prélevé.
+          </p>
+        </div>
+      )}
+
       <h1 className="text-2xl font-semibold tracking-tight">Bonjour{prenom} 👋</h1>
       <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">
         Votre point de départ du jour : reprenez où vous en étiez, révisez ce qui

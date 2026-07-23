@@ -6,6 +6,7 @@ import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { createSubscriptionCheckout } from "@/lib/billing";
 import { recordFunnel, peekVisitorId } from "@/lib/funnel";
 import { attributeReferralForNewUser } from "@/lib/affiliation";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,8 @@ export async function POST(req: NextRequest) {
   const password = String(body.password ?? "");
   const consent = Boolean(body.consent);
   const planId = body.planId ? String(body.planId) : null;
+  // Retour explicite (ex. /beta/CODE). Validé : un `next` externe serait un open redirect.
+  const next = safeNextPath(body.next);
 
   if (!email.includes("@")) {
     return NextResponse.json(
@@ -80,6 +83,10 @@ export async function POST(req: NextRequest) {
   await recordFunnel("signup_complete", { visitorId: await peekVisitorId(), userId: user.id });
   // Affiliation : résout le cookie ts_ref (lien de parrainage) en referredByUserId.
   await attributeReferralForNewUser(user.id);
+
+  // Retour explicite demandé (ex. réclamation d'invitation bêta) : prioritaire sur
+  // le report de forfait, les deux ne coexistent pas dans les parcours réels.
+  if (next) return NextResponse.json({ ok: true, redirect: next });
 
   // Report du forfait choisi sur /tarifs : direct vers le checkout Stripe.
   // Un échec (Price ID manquant, Stripe non configuré) ne doit jamais bloquer

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Coins, History, RefreshCw, Sparkles } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CREDIT_PACKS, creditSettings, syncWallet } from "@/lib/credits";
+import { CREDIT_PACKS, creditSettings, syncWallet, syncSubscriptionCredits } from "@/lib/credits";
 import { canBuyIndividualOffers } from "@/lib/entitlements";
 import { resolveCommissionRate } from "@/lib/affiliation";
 import { palier, palierRank, PALIER_LABEL, type Palier } from "@/lib/mastery";
@@ -46,6 +46,10 @@ export default async function CreditsPage({
   const { need, success, canceled, error, fw } = await searchParams;
   const stripeReady = isStripeConfigured();
 
+  // Allocation du forfait (essai inclus) avant la lecture du solde, et avant le
+  // plancher freemium appliqué par syncWallet.
+  await syncSubscriptionCredits(user.id);
+
   const [balance, settings, history, plans, subscription, freemium, rates] = await Promise.all([
     syncWallet(user.id),
     creditSettings(),
@@ -86,6 +90,10 @@ export default async function CreditsPage({
     ? plans.find((p) => p.id === subscription.planId) ??
       (await prisma.subscriptionPlan.findUnique({ where: { id: subscription.planId } }))
     : null;
+  // Règle d'AFFICHAGE (« ai-je un abonnement à gérer ? »), volontairement plus large
+  // que l'entitlement : un `past_due` doit continuer à voir son bloc d'abonnement et
+  // le bouton de gestion. Ne pas remplacer par isSubscriptionEntitled() — ce serait
+  // un changement de comportement pour past_due/incomplete. `trialing` passe déjà ici.
   const hasActiveSubscription = subscription && subscription.status !== "canceled";
   // Quota de domaines du forfait actif (affichage « X/N choisis »).
   const usedChoices = hasActiveSubscription

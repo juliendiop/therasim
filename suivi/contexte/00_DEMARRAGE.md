@@ -93,7 +93,8 @@ paiements (packs de crédits + abonnements) :
      correspondants dans la même page (abonnements).
 3. **Enregistrer le webhook** : Dashboard Stripe → Developers → Webhooks → *Add endpoint* →
    URL `https://<ton-domaine>/api/stripe/webhook` → événements à sélectionner :
-   `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`,
+   `checkout.session.completed`, `invoice.paid`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.trial_will_end`,
    `customer.subscription.deleted`, `charge.refunded` → copier le **signing secret** →
    `STRIPE_WEBHOOK_SECRET` dans `.env`/Vercel.
    ⚠️ Sans cette étape, les paiements réussissent côté Stripe mais **aucun crédit n'est

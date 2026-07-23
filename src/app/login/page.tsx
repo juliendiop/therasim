@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Brain, LogIn, Mail } from "lucide-react";
 
 type Mode = "password" | "magic" | "forgot";
 
+// `useSearchParams` impose une frontière Suspense (même motif que /inscription).
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
+  // Destination de retour (ex. /beta/CODE) — validée côté serveur avant usage.
+  const next = useSearchParams().get("next");
   const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +36,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, next }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -50,7 +62,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, next }),
       });
       const data = await res.json();
       if (!res.ok) {
