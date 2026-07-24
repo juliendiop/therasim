@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Coins, History, RefreshCw, Sparkles } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CREDIT_PACKS, creditSettings, syncWallet, syncSubscriptionCredits } from "@/lib/credits";
+import { CREDIT_PACKS, creditSettings, syncWallet, syncSubscriptionCredits, getWalletView } from "@/lib/credits";
 import { canBuyIndividualOffers } from "@/lib/entitlements";
 import { resolveCommissionRate } from "@/lib/affiliation";
 import { palier, palierRank, PALIER_LABEL, type Palier } from "@/lib/mastery";
@@ -49,6 +49,8 @@ export default async function CreditsPage({
   // Allocation du forfait (essai inclus) avant la lecture du solde, et avant le
   // plancher freemium appliqué par syncWallet.
   await syncSubscriptionCredits(user.id);
+  // Détail du solde : portefeuille persistant vs allocation de forfait (non reportée).
+  const walletView = await getWalletView(user.id);
 
   const [balance, settings, history, plans, subscription, freemium, rates] = await Promise.all([
     syncWallet(user.id),
@@ -221,6 +223,12 @@ export default async function CreditsPage({
             <span className="text-3xl font-bold text-[var(--accent)]">{balance}</span>
             <span className="text-sm text-[var(--muted)]">crédit{balance > 1 ? "s" : ""}</span>
           </div>
+          {walletView.plan > 0 && (
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              dont <b>{walletView.plan}</b> de forfait ce mois-ci — non reportés au mois
+              suivant. Vos crédits achetés ({walletView.wallet}) restent acquis.
+            </p>
+          )}
         </div>
         <div className="text-right text-xs text-[var(--muted)]">
           <p>Mini-scène : <b>{settings.costMiniscene}</b> crédit{settings.costMiniscene > 1 ? "s" : ""}</p>

@@ -272,7 +272,7 @@ export async function sendBetaWelcome(
   const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
   const credits =
     input.monthlyCredits !== null
-      ? ` Vous disposez de <b>${input.monthlyCredits} crédits</b>, rechargés chaque mois de l'essai.`
+      ? ` Vous disposez de <b>${input.monthlyCredits} crédits</b>, renouvelés chaque mois de l'essai (non reportés d'un mois sur l'autre).`
       : "";
 
   const html = `

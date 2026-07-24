@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Brain, ClipboardList, Coins, Eye, Gift, GraduationCap, LogOut, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { canManageLive, canSupervise } from "@/lib/roles";
-import { creditSettings, syncWallet, syncSubscriptionCredits } from "@/lib/credits";
+import { creditSettings, syncWallet, syncSubscriptionCredits, getWalletView } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
 import { stopImpersonation } from "./admin/impersonate-actions";
 import MobileNav from "./_components/mobile-nav";
@@ -38,12 +38,18 @@ export default async function RootLayout({
   // ensuite que si le solde est sous le plancher freemium, donc l'ordre compte.
   if (user?.role === "learner") await syncSubscriptionCredits(user.id);
   // Solde de crédits pour les apprenants (initialise le pack de bienvenue au 1er accès).
+  // `syncWallet` renvoie le TOTAL (portefeuille + allocation de forfait).
   const credits = user && user.role === "learner" ? await syncWallet(user.id) : null;
+  const wallet = user && user.role === "learner" ? await getWalletView(user.id) : null;
   const settings = credits !== null ? await creditSettings() : null;
   // Seuil du bandeau bas-solde : 20 % du pack de bienvenue.
   const lowThreshold = settings ? Math.ceil(settings.welcome * 0.2) : 0;
   const creditsTooltip = settings
-    ? `${credits} crédits\nMini-scène : ${settings.costMiniscene} crédit${settings.costMiniscene > 1 ? "s" : ""} · Entretien simulé : ${settings.costSimulation} crédits\nExercices : gratuits`
+    ? `${credits} crédits\n${
+        wallet && wallet.plan > 0
+          ? `dont ${wallet.plan} de forfait (non reportés au mois suivant)\n`
+          : ""
+      }Mini-scène : ${settings.costMiniscene} crédit${settings.costMiniscene > 1 ? "s" : ""} · Entretien simulé : ${settings.costSimulation} crédits\nExercices : gratuits`
     : undefined;
 
   const isPublic = !tenant || tenant.type === "public";

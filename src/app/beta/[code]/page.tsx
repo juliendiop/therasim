@@ -208,7 +208,8 @@ function InviteConfirm({
         <KeyFacts planLabel={planLabel} />
         {monthlyCredits !== null && (
           <p className="mt-3 text-sm text-[var(--muted)]">
-            Soit <b>{monthlyCredits} crédits</b> par mois, rechargés chaque mois de l&apos;essai.
+            Soit <b>{monthlyCredits} crédits</b> par mois, renouvelés chaque mois de l&apos;essai
+            (non reportés d&apos;un mois sur l&apos;autre).
           </p>
         )}
 

@@ -113,53 +113,72 @@ describeDb("réclamation d'invitation — atomicité", () => {
   });
 });
 
-describeDb("crédits d'abonnement — idempotence structurelle", () => {
+describeDb("crédits de forfait — non cumulatif + remise à zéro", () => {
   let userId = "";
+  let planId = "";
+  let tenantId = "";
   const subId = `sub_test_${Date.now()}`;
+  // Ancre fixe : période 0 en janvier, période 1 en février (index relatif à l'ancre).
+  const anchor = new Date("2026-01-10T00:00:00Z");
+  const inPeriod0 = new Date("2026-01-20T00:00:00Z");
+  const inPeriod1 = new Date("2026-02-15T00:00:00Z");
 
   beforeAll(async () => {
     const tenant = await prisma.tenant.findFirst({ where: { slug: "public" } });
     if (!tenant) throw new Error("tenant public absent");
+    tenantId = tenant.id;
+
+    const plan = await prisma.subscriptionPlan.create({
+      data: {
+        key: `test-intensif-${generateBetaCode(6)}`,
+        label: "Test Intensif",
+        monthlyCredits: 200,
+        priceEurCents: 4900,
+      },
+    });
+    planId = plan.id;
+
     const u = await prisma.user.create({
       data: {
         email: `test-credits-${generateBetaCode(10)}@example.invalid`,
-        tenantId: tenant.id,
+        tenantId,
         role: "learner",
         credits: 0,
       },
     });
     userId = u.id;
     CLEANUP.userIds.push(u.id);
+
+    // Abonnement d'essai : `trialing` est entitled, donc l'allocation s'applique.
+    await prisma.userSubscription.create({
+      data: {
+        userId,
+        tenantId,
+        planId,
+        stripeSubscriptionId: subId,
+        status: "trialing",
+        periodAnchorAt: anchor,
+      },
+    });
+    CLEANUP.subIds.push(subId);
   });
 
   afterAll(async () => {
     await prisma.creditLedger.deleteMany({ where: { userId } });
+    await prisma.userSubscription.deleteMany({ where: { userId } });
     await prisma.user.deleteMany({ where: { id: userId } });
+    await prisma.subscriptionPlan.deleteMany({ where: { id: planId } });
   });
 
-  it("un webhook rejoué ne crédite pas deux fois", async () => {
-    const { grantSubscriptionCredits } = await import("../src/lib/credits");
+  it("alloue l'allocation du forfait, une seule fois par période (idempotent)", async () => {
+    const { syncSubscriptionCredits } = await import("../src/lib/credits");
 
-    const first = await grantSubscriptionCredits({
-      userId,
-      amount: 200,
-      reason: "subscription_renewal",
-      stripeSubscriptionId: subId,
-      periodIndex: 0,
-    });
-    const replay = await grantSubscriptionCredits({
-      userId,
-      amount: 200,
-      reason: "subscription_renewal",
-      stripeSubscriptionId: subId,
-      periodIndex: 0,
-    });
-
-    expect(first).toBe(true);
-    expect(replay).toBe(false); // refusé par la contrainte unique, silencieusement
+    await syncSubscriptionCredits(userId, inPeriod0);
+    await syncSubscriptionCredits(userId, inPeriod0); // rejeu même période
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    expect(user?.credits).toBe(200); // et non 400
+    expect(user?.planCredits).toBe(200); // et non 400
+    expect(user?.credits).toBe(0); // le portefeuille persistant n'est pas touché
 
     const rows = await prisma.creditLedger.count({
       where: { stripeSubscriptionId: subId, reason: "subscription_renewal", periodIndex: 0 },
@@ -167,45 +186,59 @@ describeDb("crédits d'abonnement — idempotence structurelle", () => {
     expect(rows).toBe(1);
   });
 
-  it("la période suivante est bien créditée", async () => {
-    const { grantSubscriptionCredits } = await import("../src/lib/credits");
-    const ok = await grantSubscriptionCredits({
-      userId,
-      amount: 200,
-      reason: "subscription_renewal",
-      stripeSubscriptionId: subId,
-      periodIndex: 1,
-    });
-    expect(ok).toBe(true);
+  it("période suivante : REMET à l'allocation (non cumulatif), le reliquat est perdu", async () => {
+    const { syncSubscriptionCredits, debit } = await import("../src/lib/credits");
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    expect(user?.credits).toBe(400);
+    // Consomme 50 sur l'allocation de la période 0 (200 -> 150).
+    await debit(userId, 50, "consume_test");
+    let user = await prisma.user.findUnique({ where: { id: userId } });
+    expect(user?.planCredits).toBe(150);
+
+    // Période 1 : reset à 200 — surtout PAS 150 + 200 = 350.
+    await syncSubscriptionCredits(userId, inPeriod1);
+    user = await prisma.user.findUnique({ where: { id: userId } });
+    expect(user?.planCredits).toBe(200);
   });
 
-  it("un upgrade en cours de cycle n'est pas avalé par la déduplication", async () => {
-    const { grantSubscriptionCredits } = await import("../src/lib/credits");
+  it("upgrade en cours de cycle : ajoute le différentiel, idempotent", async () => {
+    const { topUpPlanCredits } = await import("../src/lib/credits");
 
-    // Même abonnement, même période que le renouvellement déjà versé : seul le
-    // `reason` distinct permet au différentiel de passer.
-    const topup = await grantSubscriptionCredits({
+    await topUpPlanCredits({
       userId,
       amount: 110, // Intensif (200) - Praticien (90)
-      reason: "plan_upgrade_topup",
       stripeSubscriptionId: subId,
       periodIndex: 1,
     });
-    expect(topup).toBe(true);
-
-    const replay = await grantSubscriptionCredits({
+    await topUpPlanCredits({
       userId,
       amount: 110,
-      reason: "plan_upgrade_topup",
       stripeSubscriptionId: subId,
       periodIndex: 1,
-    });
-    expect(replay).toBe(false);
+    }); // rejeu : refusé par la contrainte unique
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    expect(user?.credits).toBe(510); // 400 + 110, une seule fois
+    expect(user?.planCredits).toBe(310); // 200 + 110, une seule fois
+  });
+
+  it("débit à deux étages : puise dans le forfait AVANT le portefeuille", async () => {
+    const { debit, grant } = await import("../src/lib/credits");
+
+    await grant(userId, 30, "purchase"); // portefeuille : 0 -> 30 (forfait toujours 310)
+    await debit(userId, 320, "consume_test"); // 310 forfait + 10 portefeuille
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    expect(user?.planCredits).toBe(0);
+    expect(user?.credits).toBe(20); // 30 - 10 : les crédits achetés servent en dernier
+  });
+
+  it("fin d'accès : remet le forfait à 0 sans toucher au portefeuille", async () => {
+    const { topUpPlanCredits, zeroPlanCredits } = await import("../src/lib/credits");
+
+    await topUpPlanCredits({ userId, amount: 50, stripeSubscriptionId: subId, periodIndex: 2 });
+    await zeroPlanCredits(userId);
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    expect(user?.planCredits).toBe(0);
+    expect(user?.credits).toBe(20); // portefeuille intact
   });
 });

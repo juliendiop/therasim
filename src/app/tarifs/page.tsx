@@ -35,7 +35,11 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Quelle différence entre un pack de crédits et un abonnement ?",
-    a: "Un pack de crédits est un achat unique : les crédits s'ajoutent à votre solde et ne périment pas. Un abonnement est mensuel et récurrent : il recharge vos crédits chaque mois et vous donne accès à un ou plusieurs domaines cliniques au choix, en plus du domaine gratuit offert à l'inscription.",
+    a: "Un pack de crédits est un achat unique : les crédits s'ajoutent à votre solde et ne périment pas. Un abonnement est mensuel et récurrent : vos crédits d'abonnement sont renouvelés chaque mois et vous donnent accès à un ou plusieurs domaines cliniques au choix, en plus du domaine gratuit offert à l'inscription.",
+  },
+  {
+    q: "Les crédits de mon abonnement se cumulent-ils d'un mois sur l'autre ?",
+    a: "Non. Les crédits d'un forfait sont une allocation mensuelle : ils sont remis à leur valeur chaque mois et ne sont pas reportés (le solde non utilisé d'un mois n'est pas ajouté au mois suivant). À la fin de l'abonnement, cette allocation revient à zéro. En revanche, les crédits que vous avez achetés en packs, eux, ne périment jamais et restent acquis.",
   },
   {
     q: "Puis-je résilier à tout moment ?",
@@ -128,6 +132,7 @@ export default async function TarifsPage() {
                   <li className="flex items-start gap-1.5">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
                     {p.monthlyCredits} crédits chaque mois
+                    <span className="text-[var(--muted)]">(non reportés)</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />

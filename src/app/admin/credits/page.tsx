@@ -36,7 +36,7 @@ export default async function AdminCreditsPage({
       },
       orderBy: [{ credits: "asc" }, { email: "asc" }],
       take: 200,
-      select: { id: true, email: true, credits: true, role: true, tenantId: true },
+      select: { id: true, email: true, credits: true, planCredits: true, role: true, tenantId: true },
     }),
   ]);
 
@@ -139,11 +139,18 @@ export default async function AdminCreditsPage({
                     <td className="px-4 py-2 text-right">
                       <span
                         className={`tabular font-semibold ${
-                          u.credits <= 3 ? "text-red-600" : "text-[var(--foreground)]"
+                          u.credits + u.planCredits <= 3
+                            ? "text-red-600"
+                            : "text-[var(--foreground)]"
                         }`}
                       >
-                        {u.credits}
+                        {u.credits + u.planCredits}
                       </span>
+                      {u.planCredits > 0 && (
+                        <span className="ml-1 text-xs text-[var(--muted)]">
+                          (dont {u.planCredits} forfait)
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-2">
                       <AddCreditsButton userId={u.id} />

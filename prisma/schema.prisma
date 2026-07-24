@@ -54,7 +54,14 @@ model User {
   passwordHash String?  @map("password_hash") // mot de passe optionnel (sinon lien magique)
   consentAt    DateTime? @map("consent_at") // horodatage du consentement RGPD à l'inscription
   // Portefeuille de crédits IA (mini-scènes / entretiens). Drills QCM = gratuits.
+  // `credits` = portefeuille PERSISTANT : crédits achetés en packs (vrai argent) +
+  // crédits gratuits (bienvenue / plancher mensuel). Jamais remis à zéro.
   credits            Int       @default(0)
+  // `planCredits` = allocation de l'abonnement/essai pour la période EN COURS.
+  // Non cumulatif : remis à la valeur du forfait à chaque nouvelle période (le
+  // reliquat non consommé est perdu), et remis à 0 à la fin de l'accès. Séparé de
+  // `credits` pour ne JAMAIS confisquer un crédit acheté. Débit : planCredits d'abord.
+  planCredits        Int       @default(0) @map("plan_credits")
   // null = jamais initialisé (déclenche le pack de bienvenue au 1er accès) ;
   // sinon = date du dernier rafraîchissement (sert à la recharge mensuelle).
   creditsRefreshedAt DateTime? @map("credits_refreshed_at")
@@ -118,7 +125,7 @@ model CreditLedger {
   userId       String   @map("user_id") @db.Uuid
   delta        Int // +octroi / -consommation
   balanceAfter Int      @map("balance_after")
-  reason       String // 'welcome' | 'monthly' | 'consume_miniscene' | 'consume_simulation' | 'refund' | 'admin_grant' | 'purchase' | 'subscription_renewal' | 'beta_initial' | 'plan_upgrade_topup'
+  reason       String // 'welcome' | 'monthly' | 'consume_miniscene' | 'consume_simulation' | 'refund' | 'admin_grant' | 'purchase' | 'subscription_renewal' | 'plan_upgrade_topup' | 'plan_expired'
   meta         Json?
   createdAt    DateTime @default(now()) @map("created_at")
 

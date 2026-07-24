@@ -5,7 +5,7 @@ import "server-only";
 import type Stripe from "stripe";
 import { prisma } from "./prisma";
 import { getConfig } from "./config";
-import { grant, grantSubscriptionCredits } from "./credits";
+import { grant, syncSubscriptionCredits, topUpPlanCredits, zeroPlanCredits } from "./credits";
 import { CREDIT_PACKS } from "./credits";
 import { isSubscriptionEntitled } from "./entitlements";
 import { periodIndexFor } from "./billing-period";
@@ -232,22 +232,16 @@ export async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
 
   // Ancre de facturation : requise pour un periodIndex déterministe. Les abonnements
   // antérieurs à la bêta n'en ont pas -> on la rétablit depuis Stripe, une fois.
-  const anchor = await ensurePeriodAnchor(userSub.stripeSubscriptionId, userSub.periodAnchorAt);
+  await ensurePeriodAnchor(userSub.stripeSubscriptionId, userSub.periodAnchorAt);
 
   // Période FACTURÉE (et non « maintenant ») : c'est elle qui identifie l'allocation.
   const lineStart = invoice.lines?.data?.[0]?.period?.start;
   const periodDate = typeof lineStart === "number" ? new Date(lineStart * 1000) : new Date();
 
-  // Idempotence structurelle : la contrainte unique arbitre. Un rejeu de l'événement,
-  // ou le rechargement paresseux ayant déjà couvert cette période, deviennent des no-op.
-  await grantSubscriptionCredits({
-    userId: userSub.userId,
-    amount: plan.monthlyCredits,
-    reason: "subscription_renewal",
-    stripeSubscriptionId: userSub.stripeSubscriptionId,
-    periodIndex: periodIndexFor(anchor, periodDate),
-    meta: { invoiceId: invoice.id, planId: plan.id, source: "invoice" },
-  });
+  // Réinitialise l'allocation de forfait pour la période facturée (non cumulatif).
+  // Idempotence structurelle : un rejeu de l'événement, ou la synchro paresseuse
+  // ayant déjà servi cette période, deviennent des no-op.
+  await syncSubscriptionCredits(userSub.userId, periodDate);
 
   // Affiliation : commission niveau 1/2 sur ce paiement d'abonnement encaissé
   // (1er paiement ET chaque renouvellement -> commission "à vie"). Best-effort :
@@ -429,16 +423,9 @@ export async function handleSubscriptionCreated(event: Stripe.Event): Promise<vo
     },
   });
 
-  if (plan.monthlyCredits > 0 && isSubscriptionEntitled(sub.status)) {
-    await grantSubscriptionCredits({
-      userId: user.id,
-      amount: plan.monthlyCredits,
-      reason: "subscription_renewal",
-      stripeSubscriptionId: sub.id,
-      periodIndex: periodIndexFor(anchor, new Date()),
-      meta: { planId: plan.id, source: "subscription.created", status: sub.status },
-    });
-  }
+  // Alloue les crédits de la période courante (essai `trialing` inclus, où aucune
+  // facture n'est émise). Non cumulatif : SET à l'allocation du forfait.
+  await syncSubscriptionCredits(user.id);
 }
 
 /**
@@ -474,23 +461,30 @@ export async function handleSubscriptionUpdated(event: Stripe.Event): Promise<vo
     },
   });
 
-  // Changement de forfait en cours de cycle : l'allocation de la période courante a
-  // déjà été versée sous `subscription_renewal`, la contrainte unique la bloquerait.
-  // Le différentiel a donc son propre `reason`, donc sa propre clé — sans quoi un
-  // abonné qui passe Essentiel -> Intensif paierait sans rien recevoir avant le cycle suivant.
-  if (newPlan && newPlan.id !== local.planId && isSubscriptionEntitled(sub.status)) {
+  if (!isSubscriptionEntitled(sub.status)) {
+    // Statut devenu non entitled (canceled/incomplete_expired…) : fin d'accès,
+    // l'allocation de forfait tombe à 0. Le portefeuille acheté reste intact.
+    await zeroPlanCredits(local.userId);
+  } else if (newPlan && newPlan.id !== local.planId) {
+    // Changement de forfait EN COURS de cycle : l'allocation de la période courante
+    // a déjà été (ré)initialisée sous `subscription_renewal`. On ajoute seulement le
+    // différentiel — sinon un abonné qui passe Essentiel -> Intensif paierait sans
+    // rien recevoir avant le cycle suivant. Un downgrade ne retire rien de la période
+    // en cours ; le plafond réduit s'applique au renouvellement (reset au nouveau forfait).
     const oldPlan = await prisma.subscriptionPlan.findUnique({ where: { id: local.planId } });
     const diff = newPlan.monthlyCredits - (oldPlan?.monthlyCredits ?? 0);
     if (diff > 0) {
-      await grantSubscriptionCredits({
+      await topUpPlanCredits({
         userId: local.userId,
         amount: diff,
-        reason: "plan_upgrade_topup",
         stripeSubscriptionId: sub.id,
         periodIndex: periodIndexFor(anchor, new Date()),
         meta: { from: oldPlan?.key ?? local.planId, to: newPlan.key, diff },
       });
     }
+  } else {
+    // Mise à jour ordinaire (statut/période) : (ré)alloue la période courante au besoin.
+    await syncSubscriptionCredits(local.userId);
   }
 }
 
@@ -540,6 +534,10 @@ export async function handleSubscriptionDeleted(event: Stripe.Event): Promise<vo
     .catch(() => null);
 
   if (!local) return; // déjà absent localement
+
+  // Fin d'accès : l'allocation de forfait tombe à 0 (le reliquat non consommé est
+  // perdu). Le portefeuille `credits` (packs achetés + gratuits) reste intact.
+  await zeroPlanCredits(local.userId);
 
   // `isBetaTester` est conservé volontairement : c'est un marqueur HISTORIQUE, utile
   // pour segmenter les stats et les relances. L'accès, lui, est déjà révoqué par le

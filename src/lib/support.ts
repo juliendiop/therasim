@@ -88,7 +88,7 @@ async function captureContext(userId: string, page: string | null): Promise<Tick
     appVersion: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? null,
     plan: plan?.label ?? null,
     subscriptionStatus: sub?.status ?? null,
-    credits: user?.credits ?? null,
+    credits: user ? user.credits + user.planCredits : null,
   };
 }
 

@@ -61,9 +61,27 @@ function monthIndex(d: Date): number {
 }
 
 /**
- * Initialise (pack de bienvenue) puis recharge mensuellement le portefeuille,
- * de façon paresseuse : appelé à chaque accès, n'écrit qu'au besoin.
- * Retourne le solde courant.
+ * Vue détaillée du solde : portefeuille persistant (packs + gratuits), allocation
+ * de forfait de la période en cours, et total. `total` est ce qu'on affiche.
+ */
+export type WalletView = { wallet: number; plan: number; total: number };
+
+/** Lit le solde détaillé, sans rafraîchissement. */
+export async function getWalletView(userId: string): Promise<WalletView> {
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { credits: true, planCredits: true },
+  });
+  const wallet = u?.credits ?? 0;
+  const plan = u?.planCredits ?? 0;
+  return { wallet, plan, total: wallet + plan };
+}
+
+/**
+ * Initialise (pack de bienvenue) puis recharge mensuellement le PORTEFEUILLE
+ * gratuit, de façon paresseuse : appelé à chaque accès, n'écrit qu'au besoin.
+ * N'agit que sur `credits` (portefeuille) ; l'allocation de forfait vit dans
+ * `planCredits` (voir syncSubscriptionCredits). Retourne le TOTAL courant.
  */
 export async function syncWallet(userId: string): Promise<number> {
   const s = await creditSettings();
@@ -82,13 +100,14 @@ export async function syncWallet(userId: string): Promise<number> {
       delta = Math.max(0, s.monthly - u.credits);
       reason = "monthly";
     } else {
-      return u.credits; // déjà à jour ce mois-ci
+      return u.credits + u.planCredits; // déjà à jour ce mois-ci
     }
 
-    const balanceAfter = u.credits + delta;
+    const newWallet = u.credits + delta;
+    const balanceAfter = newWallet + u.planCredits; // ledger = TOTAL après mouvement
     await tx.user.update({
       where: { id: userId },
-      data: { credits: balanceAfter, creditsRefreshedAt: now },
+      data: { credits: newWallet, creditsRefreshedAt: now },
     });
     if (delta !== 0) {
       await tx.creditLedger.create({
@@ -99,16 +118,17 @@ export async function syncWallet(userId: string): Promise<number> {
   });
 }
 
-/** Solde courant (sans rafraîchissement). */
+/** Solde TOTAL courant (portefeuille + forfait), sans rafraîchissement. */
 export async function getCredits(userId: string): Promise<number> {
-  const u = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { credits: true },
-  });
-  return u?.credits ?? 0;
+  const { total } = await getWalletView(userId);
+  return total;
 }
 
-/** Débite le portefeuille de façon atomique. Lève InsufficientCreditsError si solde insuffisant. */
+/**
+ * Débite le solde de façon atomique, en puisant D'ABORD dans l'allocation de
+ * forfait (périssable : autant l'utiliser avant qu'elle n'expire), PUIS dans le
+ * portefeuille persistant. Lève InsufficientCreditsError si le total est insuffisant.
+ */
 export async function debit(
   userId: string,
   amount: number,
@@ -119,57 +139,139 @@ export async function debit(
   return prisma.$transaction(async (tx) => {
     const u = await tx.user.findUnique({ where: { id: userId } });
     if (!u) throw new InsufficientCreditsError("compte introuvable");
-    if (u.credits < amount) throw new InsufficientCreditsError("solde insuffisant");
-    const balanceAfter = u.credits - amount;
-    await tx.user.update({ where: { id: userId }, data: { credits: balanceAfter } });
+    const total = u.credits + u.planCredits;
+    if (total < amount) throw new InsufficientCreditsError("solde insuffisant");
+
+    const fromPlan = Math.min(u.planCredits, amount); // forfait d'abord
+    const fromWallet = amount - fromPlan;
+    const balanceAfter = total - amount;
+    await tx.user.update({
+      where: { id: userId },
+      data: { planCredits: u.planCredits - fromPlan, credits: u.credits - fromWallet },
+    });
     await tx.creditLedger.create({
       data: {
         userId,
         delta: -amount,
         balanceAfter,
         reason,
-        meta: (meta ?? undefined) as Prisma.InputJsonValue | undefined,
+        meta: { ...(meta ?? {}), fromPlan, fromWallet } as Prisma.InputJsonValue,
       },
     });
     return balanceAfter;
   });
 }
 
-// --- Crédits d'abonnement : octroi idempotent par période -------------------
-
-/** Nombre max de périodes rattrapées en une fois (garde-fou contre une ancre corrompue). */
-const MAX_CATCHUP_PERIODS = 12;
+// --- Crédits de forfait : allocation NON cumulative par période -------------
+//
+// Modèle « use-it-or-lose-it » : `planCredits` porte l'allocation de la période
+// EN COURS. À chaque nouvelle période, on la REMET à la valeur du forfait (le
+// reliquat non consommé est perdu — jamais additionné). À la fin de l'accès, elle
+// tombe à 0. Le portefeuille `credits` (packs achetés + gratuits) n'est jamais touché.
 
 /**
- * Crédite l'allocation d'UNE période d'abonnement, de façon STRUCTURELLEMENT
- * idempotente : la contrainte unique `(stripeSubscriptionId, reason, periodIndex)`
- * fait foi. Peu importe qui déclenche en premier — le webhook `invoice.paid` ou le
- * rechargement paresseux — ni combien de fois Stripe rejoue : le doublon est refusé
- * par la base, pas par une coordination entre deux chemins de code.
+ * (Ré)initialise l'allocation de forfait pour UNE période, de façon
+ * STRUCTURELLEMENT idempotente : la contrainte unique
+ * `(stripeSubscriptionId, "subscription_renewal", periodIndex)` garantit un seul
+ * reset par période. Un rejeu Stripe, ou un second rechargement paresseux dans la
+ * même période, deviennent des no-op — donc on ne « recharge » jamais des crédits
+ * déjà consommés au sein d'une période.
  *
- * Retourne `true` si l'octroi a eu lieu, `false` si la période était déjà créditée.
+ * SET (planCredits := allocation), pas ADD : c'est ce qui rend le modèle non
+ * cumulatif. Retourne `true` si le reset a eu lieu, `false` si la période l'était déjà.
  */
-export async function grantSubscriptionCredits(opts: {
+async function grantPlanPeriod(opts: {
   userId: string;
-  amount: number;
-  reason: "subscription_renewal" | "plan_upgrade_topup";
+  allocation: number;
   stripeSubscriptionId: string;
   periodIndex: number;
-  meta?: Record<string, unknown>;
+  planId: string;
+  status: string;
+  source: string;
 }): Promise<boolean> {
-  if (opts.amount <= 0) return false;
   try {
     await prisma.$transaction(async (tx) => {
       const u = await tx.user.findUnique({ where: { id: opts.userId } });
       if (!u) throw new Error("compte introuvable");
-      const balanceAfter = u.credits + opts.amount;
+      const forfeited = u.planCredits; // reliquat de la période précédente, perdu
+      const balanceAfter = u.credits + opts.allocation; // total après reset
       // create AVANT update : une violation d'unicité annule toute la transaction.
+      await tx.creditLedger.create({
+        data: {
+          userId: opts.userId,
+          delta: opts.allocation - forfeited, // variation du total (allocation remplace le reliquat)
+          balanceAfter,
+          reason: "subscription_renewal",
+          stripeSubscriptionId: opts.stripeSubscriptionId,
+          periodIndex: opts.periodIndex,
+          meta: {
+            allocation: opts.allocation,
+            forfeited,
+            planId: opts.planId,
+            source: opts.source,
+            status: opts.status,
+          } as Prisma.InputJsonValue,
+        },
+      });
+      await tx.user.update({
+        where: { id: opts.userId },
+        data: { planCredits: opts.allocation },
+      });
+    });
+    return true;
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return false; // période déjà servie : no-op silencieux
+    }
+    throw e;
+  }
+}
+
+/**
+ * Remet l'allocation de forfait à 0 (fin d'accès : essai terminé, abonnement
+ * résilié/expiré). N'agit que si `planCredits > 0`, donc idempotent et sans écriture
+ * superflue à chaque accès. Le portefeuille `credits` reste intact.
+ */
+export async function zeroPlanCredits(
+  userId: string,
+  reason: "plan_expired" = "plan_expired",
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const u = await tx.user.findUnique({ where: { id: userId } });
+    if (!u || u.planCredits === 0) return;
+    await tx.user.update({ where: { id: userId }, data: { planCredits: 0 } });
+    await tx.creditLedger.create({
+      data: { userId, delta: -u.planCredits, balanceAfter: u.credits, reason },
+    });
+  });
+}
+
+/**
+ * Complément d'allocation lors d'un changement de forfait EN COURS de période
+ * (ex. Essentiel -> Intensif) : ajoute le différentiel à `planCredits` pour que
+ * l'abonné dispose immédiatement du plafond supérieur, sans attendre le cycle
+ * suivant. Idempotent par (sub, "plan_upgrade_topup", periodIndex).
+ */
+export async function topUpPlanCredits(opts: {
+  userId: string;
+  amount: number;
+  stripeSubscriptionId: string;
+  periodIndex: number;
+  meta?: Record<string, unknown>;
+}): Promise<void> {
+  if (opts.amount <= 0) return;
+  try {
+    await prisma.$transaction(async (tx) => {
+      const u = await tx.user.findUnique({ where: { id: opts.userId } });
+      if (!u) throw new Error("compte introuvable");
+      const newPlan = u.planCredits + opts.amount;
+      const balanceAfter = u.credits + newPlan;
       await tx.creditLedger.create({
         data: {
           userId: opts.userId,
           delta: opts.amount,
           balanceAfter,
-          reason: opts.reason,
+          reason: "plan_upgrade_topup",
           stripeSubscriptionId: opts.stripeSubscriptionId,
           periodIndex: opts.periodIndex,
           meta: (opts.meta ?? undefined) as Prisma.InputJsonValue | undefined,
@@ -177,77 +279,61 @@ export async function grantSubscriptionCredits(opts: {
       });
       await tx.user.update({
         where: { id: opts.userId },
-        data: { credits: balanceAfter },
+        data: { planCredits: newPlan },
       });
     });
-    return true;
   } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-      return false; // période déjà créditée : no-op silencieux
-    }
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return;
     throw e;
   }
 }
 
 /**
- * Recharge paresseuse des crédits de forfait, appelée à chaque accès (comme
- * `syncWallet`). Couvre l'essai (`trialing`) comme l'abonnement payant : une seule
- * règle, aucun cas particulier à la bascule trialing -> active.
+ * Synchronise l'allocation de forfait, appelée à chaque accès (comme `syncWallet`)
+ * ET par les webhooks Stripe. Une seule règle couvre l'essai (`trialing`) comme
+ * l'abonnement payant, et la fin d'accès :
+ *   - non entitled (ou forfait sans crédits) -> planCredits remis à 0 ;
+ *   - sinon -> planCredits (ré)initialisé à l'allocation de la période courante,
+ *     une seule fois par période (non cumulatif).
  *
- * Cumulatif AVEC rattrapage, pour s'aligner sur le comportement du parcours payant
- * (piloté par les factures, donc indépendant de la connexion) : un utilisateur
- * absent deux mois retrouve les allocations manquées, comme un abonné facturé.
- *
+ * `at` permet aux webhooks de viser la période FACTURÉE plutôt que « maintenant ».
  * Best-effort : ne lève jamais — un échec ici ne doit pas casser une page.
  */
-export async function syncSubscriptionCredits(userId: string): Promise<void> {
+export async function syncSubscriptionCredits(
+  userId: string,
+  at: Date = new Date(),
+): Promise<void> {
   try {
     const sub = await prisma.userSubscription.findUnique({ where: { userId } });
-    if (!sub || !isSubscriptionEntitled(sub.status)) return;
+    if (!sub || !isSubscriptionEntitled(sub.status)) {
+      await zeroPlanCredits(userId);
+      return;
+    }
 
     const plan = await prisma.subscriptionPlan.findUnique({ where: { id: sub.planId } });
-    if (!plan || plan.monthlyCredits <= 0) return;
+    if (!plan || plan.monthlyCredits <= 0) {
+      await zeroPlanCredits(userId);
+      return;
+    }
 
     const anchor = sub.periodAnchorAt ?? sub.createdAt;
-    const currentIndex = periodIndexFor(anchor, new Date());
+    const currentIndex = periodIndexFor(anchor, at);
 
-    // Dernière période déjà créditée pour CET abonnement.
-    const last = await prisma.creditLedger.findFirst({
-      where: {
-        stripeSubscriptionId: sub.stripeSubscriptionId,
-        reason: "subscription_renewal",
-      },
-      orderBy: { periodIndex: "desc" },
-      select: { periodIndex: true },
+    await grantPlanPeriod({
+      userId,
+      allocation: plan.monthlyCredits,
+      stripeSubscriptionId: sub.stripeSubscriptionId,
+      periodIndex: currentIndex,
+      planId: plan.id,
+      status: sub.status,
+      source: "sync",
     });
-
-    const from = last?.periodIndex == null ? 0 : last.periodIndex + 1;
-    if (from > currentIndex) return; // à jour
-
-    let start = from;
-    if (currentIndex - start + 1 > MAX_CATCHUP_PERIODS) {
-      start = currentIndex - MAX_CATCHUP_PERIODS + 1;
-      console.warn(
-        `[credits] rattrapage tronqué pour ${sub.stripeSubscriptionId} : ${from}..${currentIndex}`,
-      );
-    }
-
-    for (let i = start; i <= currentIndex; i++) {
-      await grantSubscriptionCredits({
-        userId,
-        amount: plan.monthlyCredits,
-        reason: "subscription_renewal",
-        stripeSubscriptionId: sub.stripeSubscriptionId,
-        periodIndex: i,
-        meta: { planId: plan.id, source: "lazy", status: sub.status },
-      });
-    }
   } catch (e) {
-    console.error("[credits] échec du rechargement d'abonnement", userId, e);
+    console.error("[credits] échec de la synchro d'abonnement", userId, e);
   }
 }
 
-/** Crédite le portefeuille (octroi admin, remboursement, achat). */
+/** Crédite le PORTEFEUILLE persistant (octroi admin, remboursement, achat de pack). */
 export async function grant(
   userId: string,
   amount: number,
@@ -258,8 +344,9 @@ export async function grant(
   return prisma.$transaction(async (tx) => {
     const u = await tx.user.findUnique({ where: { id: userId } });
     if (!u) throw new Error("compte introuvable");
-    const balanceAfter = u.credits + amount;
-    await tx.user.update({ where: { id: userId }, data: { credits: balanceAfter } });
+    const newWallet = u.credits + amount;
+    const balanceAfter = newWallet + u.planCredits; // ledger = TOTAL après mouvement
+    await tx.user.update({ where: { id: userId }, data: { credits: newWallet } });
     await tx.creditLedger.create({
       data: {
         userId,
