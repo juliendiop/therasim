@@ -20,6 +20,7 @@ import {
 import { getSessionUser } from "@/lib/auth";
 import DemoDrill from "./demo-drill";
 import Track from "./_components/track";
+import TestimonialsSection from "./_components/testimonials-section";
 
 export const dynamic = "force-dynamic";
 
@@ -242,6 +243,9 @@ export default async function LandingPage() {
           </p>
         </div>
       </section>
+
+      {/* ---- Témoignages (uniquement ceux validés/publiés ; masqué sinon) ---- */}
+      <TestimonialsSection />
 
       {/* ---- Bandeau final ---- */}
       <section className="mt-16 rounded-2xl bg-[var(--accent)] px-6 py-10 text-center text-white">

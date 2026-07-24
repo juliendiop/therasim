@@ -7,6 +7,7 @@ import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { generateBetaCode } from "@/lib/beta-code";
 import { BETA_PLAN_KEY, BETA_TRIAL_DAYS, BETA_INVITE_EXPIRY_DAYS } from "@/lib/beta-constants";
 import { isEmailConfigured, sendBetaInvitation } from "@/lib/email";
+import { setBetaImprovements } from "@/lib/beta-bilan";
 
 export type InviteResult = { ok: boolean; message: string } | null;
 
@@ -103,5 +104,16 @@ export async function revokeBetaInviteAction(formData: FormData): Promise<void> 
     where: { id, status: "PENDING" },
     data: { status: "REVOKED" },
   });
+  revalidatePath("/admin/beta");
+}
+
+/**
+ * Enregistre les « améliorations concrètes » (une par ligne) affichées dans l'email
+ * de bilan J+21. Vide = le paragraphe correspondant est masqué dans l'email.
+ */
+export async function saveBetaImprovementsAction(formData: FormData): Promise<void> {
+  await requireSuperAdmin();
+  const text = String(formData.get("improvements") ?? "");
+  await setBetaImprovements(text);
   revalidatePath("/admin/beta");
 }

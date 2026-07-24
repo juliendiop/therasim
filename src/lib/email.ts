@@ -421,6 +421,106 @@ export async function sendBetaFeedbackRequest(
   });
 }
 
+/**
+ * Relance « bilan » (J+21) : fin de la phase active du pilote. Le paragraphe des
+ * améliorations n'apparaît que si l'admin en a saisi (sinon masqué). Le bouton mène
+ * au bilan in-app /beta/bilan. Déclenchée par le cron quotidien `beta-bilan`.
+ */
+export async function sendBetaBilan(
+  to: string,
+  input: {
+    firstName: string | null;
+    planLabel: string;
+    monthlyCredits: number | null;
+    endsAt: Date | null;
+    improvements: string[];
+    ctaUrl: string;
+  },
+): Promise<void> {
+  const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
+  const credits =
+    input.monthlyCredits !== null
+      ? `, avec ${input.monthlyCredits} crédits renouvelés chaque mois (non reportés)`
+      : "";
+  const improvements =
+    input.improvements.length > 0
+      ? `<p>Grâce aux premiers testeurs, nous avons déjà pu améliorer :</p>
+         <ul style="padding-left:18px;margin:0 0 12px">
+           ${input.improvements.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}
+         </ul>`
+      : "";
+
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1d23;line-height:1.6">
+    <h2 style="color:#0e5a54">Votre bilan de la phase pilote</h2>
+    <p>${hello}</p>
+    <p>La phase active du programme pilote se termine aujourd'hui.</p>
+    <p>Votre accès, lui, continue bien jusqu'au <b>${frDate(input.endsAt)}</b>. Vous conservez
+       le forfait <b>${escapeHtml(input.planLabel)}</b>${credits}, et aucune carte bancaire n'est
+       enregistrée.</p>
+    ${improvements}
+    <p>J'aimerais maintenant recueillir votre bilan :</p>
+    <ul style="padding-left:18px;margin:0 0 12px">
+      <li>Qu'est-ce que MELETA vous a réellement apporté ?</li>
+      <li>Dans quelle situation l'application vous a-t-elle paru la plus utile ?</li>
+      <li>Qu'est-ce qui reste peu crédible, frustrant ou inutile ?</li>
+      <li>Vous sentez-vous plus à l'aise qu'avant sur certaines compétences ?</li>
+      <li>Recommanderiez-vous MELETA à un collègue (note de 0 à 10) ? Pourquoi ?</li>
+    </ul>
+    <p style="margin:24px 0">
+      <a href="${input.ctaUrl}" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
+        Donner mon bilan
+      </a>
+    </p>
+    <p>Le questionnaire prend environ quatre minutes. Votre réponse décidera directement des
+       prochaines évolutions du produit.</p>
+    <p>Merci sincèrement pour votre implication,<br>Julien</p>
+  </div>`;
+
+  await send(to, "MELETA — votre bilan de la phase pilote", html, { replyTo: CONTACT_EMAIL });
+}
+
+/**
+ * Relance « témoignage » : envoyée aux promoteurs (NPS 8-10) juste après leur bilan.
+ * Le bouton mène au formulaire in-app /beta/temoignage (3 phrases à compléter + choix
+ * du mode d'affichage). Rien n'est publié sans validation ultérieure.
+ */
+export async function sendBetaTestimonialRequest(
+  to: string,
+  input: { firstName: string | null; ctaUrl: string },
+): Promise<void> {
+  const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
+
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1d23;line-height:1.6">
+    <h2 style="color:#0e5a54">Un grand merci — et une petite demande</h2>
+    <p>${hello}</p>
+    <p>Merci pour votre retour sur MELETA.</p>
+    <p>Ce que vous en dites décrit exactement ce que j'espérais rendre possible : un espace où
+       l'on peut pratiquer sans pression, comprendre ses automatismes et gagner progressivement
+       en assurance.</p>
+    <p>M'autoriseriez-vous à partager votre témoignage ? Vous pouvez simplement compléter ces
+       trois phrases :</p>
+    <ul style="padding-left:18px;margin:0 0 12px">
+      <li>Avant MELETA, je…</li>
+      <li>En utilisant MELETA, j'ai…</li>
+      <li>Aujourd'hui, je…</li>
+    </ul>
+    <p style="margin:24px 0">
+      <a href="${input.ctaUrl}" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
+        Laisser mon témoignage
+      </a>
+    </p>
+    <p>Vous pourrez choisir l'affichage qui vous convient : prénom et profession, prénom
+       uniquement, ou totalement anonyme. <b>Rien ne sera publié sans votre accord explicite.</b></p>
+    <p>Merci encore,<br>Julien</p>
+  </div>`;
+
+  await send(to, "MELETA — m'autoriseriez-vous à partager votre témoignage ?", html, {
+    replyTo: CONTACT_EMAIL,
+  });
+}
+
 /** Email de fin d'essai bêta (déclenché par Stripe 3 jours avant le terme). */
 export async function sendBetaTrialEnd(
   to: string,

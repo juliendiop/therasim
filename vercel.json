@@ -13,6 +13,10 @@
     {
       "path": "/api/cron/beta-feedback",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/beta-bilan",
+      "schedule": "0 11 * * *"
     }
   ]
 }

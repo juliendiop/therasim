@@ -75,6 +75,9 @@ model User {
   // --- Bêta fermée (invitations) ---
   isBetaTester Boolean @default(false) @map("is_beta_tester") // segmentation stats/emails
   betaCohort   String? @map("beta_cohort") // ex. 'beta-2026-01'
+  // Relance témoignage (promoteurs NPS 8-10) : posé à l'envoi de la sollicitation,
+  // déclenchée à la soumission du bilan. Empêche un second envoi.
+  testimonialInviteAt DateTime? @map("testimonial_invite_at")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])
@@ -660,6 +663,10 @@ model BetaInvite {
   // atteint, l'invitation reste candidate les jours suivants.
   feedbackEmailAt DateTime? @map("feedback_email_at")
 
+  // Relance « bilan » de fin de phase active : envoyée à J+21 de l'activation.
+  // Marqueur posé à l'envoi (anti-doublon sur relance du cron).
+  bilanEmailAt DateTime? @map("bilan_email_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -684,4 +691,48 @@ model BetaFeedback {
   @@index([createdAt])
   @@index([userId])
   @@map("beta_feedback")
+}
+
+// Bilan de fin de phase active (J+21) : 4 questions ouvertes + score de recommandation
+// (NPS 0..10) et sa justification. Le NPS 8-10 déclenche la relance témoignage.
+model BetaBilan {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  cohort    String?
+  q1        String // ce que MELETA a réellement apporté
+  q2        String // situation où l'app a paru la plus utile
+  q3        String // ce qui reste peu crédible / frustrant / inutile
+  q4        String // sentiment d'aisance accrue sur certaines compétences
+  nps       Int // 0..10 : probabilité de recommander
+  npsWhy    String   @map("nps_why") // pourquoi cette note
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([nps])
+  @@map("beta_bilan")
+}
+
+// Témoignage recueilli auprès d'un promoteur (NPS 8-10). Publié sur le site UNIQUEMENT
+// après validation admin, selon le mode d'affichage choisi par l'auteur.
+model Testimonial {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  beforeText  String   @map("before_text") // « Avant MELETA, je… »
+  duringText  String   @map("during_text") // « En utilisant MELETA, j'ai… »
+  afterText   String   @map("after_text") //  « Aujourd'hui, je… »
+  // 'name_profession' | 'first_name' | 'anonymous' — choix d'affichage de l'auteur.
+  displayMode String   @map("display_mode")
+  firstName   String?  @map("first_name") // instantané, pour l'affichage public
+  profession  String? // saisie facultative (mode 'name_profession')
+  // 'pending' | 'published' | 'rejected' — publication après validation admin.
+  status      String   @default("pending")
+  createdAt   DateTime @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([status, createdAt])
+  @@index([userId])
+  @@map("testimonials")
 }

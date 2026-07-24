@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { FlaskConical, MessageSquareHeart } from "lucide-react";
+import { FlaskConical, MessageSquareHeart, ClipboardCheck, Quote } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { parseBetaInviteStatus, BETA_INVITE_STATUS_LABEL } from "@/lib/beta-status";
-import { revokeBetaInviteAction } from "./actions";
+import { getBetaImprovements } from "@/lib/beta-bilan";
+import { revokeBetaInviteAction, saveBetaImprovementsAction } from "./actions";
 import InviteForm from "./invite-form";
 import ResendButton from "./resend-button";
 
@@ -21,10 +22,10 @@ function fmt(d: Date | null): string {
 }
 
 export default async function AdminBetaPage() {
-  const invites = await prisma.betaInvite.findMany({
-    orderBy: [{ createdAt: "desc" }],
-    take: 300,
-  });
+  const [invites, improvements] = await Promise.all([
+    prisma.betaInvite.findMany({ orderBy: [{ createdAt: "desc" }], take: 300 }),
+    getBetaImprovements(),
+  ]);
 
   // Utilisateurs et abonnements des invitations réclamées, en 2 requêtes plutôt
   // qu'une par ligne.
@@ -58,13 +59,42 @@ export default async function AdminBetaPage() {
           (<code className="rounded bg-[var(--surface-tint)] px-1">intensif</code>) — son Price ID
           se règle dans Facturation.
         </p>
-        <Link
-          href="/admin/beta/feedback"
-          className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)] hover:underline"
-        >
-          <MessageSquareHeart className="h-4 w-4" /> Voir les impressions à chaud recueillies
-        </Link>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-sm font-medium text-[var(--accent)]">
+          <Link href="/admin/beta/feedback" className="inline-flex items-center gap-1.5 hover:underline">
+            <MessageSquareHeart className="h-4 w-4" /> Impressions à chaud
+          </Link>
+          <Link href="/admin/beta/bilan" className="inline-flex items-center gap-1.5 hover:underline">
+            <ClipboardCheck className="h-4 w-4" /> Bilans J+21
+          </Link>
+          <Link href="/admin/beta/temoignages" className="inline-flex items-center gap-1.5 hover:underline">
+            <Quote className="h-4 w-4" /> Témoignages
+          </Link>
+        </div>
       </div>
+
+      {/* Améliorations affichées dans l'email de bilan J+21 (masquées si vide). */}
+      <form
+        action={saveBetaImprovementsAction}
+        className="rounded-xl border border-[var(--border)] bg-white p-4"
+      >
+        <label className="text-sm font-semibold">
+          Améliorations concrètes (email de bilan J+21)
+        </label>
+        <p className="mt-0.5 text-xs text-[var(--muted)]">
+          Une par ligne. Elles apparaissent dans l&apos;email de bilan. Laisser vide masque le
+          paragraphe.
+        </p>
+        <textarea
+          name="improvements"
+          rows={3}
+          defaultValue={improvements.join("\n")}
+          placeholder={"Feedback plus précis sur les reformulations\nNouveau domaine « deuil »\n…"}
+          className="mt-2 w-full rounded-lg border border-[var(--border)] p-2.5 text-sm"
+        />
+        <button className="mt-2 rounded-lg bg-[var(--accent)] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]">
+          Enregistrer
+        </button>
+      </form>
 
       <section>
         <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
