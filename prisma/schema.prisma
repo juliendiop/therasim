@@ -649,6 +649,11 @@ model BetaInvite {
   // distinguer « code créé » de « code envoyé », et de relancer en connaissance de cause.
   emailSentAt DateTime? @map("email_sent_at")
 
+  // Relance J+2 « sans activité » (envoyée ~48 h après l'invitation, si aucun exercice
+  // n'a été lancé). Marqueur posé à l'unique traitement de l'invitation par le cron :
+  // garantit un envoi au plus, qu'on ait relancé ou décidé de ne pas le faire (activité détectée).
+  nudgeEmailAt DateTime? @map("nudge_email_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

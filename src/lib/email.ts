@@ -330,6 +330,57 @@ export async function sendBetaMidTrial(
   await send(to, "MELETA — trois questions à mi-parcours", html, { replyTo: CONTACT_EMAIL });
 }
 
+/**
+ * Relance J+2 : envoyée ~48 h après l'invitation, uniquement aux invités qui n'ont
+ * encore lancé AUCUN exercice (activés ou non). Le bouton et la date s'adaptent :
+ * un invité déjà activé est renvoyé vers son espace avec sa date de fin d'essai ; un
+ * invité qui n'a pas encore activé est renvoyé vers son lien d'activation avec la date
+ * d'expiration de l'invitation. Déclenchée par le cron quotidien `beta-nudge`.
+ */
+export async function sendBetaNudge(
+  to: string,
+  input: {
+    firstName: string | null;
+    ctaUrl: string;
+    deadline: Date | null;
+    activated: boolean;
+  },
+): Promise<void> {
+  const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
+  const deadlineLine = input.activated
+    ? `Votre accès reste actif jusqu'au <b>${frDate(input.deadline)}</b> et aucune carte bancaire n'est enregistrée.`
+    : `Votre invitation reste valable jusqu'au <b>${frDate(input.deadline)}</b> et aucune carte bancaire ne vous sera demandée.`;
+
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1d23;line-height:1.6">
+    <h2 style="color:#0e5a54">Un premier pas sur MELETA ?</h2>
+    <p>${hello}</p>
+    <p>Je vois que vous n'avez pas encore lancé votre premier entraînement sur MELETA.</p>
+    <p>Aucun reproche, bien sûr. Les journées sont chargées, et il suffit parfois d'un détail
+       peu clair pour remettre quelque chose à plus tard.</p>
+    <p>J'aimerais simplement comprendre ce qui vous a freiné :</p>
+    <ul style="padding-left:18px;margin:0 0 12px">
+      <li>vous n'avez pas encore eu le temps ;</li>
+      <li>vous ne saviez pas par où commencer ;</li>
+      <li>le lien ou la connexion n'a pas fonctionné ;</li>
+      <li>vous n'êtes finalement plus disponible pour participer.</li>
+    </ul>
+    <p>Vous pouvez me répondre avec un seul mot : <b>«&nbsp;temps&nbsp;»</b>, <b>«&nbsp;perdu&nbsp;»</b>,
+       <b>«&nbsp;technique&nbsp;»</b> ou <b>«&nbsp;stop&nbsp;»</b>. Cette réponse m'aidera déjà beaucoup.</p>
+    <p>Si vous souhaitez commencer maintenant, voici le chemin le plus simple :</p>
+    <p style="margin:24px 0">
+      <a href="${input.ctaUrl}" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
+        Faire mon premier exercice
+      </a>
+    </p>
+    <p>Comptez environ cinq minutes.</p>
+    <p>${deadlineLine}</p>
+    <p>Merci,<br>Julien</p>
+  </div>`;
+
+  await send(to, "Votre premier entraînement MELETA vous attend", html, { replyTo: CONTACT_EMAIL });
+}
+
 /** Email de fin d'essai bêta (déclenché par Stripe 3 jours avant le terme). */
 export async function sendBetaTrialEnd(
   to: string,
