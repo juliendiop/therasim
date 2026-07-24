@@ -47,19 +47,23 @@ export default function SupportWidget() {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-0 sm:items-center sm:p-4"
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/30"
           onMouseDown={(e) => {
             // Fermeture au clic sur le fond, jamais sur le contenu.
             if (!dialogRef.current?.contains(e.target as Node)) setOpen(false);
           }}
         >
-          <div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Nouvelle demande"
-            className="w-full max-w-lg rounded-t-2xl border border-[var(--border)] bg-white p-5 shadow-lg sm:rounded-2xl"
-          >
+          {/* Wrapper `min-h-full` : centre la modale quand elle est courte, et laisse
+              l'overlay défiler quand elle dépasse l'écran — son haut reste toujours
+              atteignable (jamais rogné par le centrage flex). */}
+          <div className="flex min-h-full items-end justify-center p-0 sm:items-center sm:p-4">
+            <div
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Nouvelle demande"
+              className="w-full max-w-lg rounded-t-2xl border border-[var(--border)] bg-white p-5 shadow-lg sm:rounded-2xl"
+            >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold">Une anomalie ? Une idée ?</h2>
@@ -163,6 +167,7 @@ export default function SupportWidget() {
                 </div>
               </form>
             )}
+            </div>
           </div>
         </div>
       )}
