@@ -47,7 +47,12 @@ export default async function AdminTestimonialsPage() {
           {rows.map((r) => (
             <li key={r.id} className="rounded-xl border border-[var(--border)] bg-white p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm font-semibold">{r.email}</span>
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  {r.email}
+                  <span className="rounded-full bg-[var(--surface-tint)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
+                    {r.source === "spontaneous" ? "Avis spontané" : "Bêta"}
+                  </span>
+                </span>
                 <div className="flex items-center gap-2">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-semibold ${

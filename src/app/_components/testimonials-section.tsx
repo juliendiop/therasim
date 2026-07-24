@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Star } from "lucide-react";
 import { listPublishedTestimonials, testimonialAttribution } from "@/lib/beta-bilan";
 
@@ -55,6 +56,14 @@ export default async function TestimonialsSection() {
           </li>
         ))}
       </ul>
+
+      <p className="mt-8 text-center text-sm text-[var(--muted)]">
+        Vous vous entraînez sur MELETA ?{" "}
+        <Link href="/avis" className="font-medium text-[var(--accent)] hover:underline">
+          Partagez votre avis
+        </Link>
+        .
+      </p>
     </section>
   );
 }

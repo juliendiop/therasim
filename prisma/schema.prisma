@@ -729,6 +729,8 @@ model Testimonial {
   profession  String? // saisie facultative (mode 'name_profession')
   // 'pending' | 'published' | 'rejected' — publication après validation admin.
   status      String   @default("pending")
+  // 'beta' (promoteur sollicité) | 'spontaneous' (avis laissé librement depuis le site).
+  source      String   @default("beta")
   createdAt   DateTime @default(now()) @map("created_at")
   publishedAt DateTime? @map("published_at")
 

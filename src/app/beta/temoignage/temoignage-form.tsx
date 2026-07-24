@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { submitTestimonialAction, type TestimonialFormState } from "./actions";
+import type { TestimonialFormState } from "@/lib/testimonial-form-state";
 import {
   TESTIMONIAL_PROMPTS,
   TESTIMONIAL_DISPLAY_MODES,
@@ -12,9 +12,13 @@ import {
 
 const FIELD_NAMES = ["before", "during", "after"] as const;
 
-export default function TemoignageForm() {
+export default function TemoignageForm({
+  action: submitAction,
+}: {
+  action: (state: TestimonialFormState, formData: FormData) => Promise<TestimonialFormState>;
+}) {
   const [state, action, pending] = useActionState<TestimonialFormState, FormData>(
-    submitTestimonialAction,
+    submitAction,
     null,
   );
   const [mode, setMode] = useState<string>("name_profession");

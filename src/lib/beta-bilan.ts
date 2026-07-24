@@ -148,6 +148,7 @@ export async function submitTestimonial(opts: {
   userId: string;
   tenantId: string;
   firstName: string | null;
+  source?: "beta" | "spontaneous";
   input: TestimonialInput;
 }): Promise<SubmitTestimonialResult> {
   const before = opts.input.before.trim();
@@ -176,6 +177,7 @@ export async function submitTestimonial(opts: {
       firstName: opts.input.displayMode === "anonymous" ? null : opts.firstName,
       profession: opts.input.displayMode === "name_profession" ? profession || null : null,
       status: "pending",
+      source: opts.source ?? "beta",
     },
   });
   return { ok: true };
@@ -191,6 +193,7 @@ export type TestimonialRow = {
   firstName: string | null;
   profession: string | null;
   status: string;
+  source: string;
   createdAt: Date;
 };
 
@@ -217,6 +220,7 @@ export async function listTestimonials(status?: string): Promise<TestimonialRow[
     firstName: r.firstName,
     profession: r.profession,
     status: r.status,
+    source: r.source,
     createdAt: r.createdAt,
   }));
 }

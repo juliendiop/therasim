@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 import { Quote } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import TemoignageForm from "./temoignage-form";
-import { submitTestimonialAction } from "./actions";
+import TemoignageForm from "@/app/beta/temoignage/temoignage-form";
+import { submitAvisAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Votre témoignage — MELETA",
-  robots: { index: false, follow: false },
+  title: "Laisser un avis — MELETA",
 };
 
-export default async function BetaTemoignagePage() {
+export default async function AvisPage() {
   await requireUser();
 
   return (
@@ -21,14 +20,15 @@ export default async function BetaTemoignagePage() {
           <Quote className="h-5 w-5" />
         </span>
         <h1 className="mt-4 text-xl font-semibold tracking-tight sm:text-2xl">
-          Partager votre témoignage
+          Partager votre avis sur MELETA
         </h1>
         <p className="mt-2 text-sm text-[var(--ink-soft)]">
-          Merci d&apos;avoir accepté. Complétez ces trois phrases, choisissez comment vous
-          souhaitez être présenté — et rien ne sera publié sans votre accord.
+          Vous vous entraînez sur MELETA ? Votre retour aide d&apos;autres praticiens à se
+          lancer. Complétez ces trois phrases et choisissez comment vous souhaitez être
+          présenté — rien n&apos;est publié sans votre accord.
         </p>
 
-        <TemoignageForm action={submitTestimonialAction} />
+        <TemoignageForm action={submitAvisAction} />
       </div>
     </div>
   );

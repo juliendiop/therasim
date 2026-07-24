@@ -255,6 +255,15 @@ export default async function RootLayout({
               <Link href="/ambassadeurs" className="underline hover:text-[var(--foreground)]">
                 Ambassadeurs
               </Link>
+              {user && (
+                <>
+                  {" "}
+                  ·{" "}
+                  <Link href="/avis" className="underline hover:text-[var(--foreground)]">
+                    Laisser un avis
+                  </Link>
+                </>
+              )}
             </>
           ) : (
             <>

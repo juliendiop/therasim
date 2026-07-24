@@ -5,8 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { submitTestimonial } from "@/lib/beta-bilan";
 import type { TestimonialFormState } from "@/lib/testimonial-form-state";
 
-/** Enregistre un témoignage de promoteur bêta (statut `pending`, source `beta`). */
-export async function submitTestimonialAction(
+/**
+ * Avis laissé librement depuis le site par tout utilisateur connecté. Même circuit
+ * que la relance bêta : statut `pending`, publication après validation admin.
+ * Distingué par `source: "spontaneous"`.
+ */
+export async function submitAvisAction(
   _prev: TestimonialFormState,
   formData: FormData,
 ): Promise<TestimonialFormState> {
@@ -20,6 +24,7 @@ export async function submitTestimonialAction(
     userId: user.id,
     tenantId: user.tenantId,
     firstName: dbUser?.firstName ?? null,
+    source: "spontaneous",
     input: {
       before: String(formData.get("before") ?? ""),
       during: String(formData.get("during") ?? ""),
