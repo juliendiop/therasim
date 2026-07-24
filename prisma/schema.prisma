@@ -654,6 +654,12 @@ model BetaInvite {
   // garantit un envoi au plus, qu'on ait relancé ou décidé de ne pas le faire (activité détectée).
   nudgeEmailAt DateTime? @map("nudge_email_at")
 
+  // Relance « impression à chaud » : envoyée après 3 mises en situation terminées, ou
+  // au plus tard à J+7 de l'activation (si un minimum d'activité). Posé uniquement à
+  // l'envoi effectif (contrairement à nudgeEmailAt) : tant que le seuil n'est pas
+  // atteint, l'invitation reste candidate les jours suivants.
+  feedbackEmailAt DateTime? @map("feedback_email_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -661,4 +667,21 @@ model BetaInvite {
   @@index([claimedByUserId])
   @@index([cohort])
   @@map("beta_invites")
+}
+
+// Réponses au questionnaire « impression à chaud » de la bêta (3 questions ouvertes),
+// recueillies via /beta/feedback et relues en backoffice (/admin/beta/feedback).
+model BetaFeedback {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  cohort    String?
+  q1        String // ce qui a le plus surpris (en bien ou en mal)
+  q2        String // moment d'hésitation / décrochage
+  q3        String // feedback assez précis et crédible ?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("beta_feedback")
 }

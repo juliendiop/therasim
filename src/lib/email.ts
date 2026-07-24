@@ -381,6 +381,46 @@ export async function sendBetaNudge(
   await send(to, "Votre premier entraînement MELETA vous attend", html, { replyTo: CONTACT_EMAIL });
 }
 
+/**
+ * Relance « impression à chaud » : envoyée après 3 mises en situation terminées, ou au
+ * plus tard à J+7 de l'activation (si un minimum d'activité). Le bouton mène au
+ * questionnaire in-app /beta/feedback. Déclenchée par le cron quotidien `beta-feedback`.
+ */
+export async function sendBetaFeedbackRequest(
+  to: string,
+  input: { firstName: string | null; ctaUrl: string },
+): Promise<void> {
+  const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
+
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1d23;line-height:1.6">
+    <h2 style="color:#0e5a54">Votre impression à chaud, en deux minutes</h2>
+    <p>${hello}</p>
+    <p>Vous avez maintenant commencé à explorer MELETA. Avant que l'habitude ne s'installe,
+       j'aimerais recueillir votre impression spontanée.</p>
+    <p><b>Trois questions seulement :</b></p>
+    <ol style="padding-left:18px;margin:0 0 12px">
+      <li>Qu'est-ce qui vous a le plus surpris, en bien ou en mal ?</li>
+      <li>À quel moment avez-vous hésité, décroché ou eu envie d'abandonner ?</li>
+      <li>Le feedback vous a-t-il semblé suffisamment précis et crédible ?</li>
+    </ol>
+    <p style="margin:24px 0">
+      <a href="${input.ctaUrl}" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
+        Répondre en deux minutes
+      </a>
+    </p>
+    <p>Vous pouvez être très direct. Une critique précise m'est souvent plus utile qu'un
+       encouragement général.</p>
+    <p>Si vous n'avez encore effectué qu'un ou deux exercices, votre regard reste précieux :
+       l'entrée dans le produit fait pleinement partie de ce que je cherche à améliorer.</p>
+    <p>Merci pour votre aide,<br>Julien</p>
+  </div>`;
+
+  await send(to, "MELETA — votre impression à chaud, en deux minutes", html, {
+    replyTo: CONTACT_EMAIL,
+  });
+}
+
 /** Email de fin d'essai bêta (déclenché par Stripe 3 jours avant le terme). */
 export async function sendBetaTrialEnd(
   to: string,

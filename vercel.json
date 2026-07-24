@@ -9,6 +9,10 @@
     {
       "path": "/api/cron/beta-nudge",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/beta-feedback",
+      "schedule": "0 10 * * *"
     }
   ]
 }

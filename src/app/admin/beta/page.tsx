@@ -1,4 +1,5 @@
-import { FlaskConical } from "lucide-react";
+import Link from "next/link";
+import { FlaskConical, MessageSquareHeart } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { parseBetaInviteStatus, BETA_INVITE_STATUS_LABEL } from "@/lib/beta-status";
 import { revokeBetaInviteAction } from "./actions";
@@ -57,6 +58,12 @@ export default async function AdminBetaPage() {
           (<code className="rounded bg-[var(--surface-tint)] px-1">intensif</code>) — son Price ID
           se règle dans Facturation.
         </p>
+        <Link
+          href="/admin/beta/feedback"
+          className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)] hover:underline"
+        >
+          <MessageSquareHeart className="h-4 w-4" /> Voir les impressions à chaud recueillies
+        </Link>
       </div>
 
       <section>
