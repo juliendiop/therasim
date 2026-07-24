@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useActionState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LifeBuoy, X } from "lucide-react";
@@ -45,14 +46,19 @@ export default function SupportWidget() {
         <span className="hidden lg:inline">Aide</span>
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-black/30"
-          onMouseDown={(e) => {
-            // Fermeture au clic sur le fond, jamais sur le contenu.
-            if (!dialogRef.current?.contains(e.target as Node)) setOpen(false);
-          }}
-        >
+      {/* Portail vers <body> : le widget vit dans le <header>, qui porte un
+          `backdrop-blur`. Un ancêtre filtré devient le bloc conteneur des éléments
+          `position: fixed` -> sans portail, l'overlay serait relatif à la barre
+          d'en-tête (et non à l'écran), donc coincé en haut. */}
+      {open &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 overflow-y-auto bg-black/30"
+            onMouseDown={(e) => {
+              // Fermeture au clic sur le fond, jamais sur le contenu.
+              if (!dialogRef.current?.contains(e.target as Node)) setOpen(false);
+            }}
+          >
           {/* Wrapper `min-h-full` : centre la modale quand elle est courte, et laisse
               l'overlay défiler quand elle dépasse l'écran — son haut reste toujours
               atteignable (jamais rogné par le centrage flex). */}
@@ -169,8 +175,9 @@ export default function SupportWidget() {
             )}
             </div>
           </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
