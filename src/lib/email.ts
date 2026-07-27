@@ -532,9 +532,19 @@ export async function sendBetaTrialEnd(
   },
 ): Promise<void> {
   const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
+  const base = emailBaseUrl();
+  // Conversion naturelle après la bêta : le forfait Praticien (et non l'Intensif au
+  // prix fort), avec une remise fondateur réservée via le code bêta.
   const coupon = input.couponCode
-    ? `<p>Si vous souhaitez continuer, le code <b>${escapeHtml(input.couponCode)}</b> vous est réservé
-       en tant que bêta-testeur — à saisir au moment du paiement.</p>`
+    ? `<p>Pour continuer, le plus adapté est le forfait <b>Praticien</b> — tous les domaines
+       inclus, largement de quoi pratiquer chaque mois. En tant que bêta-testeur, le code
+       <b>${escapeHtml(input.couponCode)}</b> vous ouvre une <b>remise fondateur</b>, à saisir
+       au moment du paiement.</p>
+       <p style="margin:24px 0">
+         <a href="${base}/tarifs" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
+           Continuer avec Praticien
+         </a>
+       </p>`
     : "";
 
   const html = `
@@ -552,6 +562,32 @@ export async function sendBetaTrialEnd(
   </div>`;
 
   await send(to, "Votre accès bêta MELETA se termine bientôt", html, { replyTo: CONTACT_EMAIL });
+}
+
+/**
+ * Alerte INTERNE (super-admin) : un utilisateur franchit le seuil d'usage loyal
+ * paramétré sur les mises en situation. Purement informatif — sert à repérer un
+ * usage atypique (abus potentiel), jamais à couper un accès.
+ */
+export async function sendAdminUsageAlert(
+  to: string,
+  input: { userEmail: string; count: number; threshold: number; period: string },
+): Promise<void> {
+  const base = emailBaseUrl();
+  const html = `
+  <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1d23;line-height:1.6">
+    <h2 style="color:#0e5a54">Usage élevé repéré</h2>
+    <p><b>${escapeHtml(input.userEmail)}</b> a lancé <b>${input.count}</b> mises en situation
+       sur les 30 derniers jours (seuil d'alerte : ${input.threshold}).</p>
+    <p style="font-size:13px;color:#6b7280">Simple signal de suivi, aucune action automatique n'a
+       été déclenchée. Le plafond mensuel reste un filet courtois, pas une coupure.</p>
+    <p style="margin:20px 0">
+      <a href="${base}/admin/usage" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
+        Voir la consommation
+      </a>
+    </p>
+  </div>`;
+  await send(to, `[MELETA] Usage élevé — ${input.userEmail}`, html);
 }
 
 /**

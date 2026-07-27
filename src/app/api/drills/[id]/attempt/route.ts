@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { userCanAccess } from "@/lib/entitlements";
 import { recordAttempt, type RecordAttemptResult } from "@/lib/attempts";
+import { checkDrillProductionAllowance } from "@/lib/usage-limits";
 import { recordFunnelOncePerUser } from "@/lib/funnel";
 import { parseOptions } from "@/lib/drill-view";
 import { normalizeNote, PALIER_LABEL } from "@/lib/mastery";
@@ -69,6 +70,20 @@ export async function POST(
   const answer = String(body.answer ?? "").trim();
   if (!answer) {
     return NextResponse.json({ error: "réponse vide" }, { status: 400 });
+  }
+
+  // Garde-fou anti-abus sur l'appel IA gratuit (non facturé en crédits). Depuis
+  // l'ouverture de tout le catalogue au gratuit, c'est la seule dépense IA non bornée.
+  // Message courtois, jamais présenté comme une limite de produit ; les QCM restent ouverts.
+  if (!(await checkDrillProductionAllowance(user.id))) {
+    return NextResponse.json(
+      {
+        error: "fair_use",
+        message:
+          "Vous avez enchaîné beaucoup d'exercices notés aujourd'hui — laissez-les reposer et revenez un peu plus tard. Les exercices à choix multiples, eux, restent ouverts.",
+      },
+      { status: 429 },
+    );
   }
 
   const competency = await prisma.competency.findFirst({

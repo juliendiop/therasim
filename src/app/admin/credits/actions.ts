@@ -22,7 +22,22 @@ export async function saveCreditSettings(formData: FormData) {
     const n = parseInt(String(formData.get(field) ?? "").trim(), 10);
     if (Number.isFinite(n) && n >= 0) await setConfig(cfgKey, String(n));
   }
+
+  // Plafonds d'usage loyal (garde-fous anti-abus, jamais des limites de produit).
+  // Exigent une valeur > 0 : un 0 n'a aucun sens (couperait tout usage).
+  const limits: [string, string][] = [
+    ["limits.sim.daily", "simDaily"],
+    ["limits.sim.monthly", "simMonthly"],
+    ["limits.sim.alert", "simAlert"],
+    ["limits.drill.daily", "drillDaily"],
+  ];
+  for (const [cfgKey, field] of limits) {
+    const n = parseInt(String(formData.get(field) ?? "").trim(), 10);
+    if (Number.isFinite(n) && n > 0) await setConfig(cfgKey, String(n));
+  }
+
   revalidatePath("/admin/credits");
+  revalidatePath("/admin/usage");
 }
 
 // Enregistre les textes des offres (sujet/corps/crédits) dans app_config.

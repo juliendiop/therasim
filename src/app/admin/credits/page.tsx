@@ -1,6 +1,7 @@
 import { Coins, Mail, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { creditSettings } from "@/lib/credits";
+import { usageSettings } from "@/lib/usage-limits";
 import { getOffers } from "@/lib/offers";
 import { ROLE_LABELS } from "@/lib/roles";
 import type { Role } from "@/lib/auth";
@@ -21,8 +22,9 @@ export default async function AdminCreditsPage({
   const emailQ = sp.email?.trim() || undefined;
   const maxCredits = sp.max !== undefined && sp.max !== "" ? Number(sp.max) : undefined;
 
-  const [s, offers, tenants, users] = await Promise.all([
+  const [s, limits, offers, tenants, users] = await Promise.all([
     creditSettings(),
+    usageSettings(),
     getOffers(),
     prisma.tenant.findMany({ orderBy: { nom: "asc" }, select: { id: true, nom: true } }),
     prisma.user.findMany({
@@ -249,6 +251,22 @@ export default async function AdminCreditsPage({
               Enregistrer
             </button>
           </div>
+
+          {/* Plafonds d'usage loyal : garde-fous anti-abus (pas des limites de produit).
+              Calibrer TRÈS haut — invisibles à un usage normal. */}
+          <div className="sm:col-span-2 border-t border-[var(--border)] pt-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+              Usage loyal (anti-abus)
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--muted)]">
+              Filets de sécurité, jamais des limites de produit. Un usage normal ne doit
+              jamais les atteindre. Suivi dans « Consommation IA ».
+            </p>
+          </div>
+          <Field name="simDaily" label="Mises en situation / jour" hint="Par utilisateur, sur 24 h glissantes." value={limits.simDaily} />
+          <Field name="simMonthly" label="Filet mensuel" hint="Plafond très haut, dernier recours (30 j)." value={limits.simMonthly} />
+          <Field name="simAlert" label="Seuil d'alerte admin" hint="Email au franchissement (mises en situation, 30 j)." value={limits.simAlert} />
+          <Field name="drillDaily" label="Drills notés / jour" hint="Évaluations IA d'exercices (gratuites) par utilisateur / 24 h." value={limits.drillDaily} />
         </form>
       </section>
 

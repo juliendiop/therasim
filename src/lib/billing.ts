@@ -9,6 +9,7 @@ import { grant, syncSubscriptionCredits, topUpPlanCredits, zeroPlanCredits } fro
 import { CREDIT_PACKS } from "./credits";
 import { isSubscriptionEntitled } from "./entitlements";
 import { periodIndexFor } from "./billing-period";
+import { BETA_PLAN_LABEL } from "./beta-constants";
 import { sendBetaTrialEnd } from "./email";
 import { ensureStripeCustomer, stripeClient } from "./stripe";
 import { recordFunnelOncePerUser } from "./funnel";
@@ -514,7 +515,7 @@ export async function handleTrialWillEnd(event: Stripe.Event): Promise<void> {
   try {
     await sendBetaTrialEnd(user.email, {
       firstName: user.firstName,
-      planLabel: plan?.label ?? "Intensif",
+      planLabel: plan?.label ?? BETA_PLAN_LABEL,
       endsAt: trialEnd,
       couponCode: process.env.BETA_CONVERSION_COUPON || null,
     });

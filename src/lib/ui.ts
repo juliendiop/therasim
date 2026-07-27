@@ -26,10 +26,14 @@ export const KIND_LABEL: Record<string, string> = {
   miniscene: "Mini-scène guidée",
 };
 
-/** Libellé du quota de domaines d'un forfait (null = illimité). Source unique. */
-export function planQuotaLabel(quota: number | null): string {
-  if (quota == null) return "tous les domaines inclus";
-  return `${quota} domaine${quota > 1 ? "s" : ""} au choix`;
+/**
+ * Libellé des domaines inclus dans un forfait. Depuis la refonte « tout inclus »,
+ * chaque niveau — gratuit compris — donne accès à l'intégralité des domaines ;
+ * la seule variable tarifaire est le volume de crédits. Le paramètre `quota` est
+ * conservé pour compatibilité d'appel mais n'a plus d'effet (colonne neutralisée).
+ */
+export function planQuotaLabel(_quota?: number | null): string {
+  return "tous les domaines inclus";
 }
 
 /** Date lisible en Europe/Paris (le serveur tourne en UTC). */

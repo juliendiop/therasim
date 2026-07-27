@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { isEmailConfigured, sendBetaBilan } from "@/lib/email";
 import { getBetaImprovements } from "@/lib/beta-bilan";
+import { BETA_PLAN_LABEL } from "@/lib/beta-constants";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
     try {
       await sendBetaBilan(invite.email, {
         firstName: user?.firstName ?? invite.note ?? null,
-        planLabel: plan?.label ?? "Intensif",
+        planLabel: plan?.label ?? BETA_PLAN_LABEL,
         monthlyCredits: plan?.monthlyCredits ?? null,
         endsAt: sub?.trialEndsAt ?? null,
         improvements,

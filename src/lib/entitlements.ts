@@ -83,14 +83,28 @@ export async function tenantCanAccess(
 // --- Niveau utilisateur (freemium B2C) --------------------------------------
 
 export const FREE_FRAMEWORKS_CONFIG_KEY = "freemium.free.frameworks";
-const DEFAULT_FREE_FRAMEWORKS = "em"; // référentiel d'appel par défaut
 
-/** Référentiels gratuits pour tout inscrit B2C (CSV d'ids, configurable en admin). */
+/** Tous les référentiels PUBLIÉS. Depuis la refonte « tout inclus », c'est le
+ *  catalogue accessible à tout compte B2C (gratuit compris). */
+export async function allPublishedFrameworkIds(): Promise<Set<string>> {
+  const rows = await prisma.framework.findMany({
+    where: { statut: "publie" },
+    select: { id: true },
+  });
+  return new Set(rows.map((r) => r.id));
+}
+
+/**
+ * Référentiels gratuits pour un inscrit B2C. Depuis la refonte « tout inclus »,
+ * le défaut couvre l'INTÉGRALITÉ du catalogue publié : plus aucun domaine n'est
+ * payant côté B2C. Reste une configuration (CSV d'ids dans `freemium.free.frameworks`,
+ * ou `*`/vide = tout le catalogue) pour rester ajustable sans redéploiement.
+ */
 export async function freeFrameworkIds(): Promise<Set<string>> {
-  const v = await getConfig(FREE_FRAMEWORKS_CONFIG_KEY);
-  const csv = v && v.trim() ? v : DEFAULT_FREE_FRAMEWORKS;
+  const v = (await getConfig(FREE_FRAMEWORKS_CONFIG_KEY))?.trim() ?? "";
+  if (!v || v === "*") return allPublishedFrameworkIds();
   return new Set(
-    csv
+    v
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean),
@@ -138,7 +152,18 @@ export async function userFrameworkAccess(user: UserLike): Promise<FrameworkAcce
     return { unlocked: tenantIds, locked: new Set() };
   }
 
+  // --- Refonte « tout inclus » (B2C) ------------------------------------------
+  // Le gating par domaine est SUPPRIMÉ sur le site public : tout compte, gratuit
+  // compris, accède à l'intégralité du catalogue publié. Le seul verrou restant est
+  // le solde de crédits (mises en situation IA), appliqué dans sim/actions. Ni
+  // `frameworkQuota`, ni les achats à l'unité, ni `subscription_choice` n'entrent
+  // plus en jeu ici — `locked` est toujours vide, donc aucune vitrine « à débloquer ».
+  if (isPublic) {
+    return { unlocked: await allPublishedFrameworkIds(), locked: new Set() };
+  }
+
   // Plafond de vente individuelle = catalogue du site public (ce qui est commercialisé).
+  // (Chemin B2B « opt-in offres individuelles » — HORS PÉRIMÈTRE de la refonte, inchangé.)
   let saleIds: Set<string>;
   if (isPublic) {
     saleIds = tenantIds;

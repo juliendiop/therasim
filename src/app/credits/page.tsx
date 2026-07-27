@@ -97,12 +97,6 @@ export default async function CreditsPage({
   // le bouton de gestion. Ne pas remplacer par isSubscriptionEntitled() — ce serait
   // un changement de comportement pour past_due/incomplete. `trialing` passe déjà ici.
   const hasActiveSubscription = subscription && subscription.status !== "canceled";
-  // Quota de domaines du forfait actif (affichage « X/N choisis »).
-  const usedChoices = hasActiveSubscription
-    ? await prisma.userFrameworkAccess.count({
-        where: { userId: user.id, source: "subscription_choice" },
-      })
-    : 0;
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -240,7 +234,8 @@ export default async function CreditsPage({
       {/* Recharge mensuelle */}
       <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--muted)]">
         <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
-        Vous recevez {settings.monthly} crédits gratuits chaque mois.
+        {settings.welcome} crédits offerts à l&apos;inscription, puis {settings.monthly} crédits
+        gratuits chaque mois. Tous les domaines sont inclus, dès le compte gratuit.
       </p>
 
       {/* Abonnement en cours */}
@@ -262,13 +257,10 @@ export default async function CreditsPage({
                   })}
                 </p>
               )}
-              {activePlan && activePlan.frameworkQuota != null && (
-                <p className="mt-0.5 text-xs text-[var(--muted)]">
-                  Domaines choisis : {usedChoices}/{activePlan.frameworkQuota}
-                  {usedChoices < activePlan.frameworkQuota &&
-                    " — débloquez-en depuis le catalogue."}
-                </p>
-              )}
+              <p className="mt-0.5 text-xs text-[var(--muted)]">
+                Tous les domaines inclus — la seule différence entre forfaits est le nombre
+                de crédits mensuels.
+              </p>
             </div>
             <form action={manageBillingAction}>
               <button className="rounded-lg border border-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-white">
@@ -297,7 +289,7 @@ export default async function CreditsPage({
             <RefreshCw className="h-3.5 w-3.5" /> S&apos;abonner
           </h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {plans.map((p) => (
+            {plans.filter((p) => p.priceEurCents > 0).map((p) => (
               <div
                 key={p.id}
                 className="flex flex-col rounded-xl border border-[var(--border)] bg-white p-4"
@@ -308,8 +300,7 @@ export default async function CreditsPage({
                   <span className="text-xs font-normal text-[var(--muted)]">/mois</span>
                 </div>
                 <div className="mt-1 flex-1 text-xs text-[var(--muted)]">
-                  {p.monthlyCredits} crédits chaque mois ·{" "}
-                  <b>{planQuotaLabel(p.frameworkQuota)}</b>
+                  {p.monthlyCredits} crédits chaque mois · <b>{planQuotaLabel()}</b>
                 </div>
                 <form action={checkoutPlanAction} className="mt-3">
                   <input type="hidden" name="planId" value={p.id} />

@@ -18,10 +18,15 @@ export default async function FrameworkPage({
   searchParams,
 }: {
   params: Promise<{ framework_id: string }>;
-  searchParams: Promise<{ success?: string; canceled?: string; error?: string }>;
+  searchParams: Promise<{
+    success?: string;
+    canceled?: string;
+    error?: string;
+    fairuse?: string;
+  }>;
 }) {
   const { framework_id } = await params;
-  const { success, canceled, error } = await searchParams;
+  const { success, canceled, error, fairuse } = await searchParams;
   const user = await requireUser();
   // Garde d'accès : accès effectif de CET utilisateur (catalogue plateforme,
   // freemium B2C, ou vitrine étendue si sa plateforme B2B a l'opt-in).
@@ -57,6 +62,25 @@ export default async function FrameworkPage({
       >
         <ArrowLeft className="h-4 w-4" /> Tous les référentiels
       </Link>
+
+      {/* Usage loyal : message courtois (jamais une erreur technique ni une coupure sèche). */}
+      {fairuse && (
+        <div className="mt-4 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-4 text-sm">
+          {fairuse === "daily" ? (
+            <p>
+              Vous avez lancé beaucoup de mises en situation aujourd&apos;hui 🙌 Laissez-leur le
+              temps d&apos;infuser et reprenez demain. Les exercices, eux, restent ouverts — et si
+              vous avez besoin de plus, écrivez-moi à <b>contact@meleta.app</b>, on trouve une
+              solution.
+            </p>
+          ) : (
+            <p>
+              Vous êtes parmi les praticiens les plus assidus ce mois-ci 🙌 Pour continuer sans
+              attendre, écrivez-moi à <b>contact@meleta.app</b> — je débloque ça avec plaisir.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* En-tête */}
       <div className="mt-3">

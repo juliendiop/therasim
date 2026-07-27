@@ -25,17 +25,21 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Tarifs — MELETA",
   description:
-    "Des forfaits d'abonnement avec crédits mensuels et domaines au choix, ou des packs de crédits à l'unité. Sans engagement, résiliable à tout moment.",
+    "Tous les domaines cliniques inclus, dès le compte gratuit. Les forfaits ne changent qu'une chose : le nombre de mises en situation par mois. Sans engagement, résiliable à tout moment.",
 };
 
 const FAQ: { q: string; a: string }[] = [
   {
+    q: "Tous les domaines sont-ils vraiment inclus, même dans le gratuit ?",
+    a: "Oui. Tous les domaines cliniques (les référentiels) sont ouverts à tout le monde, y compris sur le compte gratuit : exercices illimités partout. La seule chose qui varie d'un niveau à l'autre, c'est le nombre de mises en situation avec un patient simulé par IA que vous pouvez lancer chaque mois.",
+  },
+  {
     q: "Qu'est-ce qu'un crédit ?",
-    a: "Un crédit est consommé à chaque mise en situation avec un patient simulé par IA (mini-scène ou entretien complet). Les exercices (QCM, reconnaissance) sont toujours gratuits et illimités, quel que soit votre forfait.",
+    a: "Un crédit est consommé à chaque mise en situation avec un patient simulé par IA (mini-scène ou entretien complet). Les exercices (QCM, reconnaissance) sont toujours gratuits et illimités, quel que soit votre niveau.",
   },
   {
     q: "Quelle différence entre un pack de crédits et un abonnement ?",
-    a: "Un pack de crédits est un achat unique : les crédits s'ajoutent à votre solde et ne périment pas. Un abonnement est mensuel et récurrent : vos crédits d'abonnement sont renouvelés chaque mois et vous donnent accès à un ou plusieurs domaines cliniques au choix, en plus du domaine gratuit offert à l'inscription.",
+    a: "Un pack est un achat unique de crédits : ils s'ajoutent à votre solde et ne périment jamais. Un abonnement est mensuel et récurrent : il renouvelle chaque mois une allocation de crédits de mise en situation. Dans les deux cas, tous les domaines restent inclus — un pack ou un abonnement n'ouvre aucun domaine, il ajoute seulement du volume de mises en situation.",
   },
   {
     q: "Les crédits de mon abonnement se cumulent-ils d'un mois sur l'autre ?",
@@ -46,8 +50,8 @@ const FAQ: { q: string; a: string }[] = [
     a: "Oui. La résiliation se fait en un clic depuis votre espace (« Gérer mon abonnement »), sans justification ni délai. Vous gardez l'accès jusqu'à la fin de la période déjà payée.",
   },
   {
-    q: "Y a-t-il un essai gratuit ?",
-    a: "Tout inscrit débloque immédiatement un domaine clinique gratuit, avec exercices illimités et quelques crédits offerts pour tester les mises en situation — sans carte bancaire.",
+    q: "Le compte gratuit permet-il vraiment de tester ?",
+    a: "Oui. À l'inscription, 30 crédits vous sont offerts, puis 5 crédits gratuits sont rechargés chaque mois — de quoi lancer de vraies mises en situation, sur n'importe quel domaine, sans carte bancaire.",
   },
   {
     q: "Est-ce que je reçois une facture ?",
@@ -94,8 +98,8 @@ export default async function TarifsPage() {
           Un forfait pour chaque rythme de pratique
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-base text-[var(--ink-soft)]">
-          Un domaine clinique gratuit dès l&apos;inscription. Ensuite, choisissez un
-          abonnement mensuel ou rechargez vos crédits à l&apos;unité — sans engagement.
+          Tous les domaines cliniques sont inclus, dès le compte gratuit. La seule
+          différence entre les niveaux : le nombre de mises en situation par mois.
         </p>
       </section>
 
@@ -107,6 +111,7 @@ export default async function TarifsPage() {
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {plans.map((p) => {
             const highlighted = p.key === "praticien";
+            const isFree = p.priceEurCents === 0;
             return (
               <div
                 key={p.id}
@@ -125,18 +130,24 @@ export default async function TarifsPage() {
                   {p.label}
                 </div>
                 <div className="mt-1.5 text-3xl font-bold">
-                  {(p.priceEurCents / 100).toFixed(2).replace(".00", "")} €
-                  <span className="text-sm font-normal text-[var(--muted)]">/mois</span>
+                  {isFree ? (
+                    "Gratuit"
+                  ) : (
+                    <>
+                      {(p.priceEurCents / 100).toFixed(2).replace(".00", "")} €
+                      <span className="text-sm font-normal text-[var(--muted)]">/mois</span>
+                    </>
+                  )}
                 </div>
                 <ul className="mt-3 flex-1 space-y-1.5 text-sm text-[var(--ink-soft)]">
                   <li className="flex items-start gap-1.5">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
-                    {p.monthlyCredits} crédits chaque mois
+                    {p.monthlyCredits} crédits de mise en situation par mois
                     <span className="text-[var(--muted)]">(non reportés)</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
-                    {planQuotaLabel(p.frameworkQuota)}
+                    {planQuotaLabel()}
                   </li>
                   <li className="flex items-start gap-1.5">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
@@ -144,7 +155,15 @@ export default async function TarifsPage() {
                   </li>
                 </ul>
                 <div className="mt-4">
-                  {!user ? (
+                  {isFree ? (
+                    <Link
+                      href={user ? "/accueil" : "/inscription"}
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                    >
+                      {user ? "Accéder à mon espace" : "Commencer gratuitement"}{" "}
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  ) : !user ? (
                     <Link
                       href={`/inscription?plan=${p.id}`}
                       className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
