@@ -7,7 +7,7 @@ import { canBuyIndividualOffers } from "@/lib/entitlements";
 import { resolveCommissionRate } from "@/lib/affiliation";
 import { palier, palierRank, PALIER_LABEL, type Palier } from "@/lib/mastery";
 import { isStripeConfigured } from "@/lib/stripe";
-import { planQuotaLabel } from "@/lib/ui";
+import { planQuotaLabel, monthlyCreditsLabel } from "@/lib/ui";
 import AffiliationNudge from "@/app/_components/affiliation-nudge";
 import { checkoutPackAction, checkoutPlanAction, manageBillingAction } from "./actions";
 
@@ -105,9 +105,59 @@ export default async function CreditsPage({
         <h1 className="text-xl font-semibold">Mes crédits</h1>
       </div>
 
+      {/* Entretien complet « découverte » déjà utilisé : explication + abonnement
+          (jamais une erreur technique). L'entretien N3 sur le gratuit est unique à vie. */}
+      {need === "discovery" && (
+        <div className="mt-4 rounded-2xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-5">
+          <h2 className="font-semibold">Vous avez utilisé votre entretien complet découverte</h2>
+          <p className="mt-1 text-sm text-[var(--ink-soft)]">
+            Le compte gratuit inclut <b>un entretien complet</b>, offert une fois — vous
+            l&apos;avez fait, bravo. Les <b>exercices</b> et les <b>mini-scènes</b> restent
+            ouverts sur toutes vos spécialités. Pour enchaîner les entretiens complets, un
+            abonnement les débloque (2 crédits chacun).
+          </p>
+          {fwName && (
+            <Link
+              href={`/f/${fw}`}
+              className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[var(--accent)] hover:underline"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Retourner à « {fwName} »
+            </Link>
+          )}
+          {freemium && recommendedPlan && (
+            <div className="mt-4 rounded-xl border border-[var(--accent)] bg-white p-4 sm:max-w-xs">
+              <div className="text-xs font-medium uppercase tracking-wide text-[var(--accent)]">
+                {recommendedPlan.label}
+              </div>
+              <div className="mt-1 text-2xl font-bold">
+                {(recommendedPlan.priceEurCents / 100).toFixed(2).replace(".00", "")} €
+                <span className="text-sm font-normal text-[var(--muted)]">/mois</span>
+              </div>
+              <div className="text-sm text-[var(--muted)]">
+                Entretiens complets débloqués · socle + 3 spécialités
+              </div>
+              <form action={checkoutPlanAction} className="mt-3">
+                <input type="hidden" name="planId" value={recommendedPlan.id} />
+                <button
+                  disabled={!stripeReady || !recommendedPlan.stripePriceId}
+                  className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                >
+                  S&apos;abonner
+                </button>
+              </form>
+            </div>
+          )}
+          <p className="mt-3 text-xs text-[var(--muted)]">
+            <Link href="/tarifs" className="font-medium text-[var(--accent)] hover:underline">
+              Voir tous les forfaits
+            </Link>
+          </p>
+        </div>
+      )}
+
       {/* Écran dédié "plus de crédits" (pas une erreur générique) : récap de
           progression + 2 CTA directs vers le checkout. */}
-      {need && (
+      {need && need !== "discovery" && (
         <div className="mt-4 rounded-2xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-5">
           <h2 className="font-semibold">
             Il vous manque des crédits pour{" "}
@@ -170,7 +220,7 @@ export default async function CreditsPage({
                   <span className="text-sm font-normal text-[var(--muted)]">/mois</span>
                 </div>
                 <div className="text-sm text-[var(--muted)]">
-                  {recommendedPlan.monthlyCredits} crédits chaque mois
+                  {monthlyCreditsLabel(recommendedPlan.monthlyCredits)}
                 </div>
                 <form action={checkoutPlanAction} className="mt-3">
                   <input type="hidden" name="planId" value={recommendedPlan.id} />
@@ -235,7 +285,8 @@ export default async function CreditsPage({
       <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--muted)]">
         <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
         {settings.welcome} crédits offerts à l&apos;inscription, puis {settings.monthly} crédits
-        gratuits chaque mois. Tous les domaines sont inclus, dès le compte gratuit.
+        gratuits chaque mois. Le socle et une spécialité de votre choix sont inclus dès le
+        compte gratuit.
       </p>
 
       {/* Abonnement en cours */}
@@ -258,8 +309,8 @@ export default async function CreditsPage({
                 </p>
               )}
               <p className="mt-0.5 text-xs text-[var(--muted)]">
-                Tous les domaines inclus — la seule différence entre forfaits est le nombre
-                de crédits mensuels.
+                Le socle est inclus partout ; votre forfait ouvre des spécialités au choix —
+                ouvrez-les ou échangez-les depuis le catalogue.
               </p>
             </div>
             <form action={manageBillingAction}>
@@ -300,7 +351,7 @@ export default async function CreditsPage({
                   <span className="text-xs font-normal text-[var(--muted)]">/mois</span>
                 </div>
                 <div className="mt-1 flex-1 text-xs text-[var(--muted)]">
-                  {p.monthlyCredits} crédits chaque mois · <b>{planQuotaLabel()}</b>
+                  {monthlyCreditsLabel(p.monthlyCredits)} · <b>{planQuotaLabel(p.frameworkQuota)}</b>
                 </div>
                 <form action={checkoutPlanAction} className="mt-3">
                   <input type="hidden" name="planId" value={p.id} />

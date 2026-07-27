@@ -143,14 +143,25 @@ export default async function FacturationPage() {
                   className="min-w-40 flex-1 rounded-lg border border-[var(--border)] p-2 text-xs font-mono"
                 />
                 <label className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
-                  Domaines au choix
+                  Spécialités
                   <input
                     name="frameworkQuota"
                     type="number"
                     min={1}
                     defaultValue={plan.frameworkQuota ?? ""}
-                    placeholder="tout"
+                    placeholder="toutes"
                     className="w-16 rounded-lg border border-[var(--border)] p-2 text-xs"
+                  />
+                </label>
+                <label className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+                  Crédits/mois
+                  <input
+                    name="monthlyCredits"
+                    type="number"
+                    min={0}
+                    defaultValue={plan.monthlyCredits ?? ""}
+                    placeholder="sans compter"
+                    className="w-20 rounded-lg border border-[var(--border)] p-2 text-xs"
                   />
                 </label>
                 <button className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium hover:border-[var(--accent)]">
@@ -177,7 +188,7 @@ export default async function FacturationPage() {
         </div>
         <div>
           <label className="text-xs font-medium">Crédits accordés / mois</label>
-          <input name="monthlyCredits" type="number" min={1} required className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm" />
+          <input name="monthlyCredits" type="number" min={0} placeholder="vide = sans compter" className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm" />
         </div>
         <div>
           <label className="text-xs font-medium">Prix (€ / mois)</label>
@@ -185,7 +196,7 @@ export default async function FacturationPage() {
         </div>
         <div className="sm:col-span-2">
           <label className="text-xs font-medium">
-            Domaines au choix de l&apos;abonné (vide = tous les domaines inclus)
+            Spécialités au choix de l&apos;abonné (vide = toutes les spécialités)
           </label>
           <input
             name="frameworkQuota"

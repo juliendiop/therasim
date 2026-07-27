@@ -71,6 +71,30 @@ export default async function ReferentielDetail({
               </select>
             </div>
           </div>
+          <div className="flex gap-3">
+            <div>
+              <label className="text-xs font-medium">Nature</label>
+              <select
+                name="nature"
+                defaultValue={fw.nature}
+                className="mt-1 rounded-lg border border-[var(--border)] p-2 text-sm"
+              >
+                <option value="specialite">Spécialité (comptée dans le quota)</option>
+                <option value="socle">Socle (inclus partout, hors quota)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium">Palier (réservé, futur)</label>
+              <select
+                name="tier"
+                defaultValue={fw.tier}
+                className="mt-1 rounded-lg border border-[var(--border)] p-2 text-sm"
+              >
+                <option value="standard">Standard</option>
+                <option value="premium">Premium</option>
+              </select>
+            </div>
+          </div>
           <div>
             <label className="text-xs font-medium">Description</label>
             <textarea

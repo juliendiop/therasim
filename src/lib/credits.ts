@@ -129,6 +129,18 @@ export async function getCredits(userId: string): Promise<number> {
  * forfait (périssable : autant l'utiliser avant qu'elle n'expire), PUIS dans le
  * portefeuille persistant. Lève InsufficientCreditsError si le total est insuffisant.
  */
+/**
+ * Vrai si l'utilisateur bénéficie d'un forfait « sans compter » (abonnement entitled
+ * dont le plan a `monthlyCredits == null`). Les mises en situation ne sont alors pas
+ * décomptées — le garde-fou anti-abus (usage-limits) reste seul en vigueur.
+ */
+export async function isUnlimited(userId: string): Promise<boolean> {
+  const sub = await prisma.userSubscription.findUnique({ where: { userId } });
+  if (!sub || !isSubscriptionEntitled(sub.status)) return false;
+  const plan = await prisma.subscriptionPlan.findUnique({ where: { id: sub.planId } });
+  return Boolean(plan && plan.monthlyCredits == null);
+}
+
 export async function debit(
   userId: string,
   amount: number,
@@ -136,6 +148,8 @@ export async function debit(
   meta?: Record<string, unknown>,
 ): Promise<number> {
   if (amount <= 0) return getCredits(userId);
+  // Forfait « sans compter » : aucun décompte, aucun blocage sur le solde.
+  if (await isUnlimited(userId)) return getCredits(userId);
   return prisma.$transaction(async (tx) => {
     const u = await tx.user.findUnique({ where: { id: userId } });
     if (!u) throw new InsufficientCreditsError("compte introuvable");
@@ -311,7 +325,10 @@ export async function syncSubscriptionCredits(
     }
 
     const plan = await prisma.subscriptionPlan.findUnique({ where: { id: sub.planId } });
-    if (!plan || plan.monthlyCredits <= 0) {
+    // `monthlyCredits` null = « sans compter » (aucune allocation numérique ; le débit
+    // est court-circuité pour ces forfaits, voir `debit`/`isUnlimited`). Comme pour 0,
+    // on remet simplement `planCredits` à 0.
+    if (!plan || plan.monthlyCredits == null || plan.monthlyCredits <= 0) {
       await zeroPlanCredits(userId);
       return;
     }

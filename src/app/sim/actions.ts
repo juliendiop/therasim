@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
-import { userCanAccess } from "@/lib/entitlements";
+import { userCanAccess, resolveB2CEntitlement } from "@/lib/entitlements";
 import { checkSimulationAllowance } from "@/lib/usage-limits";
 import { startSimulation } from "@/lib/simulator";
 import { topPriorityCodes } from "@/lib/next-drill";
@@ -12,6 +12,7 @@ import {
   creditSettings,
   debit,
   grant,
+  isUnlimited,
   InsufficientCreditsError,
 } from "@/lib/credits";
 
@@ -22,12 +23,46 @@ export async function startSimulationAction(formData: FormData) {
   const scenarioId = String(formData.get("scenarioId"));
   if (!(await userCanAccess(user, frameworkId))) redirect(`/f/${frameworkId}`);
 
-  // Usage loyal (garde-fou anti-abus, jamais une limite de produit) : vérifié AVANT
-  // tout débit de crédit, donc un refus ne consomme rien.
+  const ent = await resolveB2CEntitlement(user.id);
+
+  // --- Compte gratuit (Découverte) : UN entretien complet dans la vie du compte,
+  // gratuit en crédits. Porte d'accès N3, tracée à vie par discoveryInterviewUsedAt
+  // (jamais réinitialisée par la recharge mensuelle).
+  if (!ent.entitledSub) {
+    // Réservation atomique : ne « brûle » l'entretien gratuit que si encore disponible.
+    const claimed = await prisma.user.updateMany({
+      where: { id: user.id, discoveryInterviewUsedAt: null },
+      data: { discoveryInterviewUsedAt: new Date() },
+    });
+    if (claimed.count === 0) {
+      // Déjà utilisé : message d'explication + proposition d'abonnement (pas une erreur).
+      redirect(`/credits?need=discovery&fw=${frameworkId}`);
+    }
+    let sessionId: string;
+    try {
+      ({ sessionId } = await startSimulation({
+        userId: user.id,
+        tenantId: user.tenantId,
+        frameworkId,
+        scenarioId,
+      }));
+    } catch (e) {
+      // Échec technique : on rend son entretien découverte (ne pas pénaliser).
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { discoveryInterviewUsedAt: null },
+      });
+      throw e;
+    }
+    revalidatePath("/", "layout");
+    redirect(`/sim/${sessionId}`);
+  }
+
+  // --- Forfait payant : usage loyal (anti-abus) puis débit (court-circuité si « sans
+  // compter »). Vérifié AVANT tout débit, donc un refus ne consomme rien.
   const allowance = await checkSimulationAllowance(user.id);
   if (!allowance.ok) redirect(`/f/${frameworkId}?fairuse=${allowance.scope}`);
 
-  // Débit du portefeuille (entretien simulé). Redirige si solde insuffisant.
   const s = await creditSettings();
   try {
     await debit(user.id, s.costSimulation, "consume_simulation", { frameworkId });
@@ -46,8 +81,10 @@ export async function startSimulationAction(formData: FormData) {
       scenarioId,
     }));
   } catch (e) {
-    // La création a échoué : on rembourse le crédit débité.
-    await grant(user.id, s.costSimulation, "refund", { frameworkId, of: "simulation" });
+    // La création a échoué : on rembourse le crédit débité (sauf « sans compter »,
+    // où aucun crédit n'a été débité).
+    if (!(await isUnlimited(user.id)))
+      await grant(user.id, s.costSimulation, "refund", { frameworkId, of: "simulation" });
     throw e;
   }
   // Rafraîchit le compteur de crédits de l'en-tête (layout racine).
@@ -93,7 +130,8 @@ export async function startMiniSceneAction(formData: FormData) {
       maxTurns: 4,
     }));
   } catch (e) {
-    await grant(user.id, s.costMiniscene, "refund", { frameworkId, of: "miniscene" });
+    if (!(await isUnlimited(user.id)))
+      await grant(user.id, s.costMiniscene, "refund", { frameworkId, of: "miniscene" });
     throw e;
   }
   // Rafraîchit le compteur de crédits de l'en-tête (layout racine).

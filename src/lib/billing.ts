@@ -229,7 +229,10 @@ export async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
   }
 
   const plan = await prisma.subscriptionPlan.findUnique({ where: { id: userSub.planId } });
-  if (!plan || plan.monthlyCredits <= 0) return;
+  // NB : on ne sort PAS pour un forfait « sans compter » (monthlyCredits null) ni sans
+  // crédits — `syncSubscriptionCredits` gère ces cas (planCredits à 0), et surtout les
+  // commissions d'affiliation plus bas doivent s'exécuter pour tout paiement encaissé.
+  if (!plan) return;
 
   // Ancre de facturation : requise pour un periodIndex déterministe. Les abonnements
   // antérieurs à la bêta n'en ont pas -> on la rétablit depuis Stripe, une fois.
@@ -467,21 +470,27 @@ export async function handleSubscriptionUpdated(event: Stripe.Event): Promise<vo
     // l'allocation de forfait tombe à 0. Le portefeuille acheté reste intact.
     await zeroPlanCredits(local.userId);
   } else if (newPlan && newPlan.id !== local.planId) {
-    // Changement de forfait EN COURS de cycle : l'allocation de la période courante
-    // a déjà été (ré)initialisée sous `subscription_renewal`. On ajoute seulement le
-    // différentiel — sinon un abonné qui passe Essentiel -> Intensif paierait sans
-    // rien recevoir avant le cycle suivant. Un downgrade ne retire rien de la période
-    // en cours ; le plafond réduit s'applique au renouvellement (reset au nouveau forfait).
-    const oldPlan = await prisma.subscriptionPlan.findUnique({ where: { id: local.planId } });
-    const diff = newPlan.monthlyCredits - (oldPlan?.monthlyCredits ?? 0);
-    if (diff > 0) {
-      await topUpPlanCredits({
-        userId: local.userId,
-        amount: diff,
-        stripeSubscriptionId: sub.id,
-        periodIndex: periodIndexFor(anchor, new Date()),
-        meta: { from: oldPlan?.key ?? local.planId, to: newPlan.key, diff },
-      });
+    // Changement de forfait EN COURS de cycle.
+    if (newPlan.monthlyCredits == null) {
+      // Passage à un forfait « sans compter » : plus de décompte, planCredits remis à 0
+      // (le débit est court-circuité pour ces forfaits).
+      await zeroPlanCredits(local.userId);
+    } else {
+      // L'allocation de la période courante a déjà été (ré)initialisée ; on ajoute
+      // seulement le différentiel — sinon un abonné qui monte en gamme paierait sans
+      // rien recevoir avant le cycle suivant. Un ancien forfait « sans compter » compte
+      // pour 0 (on n'enlève rien de la période en cours).
+      const oldPlan = await prisma.subscriptionPlan.findUnique({ where: { id: local.planId } });
+      const diff = newPlan.monthlyCredits - (oldPlan?.monthlyCredits ?? 0);
+      if (diff > 0) {
+        await topUpPlanCredits({
+          userId: local.userId,
+          amount: diff,
+          stripeSubscriptionId: sub.id,
+          periodIndex: periodIndexFor(anchor, new Date()),
+          meta: { from: oldPlan?.key ?? local.planId, to: newPlan.key, diff },
+        });
+      }
     }
   } else {
     // Mise à jour ordinaire (statut/période) : (ré)alloue la période courante au besoin.

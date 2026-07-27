@@ -3,7 +3,11 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
-import { activateSubscriptionChoice, canBuyIndividualOffers } from "@/lib/entitlements";
+import {
+  activateSubscriptionChoice,
+  swapSpecialtyChoice,
+  canBuyIndividualOffers,
+} from "@/lib/entitlements";
 import {
   createBillingPortalSession,
   createCreditsCheckout,
@@ -73,7 +77,7 @@ export async function checkoutFrameworkAction(formData: FormData) {
   redirect(url);
 }
 
-/** Consomme un choix du quota d'abonnement pour débloquer un domaine (sans paiement). */
+/** Consomme un choix du quota pour ouvrir une spécialité (sans paiement). */
 export async function activateFrameworkChoiceAction(formData: FormData) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
@@ -84,6 +88,23 @@ export async function activateFrameworkChoiceAction(formData: FormData) {
     redirect(`/f/${frameworkId}?error=${encodeURIComponent(result.message)}`);
   }
   redirect(`/f/${frameworkId}`);
+}
+
+/** Échange une spécialité déjà choisie contre une autre (1×/période, forfaits éligibles). */
+export async function swapFrameworkChoiceAction(formData: FormData) {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+  const addFrameworkId = String(formData.get("addFrameworkId") ?? "");
+  const dropFrameworkId = String(formData.get("dropFrameworkId") ?? "");
+  if (!dropFrameworkId) {
+    redirect(`/f/${addFrameworkId}?error=${encodeURIComponent("Choisissez la spécialité à remplacer.")}`);
+  }
+
+  const result = await swapSpecialtyChoice(user, dropFrameworkId, addFrameworkId);
+  if (!result.ok) {
+    redirect(`/f/${addFrameworkId}?error=${encodeURIComponent(result.message)}`);
+  }
+  redirect(`/f/${addFrameworkId}`);
 }
 
 /** Ouvre le portail Stripe (résiliation, moyen de paiement) pour un abonné existant. */

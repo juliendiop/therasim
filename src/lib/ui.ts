@@ -27,13 +27,22 @@ export const KIND_LABEL: Record<string, string> = {
 };
 
 /**
- * Libellé des domaines inclus dans un forfait. Depuis la refonte « tout inclus »,
- * chaque niveau — gratuit compris — donne accès à l'intégralité des domaines ;
- * la seule variable tarifaire est le volume de crédits. Le paramètre `quota` est
- * conservé pour compatibilité d'appel mais n'a plus d'effet (colonne neutralisée).
+ * Libellé des spécialités incluses dans un forfait. Le socle est TOUJOURS inclus
+ * (hors quota) ; le quota ne porte que sur les spécialités. `null` = toutes.
  */
-export function planQuotaLabel(_quota?: number | null): string {
-  return "tous les domaines inclus";
+export function planQuotaLabel(quota?: number | null): string {
+  if (quota == null) return "Socle + toutes les spécialités";
+  return `Socle + ${quota} spécialité${quota > 1 ? "s" : ""} au choix`;
+}
+
+/**
+ * Libellé de l'allocation mensuelle de crédits. `null` = « sans compter » : on
+ * n'affiche JAMAIS de nombre (ni ne laisse entendre une limite).
+ */
+export function monthlyCreditsLabel(n: number | null): string {
+  return n == null
+    ? "Mises en situation sans compter"
+    : `${n} crédits de mise en situation par mois`;
 }
 
 /** Date lisible en Europe/Paris (le serveur tourne en UTC). */

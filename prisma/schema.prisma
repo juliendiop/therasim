@@ -78,6 +78,10 @@ model User {
   // Relance témoignage (promoteurs NPS 8-10) : posé à l'envoi de la sollicitation,
   // déclenchée à la soumission du bilan. Empêche un second envoi.
   testimonialInviteAt DateTime? @map("testimonial_invite_at")
+  // Entretien simulé (N3) « découverte » : le compte gratuit y a droit UNE fois dans
+  // sa vie, gratuitement en crédits. Ce marqueur est À VIE — jamais réinitialisé par la
+  // recharge mensuelle. null = pas encore utilisé.
+  discoveryInterviewUsedAt DateTime? @map("discovery_interview_used_at")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])
@@ -158,10 +162,13 @@ model SubscriptionPlan {
   id             String   @id @default(uuid()) @db.Uuid
   key            String   @unique
   label          String
-  monthlyCredits Int      @map("monthly_credits")
-  // Nombre de domaines (référentiels) que l'abonné peut DÉBLOQUER À SON CHOIX.
-  // null = tout le catalogue. Les choix sont définitifs tant qu'on est abonné
-  // (ajout possible jusqu'au quota, pas d'échange — anti-abus).
+  // Allocation mensuelle de crédits de mise en situation. null = « sans compter »
+  // (aucun décompte, aucun plafond de crédits — l'anti-abus est un garde-fou séparé).
+  // Ne JAMAIS coder l'illimité par un grand nombre.
+  monthlyCredits Int?     @map("monthly_credits")
+  // Nombre de SPÉCIALITÉS que l'abonné peut choisir. Le socle ne compte jamais dans ce
+  // quota. null = toutes les spécialités. Les choix sont conservés ; un échange (swap)
+  // est possible une fois par période sur les forfaits intermédiaires.
   frameworkQuota Int?     @map("framework_quota")
   priceEurCents  Int      @map("price_eur_cents") // affichage seul — Stripe fait foi pour la facturation
   stripePriceId  String?  @map("stripe_price_id") // Price ID récurrent (Dashboard Stripe)
@@ -188,6 +195,9 @@ model UserSubscription {
   periodAnchorAt       DateTime? @map("period_anchor_at")
   // Fin de période d'essai (null hors essai). Alimenté depuis Stripe `trial_end`.
   trialEndsAt          DateTime? @map("trial_ends_at")
+  // Dernier `periodIndex` où un ÉCHANGE de spécialité a été effectué. Sert à limiter le
+  // swap à une fois par période de facturation (même clé que la recharge). null = jamais.
+  specialtySwapPeriodIndex Int? @map("specialty_swap_period_index")
   // Suivi d'envoi des emails de cycle d'essai (anti-doublon sur rejeu/cron).
   midTrialEmailAt      DateTime? @map("mid_trial_email_at")
   trialEndEmailAt      DateTime? @map("trial_end_email_at")
@@ -337,6 +347,13 @@ model Framework {
   gridId      String  @map("grid_id")
   description String?
   statut      String  @default("brouillon") // 'brouillon' | 'calibre' | 'publie'
+  // Nature commerciale : 'socle' = accessible à TOUT compte (gratuit compris), hors
+  // quota ; 'specialite' = compté dans le quota du forfait. String + union TS + Zod
+  // (convention du dépôt, pas d'enum natif). Défaut prudent : 'specialite'.
+  nature      String  @default("specialite") // 'socle' | 'specialite'
+  // Palier requis (réservé usage FUTUR, inexploité au lancement) : permettra un jour
+  // de réserver un référentiel au palier haut sans refonte. 'standard' | 'premium'.
+  tier        String  @default("standard")
 
   @@map("frameworks")
 }

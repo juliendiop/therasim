@@ -15,7 +15,7 @@ import { CREDIT_PACKS } from "@/lib/credits";
 import { canBuyIndividualOffers } from "@/lib/entitlements";
 import { resolveCommissionRate } from "@/lib/affiliation";
 import { isStripeConfigured } from "@/lib/stripe";
-import { planQuotaLabel } from "@/lib/ui";
+import { planQuotaLabel, monthlyCreditsLabel } from "@/lib/ui";
 import { checkoutPackAction, checkoutPlanAction } from "@/app/credits/actions";
 import Track from "@/app/_components/track";
 import AffiliationNudge from "@/app/_components/affiliation-nudge";
@@ -25,25 +25,29 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Tarifs — MELETA",
   description:
-    "Tous les domaines cliniques inclus, dès le compte gratuit. Les forfaits ne changent qu'une chose : le nombre de mises en situation par mois. Sans engagement, résiliable à tout moment.",
+    "Le socle clinique est inclus dans tous les niveaux, gratuit compris. Les forfaits ouvrent des spécialités au choix et augmentent le nombre de mises en situation par mois. Sans engagement, résiliable à tout moment.",
 };
 
 const FAQ: { q: string; a: string }[] = [
   {
-    q: "Tous les domaines sont-ils vraiment inclus, même dans le gratuit ?",
-    a: "Oui. Tous les domaines cliniques (les référentiels) sont ouverts à tout le monde, y compris sur le compte gratuit : exercices illimités partout. La seule chose qui varie d'un niveau à l'autre, c'est le nombre de mises en situation avec un patient simulé par IA que vous pouvez lancer chaque mois.",
+    q: "Qu'est-ce que le socle, et qu'est-ce qu'une spécialité ?",
+    a: "Le socle regroupe les fondamentaux de l'entretien clinique : il est inclus dans tous les niveaux, y compris le compte gratuit, sans jamais entamer votre quota. Les spécialités sont les domaines plus ciblés — chaque forfait en ouvre un certain nombre, à votre choix. Le catalogue de spécialités s'enrichit régulièrement.",
+  },
+  {
+    q: "Combien de spécialités puis-je ouvrir ?",
+    a: "Découverte : le socle + 1 spécialité de votre choix. Essentiel : socle + 1 spécialité. Praticien : socle + 3 spécialités. Intensif : socle + toutes les spécialités actuelles. Sur Essentiel et Praticien, vous pouvez échanger une spécialité contre une autre une fois par mois ; votre progression sur une spécialité mise de côté est conservée et réapparaît si vous y revenez.",
   },
   {
     q: "Qu'est-ce qu'un crédit ?",
-    a: "Un crédit est consommé à chaque mise en situation avec un patient simulé par IA (mini-scène ou entretien complet). Les exercices (QCM, reconnaissance) sont toujours gratuits et illimités, quel que soit votre niveau.",
+    a: "Un crédit est consommé à chaque mise en situation avec un patient simulé par IA : 1 crédit pour une mini-scène, 2 pour un entretien complet. Les exercices (QCM, reconnaissance) sont toujours gratuits et illimités, sur toutes vos spécialités accessibles.",
   },
   {
     q: "Quelle différence entre un pack de crédits et un abonnement ?",
-    a: "Un pack est un achat unique de crédits : ils s'ajoutent à votre solde et ne périment jamais. Un abonnement est mensuel et récurrent : il renouvelle chaque mois une allocation de crédits de mise en situation. Dans les deux cas, tous les domaines restent inclus — un pack ou un abonnement n'ouvre aucun domaine, il ajoute seulement du volume de mises en situation.",
+    a: "Un pack est un achat unique de crédits : ils s'ajoutent à votre solde et ne périment jamais. Un abonnement est mensuel : il renouvelle chaque mois une allocation de crédits et ouvre le socle plus un nombre de spécialités selon le niveau. Un pack n'ouvre aucune spécialité, il ajoute seulement du volume de mises en situation.",
   },
   {
     q: "Les crédits de mon abonnement se cumulent-ils d'un mois sur l'autre ?",
-    a: "Non. Les crédits d'un forfait sont une allocation mensuelle : ils sont remis à leur valeur chaque mois et ne sont pas reportés (le solde non utilisé d'un mois n'est pas ajouté au mois suivant). À la fin de l'abonnement, cette allocation revient à zéro. En revanche, les crédits que vous avez achetés en packs, eux, ne périment jamais et restent acquis.",
+    a: "Non. Les crédits d'un forfait sont une allocation mensuelle : ils sont remis à leur valeur chaque mois et ne sont pas reportés. À la fin de l'abonnement, cette allocation revient à zéro. En revanche, les crédits achetés en packs ne périment jamais et restent acquis. Le forfait Intensif, lui, ne décompte aucun crédit.",
   },
   {
     q: "Puis-je résilier à tout moment ?",
@@ -51,7 +55,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Le compte gratuit permet-il vraiment de tester ?",
-    a: "Oui. À l'inscription, 30 crédits vous sont offerts, puis 5 crédits gratuits sont rechargés chaque mois — de quoi lancer de vraies mises en situation, sur n'importe quel domaine, sans carte bancaire.",
+    a: "Oui. Vous accédez au socle et à une spécialité de votre choix, avec exercices illimités. 10 crédits vous sont offerts à l'inscription puis 5 chaque mois, et vous avez droit à un entretien complet offert — de quoi vous faire une vraie idée, sans carte bancaire.",
   },
   {
     q: "Est-ce que je reçois une facture ?",
@@ -98,8 +102,8 @@ export default async function TarifsPage() {
           Un forfait pour chaque rythme de pratique
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-base text-[var(--ink-soft)]">
-          Tous les domaines cliniques sont inclus, dès le compte gratuit. La seule
-          différence entre les niveaux : le nombre de mises en situation par mois.
+          Le socle clinique est inclus dans tous les niveaux, gratuit compris. Les forfaits
+          ouvrent des spécialités et augmentent le nombre de mises en situation par mois.
         </p>
       </section>
 
@@ -142,13 +146,23 @@ export default async function TarifsPage() {
                 <ul className="mt-3 flex-1 space-y-1.5 text-sm text-[var(--ink-soft)]">
                   <li className="flex items-start gap-1.5">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
-                    {p.monthlyCredits} crédits de mise en situation par mois
-                    <span className="text-[var(--muted)]">(non reportés)</span>
+                    <span>
+                      {monthlyCreditsLabel(p.monthlyCredits)}
+                      {p.monthlyCredits != null && (
+                        <span className="text-[var(--muted)]"> (non reportés)</span>
+                      )}
+                    </span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
-                    {planQuotaLabel()}
+                    {planQuotaLabel(p.frameworkQuota)}
                   </li>
+                  {isFree && (
+                    <li className="flex items-start gap-1.5">
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
+                      1 entretien complet offert (une fois)
+                    </li>
+                  )}
                   <li className="flex items-start gap-1.5">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
                     Exercices illimités, sans engagement

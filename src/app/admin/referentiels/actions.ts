@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth";
 import { generateDrillDraft, type DrillDraft } from "@/lib/generate";
 import { EvaluatorNotConfiguredError } from "@/lib/evaluator";
+import { parseNature, parseTier } from "@/lib/framework";
 
 function slugify(s: string): string {
   return s
@@ -47,6 +48,8 @@ export async function updateReferential(formData: FormData) {
       nom: String(formData.get("nom") ?? "").trim(),
       type: String(formData.get("type") ?? "approche"),
       description: String(formData.get("description") ?? "") || null,
+      nature: parseNature(formData.get("nature")),
+      tier: parseTier(formData.get("tier")),
     },
   });
   revalidatePath(`/admin/referentiels/${id}`);

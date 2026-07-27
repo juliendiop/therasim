@@ -24,15 +24,17 @@ export async function createPlan(formData: FormData) {
   await requireSuperAdmin();
   const key = String(formData.get("key") ?? "").trim();
   const label = String(formData.get("label") ?? "").trim();
-  const monthlyCredits = parseInt(String(formData.get("monthlyCredits") ?? ""), 10);
+  // Allocation mensuelle. Vide = « sans compter » (null) ; sinon un entier >= 0.
+  const mcRaw = String(formData.get("monthlyCredits") ?? "").trim();
+  const monthlyCredits = mcRaw === "" ? null : parseInt(mcRaw, 10);
   const priceEur = parseFloat(String(formData.get("priceEur") ?? ""));
   const stripePriceId = String(formData.get("stripePriceId") ?? "").trim();
-  // Quota de domaines au choix de l'abonné. Vide = tout le catalogue.
+  // Quota de SPÉCIALITÉS au choix de l'abonné. Vide = toutes les spécialités.
   const quotaRaw = String(formData.get("frameworkQuota") ?? "").trim();
   const quota = quotaRaw === "" ? null : parseInt(quotaRaw, 10);
 
   if (!key || !label) return;
-  if (!Number.isFinite(monthlyCredits) || monthlyCredits < 1) return;
+  if (monthlyCredits !== null && (!Number.isFinite(monthlyCredits) || monthlyCredits < 0)) return;
   if (!Number.isFinite(priceEur) || priceEur < 0) return;
   if (quota !== null && (!Number.isFinite(quota) || quota < 1)) return;
 
@@ -61,7 +63,8 @@ export async function togglePlanActive(formData: FormData) {
   revalidatePath("/admin/facturation");
 }
 
-// Met à jour un forfait existant : Price ID Stripe + quota de domaines au choix.
+// Met à jour un forfait existant : Price ID Stripe, quota de spécialités, et allocation
+// mensuelle (vide = « sans compter »).
 export async function updatePlanPriceId(formData: FormData) {
   await requireSuperAdmin();
   const id = String(formData.get("id") ?? "");
@@ -69,10 +72,24 @@ export async function updatePlanPriceId(formData: FormData) {
   const quotaRaw = String(formData.get("frameworkQuota") ?? "").trim();
   const quota = quotaRaw === "" ? null : parseInt(quotaRaw, 10);
   if (quota !== null && (!Number.isFinite(quota) || quota < 1)) return;
-  await prisma.subscriptionPlan.update({
-    where: { id },
-    data: { stripePriceId: stripePriceId || null, frameworkQuota: quota },
-  });
+
+  // Champ présent (input rendu) : "" => null (sans compter) ; sinon entier >= 0.
+  const mcRaw = formData.get("monthlyCredits");
+  const data: {
+    stripePriceId: string | null;
+    frameworkQuota: number | null;
+    monthlyCredits?: number | null;
+  } = { stripePriceId: stripePriceId || null, frameworkQuota: quota };
+  if (mcRaw !== null) {
+    const s = String(mcRaw).trim();
+    if (s === "") data.monthlyCredits = null;
+    else {
+      const n = parseInt(s, 10);
+      if (Number.isFinite(n) && n >= 0) data.monthlyCredits = n;
+    }
+  }
+
+  await prisma.subscriptionPlan.update({ where: { id }, data });
   revalidatePath("/admin/facturation");
 }
 

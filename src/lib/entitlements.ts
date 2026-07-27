@@ -11,7 +11,16 @@
 
 import { prisma } from "./prisma";
 import { getConfig } from "./config";
+import { periodIndexFor } from "./billing-period";
 import type { Role } from "./auth";
+
+/** `key` du forfait gratuit (Découverte) : repli quand l'utilisateur n'a pas
+ *  d'abonnement actif — socle + 1 spécialité au choix, 1 entretien N3 à vie. */
+export const FREE_PLAN_KEY = "decouverte";
+/** Quota de spécialités du gratuit si le plan Découverte n'est pas encore en base. */
+export const FREE_SPECIALTY_QUOTA = 1;
+/** Forfaits autorisant l'échange de spécialité (1×/période de facturation). */
+export const SWAP_PLAN_KEYS: readonly string[] = ["essentiel", "praticien"];
 
 /**
  * Un abonnement donne-t-il droit aux avantages du forfait (domaines + crédits) ?
@@ -84,14 +93,62 @@ export async function tenantCanAccess(
 
 export const FREE_FRAMEWORKS_CONFIG_KEY = "freemium.free.frameworks";
 
-/** Tous les référentiels PUBLIÉS. Depuis la refonte « tout inclus », c'est le
- *  catalogue accessible à tout compte B2C (gratuit compris). */
+/** Tous les référentiels PUBLIÉS (socle + spécialités confondus). */
 export async function allPublishedFrameworkIds(): Promise<Set<string>> {
   const rows = await prisma.framework.findMany({
     where: { statut: "publie" },
     select: { id: true },
   });
   return new Set(rows.map((r) => r.id));
+}
+
+/** Référentiels publiés de nature « socle » : accessibles à TOUT compte (gratuit
+ *  compris), sans jamais entamer le quota de spécialités. */
+export async function socleFrameworkIds(): Promise<Set<string>> {
+  const rows = await prisma.framework.findMany({
+    where: { statut: "publie", nature: "socle" },
+    select: { id: true },
+  });
+  return new Set(rows.map((r) => r.id));
+}
+
+/**
+ * Droits effectifs d'un utilisateur B2C : forfait actif (abonnement/essai entitled)
+ * OU, à défaut, le gratuit « Découverte ». `quota` = nombre de SPÉCIALITÉS ouvertes
+ * (null = toutes) ; le socle n'y compte jamais.
+ */
+export type B2CEntitlement = {
+  planKey: string;
+  planLabel: string;
+  quota: number | null;
+  monthlyCredits: number | null;
+  entitledSub: boolean;
+};
+
+export async function resolveB2CEntitlement(userId: string): Promise<B2CEntitlement> {
+  const subscription = await prisma.userSubscription.findUnique({ where: { userId } });
+  if (subscription && isSubscriptionEntitled(subscription.status)) {
+    const plan = await prisma.subscriptionPlan.findUnique({ where: { id: subscription.planId } });
+    if (plan) {
+      return {
+        planKey: plan.key,
+        planLabel: plan.label,
+        quota: plan.frameworkQuota,
+        monthlyCredits: plan.monthlyCredits,
+        entitledSub: true,
+      };
+    }
+  }
+  // Gratuit : lit le plan Découverte s'il est configuré, sinon valeurs par défaut.
+  const free = await prisma.subscriptionPlan.findUnique({ where: { key: FREE_PLAN_KEY } });
+  return {
+    planKey: free?.key ?? FREE_PLAN_KEY,
+    planLabel: free?.label ?? "Découverte",
+    // Découverte n'est JAMAIS « toutes les spécialités » : repli à 1 si quota absent/null.
+    quota: free?.frameworkQuota ?? FREE_SPECIALTY_QUOTA,
+    monthlyCredits: free?.monthlyCredits ?? null,
+    entitledSub: false,
+  };
 }
 
 /**
@@ -152,14 +209,37 @@ export async function userFrameworkAccess(user: UserLike): Promise<FrameworkAcce
     return { unlocked: tenantIds, locked: new Set() };
   }
 
-  // --- Refonte « tout inclus » (B2C) ------------------------------------------
-  // Le gating par domaine est SUPPRIMÉ sur le site public : tout compte, gratuit
-  // compris, accède à l'intégralité du catalogue publié. Le seul verrou restant est
-  // le solde de crédits (mises en situation IA), appliqué dans sim/actions. Ni
-  // `frameworkQuota`, ni les achats à l'unité, ni `subscription_choice` n'entrent
-  // plus en jeu ici — `locked` est toujours vide, donc aucune vitrine « à débloquer ».
+  // --- Modèle « socle + spécialités » (B2C) -----------------------------------
+  // Le socle est accessible à TOUT compte, gratuit compris, hors quota. Les
+  // spécialités sont ouvertes selon le forfait : quota null = toutes, sinon les
+  // spécialités choisies (subscription_choice) + les achats à vie. Un compte
+  // Découverte (sans abonnement) a droit au socle + 1 spécialité de son choix.
   if (isPublic) {
-    return { unlocked: await allPublishedFrameworkIds(), locked: new Set() };
+    const [allIds, socle, ent, accessRows] = await Promise.all([
+      allPublishedFrameworkIds(),
+      socleFrameworkIds(),
+      resolveB2CEntitlement(user.id),
+      prisma.userFrameworkAccess.findMany({ where: { userId: user.id } }),
+    ]);
+    const owned = new Set(
+      accessRows.filter((r) => r.source !== "subscription_choice").map((r) => r.frameworkId),
+    );
+    const choices = new Set(
+      accessRows.filter((r) => r.source === "subscription_choice").map((r) => r.frameworkId),
+    );
+
+    const open = new Set<string>(socle); // socle : toujours, hors quota
+    for (const id of owned) open.add(id); // achats à vie / octrois admin
+    if (ent.quota == null) {
+      for (const id of allIds) open.add(id); // toutes les spécialités
+    } else {
+      for (const id of choices) open.add(id); // spécialités choisies (dans le quota)
+    }
+
+    const unlocked = new Set<string>();
+    const locked = new Set<string>();
+    for (const id of allIds) (open.has(id) ? unlocked : locked).add(id);
+    return { unlocked, locked };
   }
 
   // Plafond de vente individuelle = catalogue du site public (ce qui est commercialisé).
@@ -210,67 +290,149 @@ export async function userFrameworkAccess(user: UserLike): Promise<FrameworkAcce
   return { unlocked, locked };
 }
 
-/** État du quota de choix de l'abonné (null si pas d'abonnement actif). */
+/**
+ * État du quota de SPÉCIALITÉS de l'utilisateur B2C (forfait actif ou Découverte).
+ * Le socle n'est jamais compté. `quota` null = toutes les spécialités.
+ * `canSwap` : le forfait autorise l'échange 1×/période (Essentiel, Praticien).
+ */
 export async function subscriptionChoiceStatus(userId: string): Promise<{
+  planKey: string;
   planLabel: string;
-  quota: number | null; // null = tout le catalogue (rien à choisir)
+  quota: number | null;
   used: number;
   remaining: number | null;
-} | null> {
-  const subscription = await prisma.userSubscription.findUnique({ where: { userId } });
-  if (!subscription || !isSubscriptionEntitled(subscription.status)) return null;
-  const plan = await prisma.subscriptionPlan.findUnique({
-    where: { id: subscription.planId },
-  });
-  if (!plan) return null;
+  entitledSub: boolean;
+  canSwap: boolean;
+}> {
+  const ent = await resolveB2CEntitlement(userId);
   const used = await prisma.userFrameworkAccess.count({
     where: { userId, source: "subscription_choice" },
   });
   return {
-    planLabel: plan.label,
-    quota: plan.frameworkQuota,
+    planKey: ent.planKey,
+    planLabel: ent.planLabel,
+    quota: ent.quota,
     used,
-    remaining: plan.frameworkQuota == null ? null : Math.max(0, plan.frameworkQuota - used),
+    remaining: ent.quota == null ? null : Math.max(0, ent.quota - used),
+    entitledSub: ent.entitledSub,
+    canSwap: ent.entitledSub && SWAP_PLAN_KEYS.includes(ent.planKey),
   };
 }
 
 /**
- * Consomme un choix du quota d'abonnement pour débloquer un référentiel.
- * Choix DÉFINITIF tant qu'on est abonné (pas d'échange — anti-abus).
+ * Consomme un choix du quota pour ouvrir une SPÉCIALITÉ. Le socle est déjà inclus
+ * partout (aucun choix requis). Fonctionne aussi pour le gratuit (Découverte, 1 choix).
+ * Le choix est conservé ; l'échange se fait via `swapSpecialtyChoice` (forfaits éligibles).
  */
 export async function activateSubscriptionChoice(
   user: UserLike,
   frameworkId: string,
 ): Promise<{ ok: boolean; message: string }> {
-  // Réutilise la logique d'accès complète (plafond de vente, opt-in B2B…).
-  const access = await userFrameworkAccess(user);
-  if (access.unlocked.has(frameworkId)) {
-    return { ok: true, message: "Ce domaine est déjà débloqué pour vous." };
-  }
-  if (!access.locked.has(frameworkId)) {
-    return { ok: false, message: "Ce domaine n'est pas disponible." };
-  }
   const framework = await prisma.framework.findUnique({ where: { id: frameworkId } });
   if (!framework || framework.statut !== "publie") {
-    return { ok: false, message: "Ce domaine n'est pas disponible." };
+    return { ok: false, message: "Cette spécialité n'est pas disponible." };
+  }
+  if (framework.nature === "socle") {
+    return { ok: true, message: "Ce domaine fait partie du socle : il est déjà inclus." };
+  }
+
+  const access = await userFrameworkAccess(user);
+  if (access.unlocked.has(frameworkId)) {
+    return { ok: true, message: "Cette spécialité est déjà ouverte pour vous." };
+  }
+  if (!access.locked.has(frameworkId)) {
+    return { ok: false, message: "Cette spécialité n'est pas disponible." };
   }
 
   const status = await subscriptionChoiceStatus(user.id);
-  if (!status) return { ok: false, message: "Aucun abonnement actif." };
-  if (status.quota == null) return { ok: true, message: "Déjà inclus dans votre forfait." };
+  if (status.quota == null) return { ok: true, message: "Toutes les spécialités sont déjà incluses." };
   if (status.remaining !== null && status.remaining <= 0) {
+    const swapHint = status.canSwap
+      ? " Vous pouvez échanger une de vos spécialités contre celle-ci (une fois par période), ou passer au forfait supérieur."
+      : " Passez à un forfait supérieur pour ouvrir plus de spécialités.";
     return {
       ok: false,
-      message: `Votre forfait ${status.planLabel} inclut ${status.quota} domaine${status.quota > 1 ? "s" : ""} — quota atteint. Passez à un forfait supérieur ou achetez ce domaine à l'unité.`,
+      message: `Votre forfait ${status.planLabel} inclut ${status.quota} spécialité${status.quota > 1 ? "s" : ""} — quota atteint.${swapHint}`,
     };
   }
 
   await prisma.userFrameworkAccess.upsert({
     where: { userId_frameworkId: { userId: user.id, frameworkId } },
-    update: {}, // déjà débloqué (achat ou choix antérieur) : rien à faire
+    update: {}, // déjà ouvert (achat ou choix antérieur) : rien à faire
     create: { userId: user.id, frameworkId, source: "subscription_choice" },
   });
-  return { ok: true, message: "Domaine débloqué !" };
+  return { ok: true, message: "Spécialité ouverte !" };
+}
+
+/**
+ * Échange une spécialité choisie contre une autre — une seule fois par période de
+ * facturation, sur les forfaits éligibles (Essentiel, Praticien). Dédup par `periodIndex`
+ * (même clé que la recharge). AUCUNE progression n'est supprimée : on ne retire que la
+ * ligne d'accès `UserFrameworkAccess` ; les `Attempt`/`UserCompetencyState` restent en base
+ * et redeviennent visibles si l'utilisateur revient sur la spécialité abandonnée.
+ */
+export async function swapSpecialtyChoice(
+  user: UserLike,
+  dropFrameworkId: string,
+  addFrameworkId: string,
+): Promise<{ ok: boolean; message: string }> {
+  if (dropFrameworkId === addFrameworkId) {
+    return { ok: false, message: "Choisissez deux spécialités différentes." };
+  }
+  const subscription = await prisma.userSubscription.findUnique({ where: { userId: user.id } });
+  if (!subscription || !isSubscriptionEntitled(subscription.status)) {
+    return { ok: false, message: "L'échange de spécialité nécessite un abonnement actif." };
+  }
+  const plan = await prisma.subscriptionPlan.findUnique({ where: { id: subscription.planId } });
+  if (!plan || !SWAP_PLAN_KEYS.includes(plan.key)) {
+    return { ok: false, message: "Votre forfait n'autorise pas l'échange de spécialité." };
+  }
+
+  const anchor = subscription.periodAnchorAt ?? subscription.createdAt;
+  const currentIndex = periodIndexFor(anchor, new Date());
+  if (subscription.specialtySwapPeriodIndex === currentIndex) {
+    return {
+      ok: false,
+      message:
+        "Vous avez déjà échangé une spécialité cette période. Un nouvel échange sera possible au prochain renouvellement.",
+    };
+  }
+
+  // La spécialité abandonnée doit être un choix courant ; la nouvelle, une spécialité
+  // publiée verrouillée (ni socle, ni déjà ouverte).
+  const dropRow = await prisma.userFrameworkAccess.findUnique({
+    where: { userId_frameworkId: { userId: user.id, frameworkId: dropFrameworkId } },
+  });
+  if (!dropRow || dropRow.source !== "subscription_choice") {
+    return { ok: false, message: "La spécialité à remplacer n'est pas l'un de vos choix." };
+  }
+  const addFw = await prisma.framework.findUnique({ where: { id: addFrameworkId } });
+  if (!addFw || addFw.statut !== "publie" || addFw.nature === "socle") {
+    return { ok: false, message: "Spécialité cible invalide." };
+  }
+  const access = await userFrameworkAccess(user);
+  if (access.unlocked.has(addFrameworkId)) {
+    return { ok: true, message: "Cette spécialité est déjà ouverte pour vous." };
+  }
+
+  await prisma.$transaction([
+    prisma.userFrameworkAccess.deleteMany({
+      where: { userId: user.id, frameworkId: dropFrameworkId, source: "subscription_choice" },
+    }),
+    prisma.userFrameworkAccess.upsert({
+      where: { userId_frameworkId: { userId: user.id, frameworkId: addFrameworkId } },
+      update: {},
+      create: { userId: user.id, frameworkId: addFrameworkId, source: "subscription_choice" },
+    }),
+    prisma.userSubscription.update({
+      where: { userId: user.id },
+      data: { specialtySwapPeriodIndex: currentIndex },
+    }),
+  ]);
+  return {
+    ok: true,
+    message: "Spécialité échangée. Votre progression sur l'ancienne reste conservée.",
+  };
 }
 
 /** Vrai si CET utilisateur peut utiliser ce référentiel (publié + débloqué pour lui). */

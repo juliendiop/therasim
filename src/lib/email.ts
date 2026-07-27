@@ -536,8 +536,8 @@ export async function sendBetaTrialEnd(
   // Conversion naturelle après la bêta : le forfait Praticien (et non l'Intensif au
   // prix fort), avec une remise fondateur réservée via le code bêta.
   const coupon = input.couponCode
-    ? `<p>Pour continuer, le plus adapté est le forfait <b>Praticien</b> — tous les domaines
-       inclus, largement de quoi pratiquer chaque mois. En tant que bêta-testeur, le code
+    ? `<p>Pour continuer, le plus adapté est le forfait <b>Praticien</b> — le socle et
+       3 spécialités au choix, largement de quoi pratiquer chaque mois. En tant que bêta-testeur, le code
        <b>${escapeHtml(input.couponCode)}</b> vous ouvre une <b>remise fondateur</b>, à saisir
        au moment du paiement.</p>
        <p style="margin:24px 0">
