@@ -1,12 +1,23 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth";
 import { generateDrillDraft, type DrillDraft } from "@/lib/generate";
 import { EvaluatorNotConfiguredError } from "@/lib/evaluator";
 import { parseNature, parseTier } from "@/lib/framework";
+import { CATALOGUE_TAG } from "@/lib/catalogue";
+
+/** Purge immédiatement le cache des pages publiques /domaines (mémoïsées 24 h).
+ *  Best-effort : à défaut, le cache expire seul sous 24 h — ne doit jamais casser un save. */
+function revalidateCatalogue() {
+  try {
+    updateTag(CATALOGUE_TAG);
+  } catch {
+    /* invalidation best-effort */
+  }
+}
 
 function slugify(s: string): string {
   return s
@@ -16,6 +27,17 @@ function slugify(s: string): string {
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
     .slice(0, 40);
+}
+
+/** Slug PUBLIC en kebab-case (SEO). Ex. « Entretien motivationnel » -> entretien-motivationnel. */
+function kebab(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
 }
 
 // --- Référentiel -----------------------------------------------------------
@@ -31,28 +53,53 @@ export async function createReferential(formData: FormData) {
   if (await prisma.framework.findUnique({ where: { id: fwId } })) {
     fwId = `${fwId}-${Math.random().toString(36).slice(2, 5)}`;
   }
+  // Slug public distinct de l'id (SEO). Unicité garantie avant création.
+  let slug = kebab(nom) || fwId;
+  if (await prisma.framework.findUnique({ where: { slug } })) {
+    slug = `${slug}-${Math.random().toString(36).slice(2, 5)}`;
+  }
   const gridId = `${fwId}-v1`;
   await prisma.competencyGrid.create({ data: { id: gridId, nom: `${nom} — grille v1` } });
   await prisma.framework.create({
-    data: { id: fwId, nom, type, description, gridId, statut: "brouillon" },
+    data: { id: fwId, slug, nom, type, description, gridId, statut: "brouillon" },
   });
+  revalidateCatalogue();
   redirect(`/admin/referentiels/${fwId}`);
 }
 
 export async function updateReferential(formData: FormData) {
   await requireSuperAdmin();
   const id = String(formData.get("id"));
-  await prisma.framework.update({
-    where: { id },
-    data: {
-      nom: String(formData.get("nom") ?? "").trim(),
-      type: String(formData.get("type") ?? "approche"),
-      description: String(formData.get("description") ?? "") || null,
-      nature: parseNature(formData.get("nature")),
-      tier: parseTier(formData.get("tier")),
-    },
-  });
+  const data: {
+    nom: string;
+    type: string;
+    description: string | null;
+    introPublique: string | null;
+    auteurs: string | null;
+    cadreReference: string | null;
+    nature: "socle" | "specialite";
+    tier: "standard" | "premium";
+    slug?: string;
+  } = {
+    nom: String(formData.get("nom") ?? "").trim(),
+    type: String(formData.get("type") ?? "approche"),
+    description: String(formData.get("description") ?? "") || null,
+    introPublique: String(formData.get("introPublique") ?? "").trim() || null,
+    auteurs: String(formData.get("auteurs") ?? "").trim() || null,
+    cadreReference: String(formData.get("cadreReference") ?? "").trim() || null,
+    nature: parseNature(formData.get("nature")),
+    tier: parseTier(formData.get("tier")),
+  };
+  // Slug public : normalisé, appliqué seulement s'il est non vide et libre (sinon on garde
+  // l'actuel — un slug stable est précieux pour le SEO).
+  const rawSlug = kebab(String(formData.get("slug") ?? ""));
+  if (rawSlug) {
+    const taken = await prisma.framework.findFirst({ where: { slug: rawSlug, NOT: { id } } });
+    if (!taken) data.slug = rawSlug;
+  }
+  await prisma.framework.update({ where: { id }, data });
   revalidatePath(`/admin/referentiels/${id}`);
+  revalidateCatalogue();
 }
 
 export async function setStatut(formData: FormData) {
@@ -60,6 +107,7 @@ export async function setStatut(formData: FormData) {
   const id = String(formData.get("id"));
   const statut = String(formData.get("statut")); // brouillon | calibre | publie
   await prisma.framework.update({ where: { id }, data: { statut } });
+  revalidateCatalogue();
   revalidatePath(`/admin/referentiels/${id}`);
 }
 
@@ -79,6 +127,7 @@ export async function addCategory(formData: FormData) {
   if (!exists) {
     await prisma.category.create({ data: { gridId, code, nom, ordre: count + 1 } });
   }
+  revalidateCatalogue();
   revalidatePath(`/admin/referentiels/${fwId}`);
 }
 
@@ -92,6 +141,7 @@ export async function deleteCategory(formData: FormData) {
   if (used === 0) {
     await prisma.category.deleteMany({ where: { gridId, code } });
   }
+  revalidateCatalogue();
   revalidatePath(`/admin/referentiels/${fwId}`);
 }
 
@@ -123,6 +173,7 @@ export async function addCompetency(formData: FormData) {
       },
     });
   }
+  revalidateCatalogue();
   revalidatePath(`/admin/referentiels/${fwId}`);
 }
 
@@ -141,6 +192,7 @@ export async function updateCompetency(formData: FormData) {
       ancrage5: String(formData.get("ancrage5") ?? "") || null,
     },
   });
+  revalidateCatalogue();
   revalidatePath(`/admin/referentiels/${fwId}`);
 }
 
@@ -151,6 +203,7 @@ export async function deleteCompetency(formData: FormData) {
   const code = String(formData.get("code"));
   await prisma.drill.deleteMany({ where: { frameworkId: fwId, competencyId: code } });
   await prisma.competency.deleteMany({ where: { gridId, code } });
+  revalidateCatalogue();
   revalidatePath(`/admin/referentiels/${fwId}`);
 }
 
@@ -205,6 +258,7 @@ export async function deleteDrill(formData: FormData) {
   const fwId = String(formData.get("frameworkId"));
   const id = String(formData.get("drillId"));
   await prisma.drill.delete({ where: { id } });
+  revalidateCatalogue();
   revalidatePath(`/admin/referentiels/${fwId}`);
 }
 

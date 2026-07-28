@@ -18,8 +18,10 @@ import {
   Users,
 } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
+import { getPublicCatalogue } from "@/lib/catalogue";
 import DemoDrill from "./demo-drill";
 import Track from "./_components/track";
+import DomaineCardView from "./_components/domaine-card";
 import TestimonialsSection from "./_components/testimonials-section";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +31,8 @@ export const dynamic = "force-dynamic";
 export default async function LandingPage() {
   const user = await getSessionUser();
   if (user) redirect("/accueil");
+
+  const { socle, specialites } = await getPublicCatalogue();
 
   return (
     <div className="animate-in">
@@ -62,7 +66,7 @@ export default async function LandingPage() {
           </Link>
         </div>
         <p className="mt-4 text-xs text-[var(--muted)]">
-          Sans carte bancaire · cas réalistes mais fictifs · outil formatif, non certifiant
+          Sans carte bancaire · cas réalistes mais fictifs
         </p>
       </section>
 
@@ -117,6 +121,56 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ---- Catalogue (socle + spécialités) ---- */}
+      {(socle.length > 0 || specialites.length > 0) && (
+        <section className="mt-20">
+          <div className="text-center">
+            <span className="text-xs font-semibold uppercase tracking-widest text-[var(--ochre)]">
+              Le catalogue
+            </span>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+              Un socle commun, des spécialités au choix
+            </h2>
+            <p className="mx-auto mt-1 max-w-2xl text-sm text-[var(--muted)]">
+              Le socle est inclus dans tous les niveaux, gratuit compris. Les spécialités
+              approfondissent une approche ou une situation clinique.
+            </p>
+          </div>
+          {socle.length > 0 && (
+            <div className="mt-8">
+              <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+                <Sparkles className="h-4 w-4 text-[var(--ochre)]" /> Le socle
+              </h3>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {socle.map((c) => (
+                  <DomaineCardView key={c.id} card={c} />
+                ))}
+              </div>
+            </div>
+          )}
+          {specialites.length > 0 && (
+            <div className="mt-8">
+              <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+                <Layers className="h-4 w-4 text-[var(--accent)]" /> Les spécialités
+              </h3>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {specialites.map((c) => (
+                  <DomaineCardView key={c.id} card={c} />
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="mt-8 text-center">
+            <Link
+              href="/domaines"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--accent)] hover:underline"
+            >
+              Explorer tous les domaines <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+      )}
+
       {/* ---- IA spécialisée ---- */}
       <section className="mt-20">
         <div className="text-center">
@@ -162,8 +216,8 @@ export default async function LandingPage() {
             </span>
             <h3 className="mt-3 font-semibold">Un cadre maîtrisé</h3>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              Des cas fictifs, un feedback formatif, et une IA qui complète la formation et
-              la supervision humaines — elle ne les remplace pas et ne certifie rien.
+              Tous les patients sont simulés et tous les cas sont fictifs : vous vous entraînez
+              sans jamais manipuler de données de patients réels.
             </p>
           </div>
         </div>
@@ -228,19 +282,6 @@ export default async function LandingPage() {
           >
             <Building2 className="h-4 w-4" /> Demander une démo
           </Link>
-        </div>
-      </section>
-
-      {/* ---- Réassurance ---- */}
-      <section className="mx-auto mt-16 max-w-3xl">
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-tint)] p-6 text-center sm:flex-row sm:text-left">
-          <ShieldCheck className="h-8 w-8 shrink-0 text-[var(--accent)]" />
-          <p className="text-sm text-[var(--ink-soft)]">
-            <b>Un cadre sûr pour s&apos;entraîner.</b> Tous les cas sont réalistes mais
-            fictifs — jamais de données de patients réels. MELETA est un outil formatif :
-            il complète la supervision et la formation, il ne les remplace pas et ne délivre
-            aucune certification.
-          </p>
         </div>
       </section>
 

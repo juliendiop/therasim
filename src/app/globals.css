@@ -268,3 +268,66 @@ body {
     max-width: none;
   }
 }
+
+/* Typographie des pages légales : texte long, dense en listes et en tableaux.
+   Même principe que .prose-blog (tokens du design system, pas de plugin), mais
+   la largeur de lecture est fixée par le conteneur de la page — un tableau de
+   sous-traitants a besoin de toute la colonne. Les titres de section portent
+   déjà leurs classes Tailwind, on ne style donc que le corps de texte. */
+@layer base {
+  .legal-prose {
+    color: var(--ink-soft);
+    line-height: 1.7;
+  }
+  .legal-prose p {
+    margin: 0;
+  }
+  .legal-prose strong,
+  .legal-prose b {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+  .legal-prose ul,
+  .legal-prose ol {
+    margin: 0;
+    padding-left: 1.25rem;
+    list-style-position: outside;
+  }
+  .legal-prose ul {
+    list-style-type: disc;
+  }
+  .legal-prose ol {
+    list-style-type: decimal;
+  }
+  .legal-prose li + li {
+    margin-top: 0.4em;
+  }
+  .legal-prose a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  /* Les tableaux (sous-traitants, durées, cookies) défilent seuls sur mobile
+     plutôt que d'élargir la page — cf. règle overflow-x: clip sur body. */
+  .legal-prose .table-scroll {
+    overflow-x: auto;
+  }
+  .legal-prose table {
+    width: 100%;
+    min-width: 34rem;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+  .legal-prose th,
+  .legal-prose td {
+    border: 1px solid var(--border);
+    padding: 0.5em 0.75em;
+    text-align: left;
+    vertical-align: top;
+  }
+  .legal-prose th {
+    background: var(--surface-tint);
+    color: var(--foreground);
+    font-weight: 600;
+  }
+}

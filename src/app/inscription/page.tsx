@@ -211,9 +211,22 @@ function InscriptionForm() {
                   onChange={(e) => setConsent(e.target.checked)}
                   className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
                 />
+                {/* Un consentement doit renvoyer aux documents opposables, pas
+                    répéter un argument produit (le disclaimer vit dans le footer). */}
                 <span>
-                  J&apos;accepte que mes données soient traitées pour le fonctionnement du
-                  service. MELETA est un outil formatif, non certifiant ; les cas sont fictifs.
+                  J&apos;accepte les{" "}
+                  <Link href="/cgv-cgu" className="underline hover:text-[var(--foreground)]">
+                    conditions générales
+                  </Link>{" "}
+                  et le traitement de mes données pour le fonctionnement du service, décrit dans
+                  la{" "}
+                  <Link
+                    href="/confidentialite"
+                    className="underline hover:text-[var(--foreground)]"
+                  >
+                    politique de confidentialité
+                  </Link>
+                  .
                 </span>
               </label>
 

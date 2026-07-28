@@ -27,6 +27,28 @@ export const viewport: Viewport = {
 
 const HEX = /^#[0-9a-fA-F]{3,8}$/;
 
+/** Colonne du footer public (titre + liste de liens). */
+function FooterColumn({ titre, children }: { titre: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--foreground)]">
+        {titre}
+      </h2>
+      <ul className="mt-3 space-y-2">{children}</ul>
+    </div>
+  );
+}
+
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <li>
+      <Link href={href} className="transition hover:text-[var(--foreground)] hover:underline">
+        {children}
+      </Link>
+    </li>
+  );
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -141,6 +163,12 @@ export default async function RootLayout({
             {!user && (
               <div className="ml-auto flex items-center gap-2">
                 <Link
+                  href="/domaines"
+                  className="hidden items-center rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)] sm:inline-flex"
+                >
+                  Domaines
+                </Link>
+                <Link
                   href="/tarifs"
                   className="hidden items-center rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--muted)] transition hover:bg-gray-100 hover:text-[var(--foreground)] sm:inline-flex"
                 >
@@ -240,36 +268,59 @@ export default async function RootLayout({
         {/* pb-20 sur mobile : réserve la place de la barre de navigation basse. */}
         <main className="mx-auto max-w-5xl px-5 py-8 pb-24 sm:pb-8">{children}</main>
 
-        <footer className="mx-auto max-w-5xl px-5 pb-24 pt-4 text-center text-xs text-[var(--muted)] sm:pb-10">
-          {isPublic ? (
-            <>
-              MELETA — outil formatif, non certifiant. ·{" "}
-              <Link href="/tarifs" className="underline hover:text-[var(--foreground)]">
-                Tarifs
-              </Link>{" "}
-              ·{" "}
-              <Link href="/blog" className="underline hover:text-[var(--foreground)]">
-                Blog
-              </Link>{" "}
-              ·{" "}
-              <Link href="/ambassadeurs" className="underline hover:text-[var(--foreground)]">
-                Ambassadeurs
-              </Link>
-              {user && (
-                <>
-                  {" "}
-                  ·{" "}
-                  <Link href="/avis" className="underline hover:text-[var(--foreground)]">
-                    Laisser un avis
-                  </Link>
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              {brandName} · <span className="opacity-70">propulsé par MELETA</span>
-            </>
-          )}
+        {/* Le footer public porte les liens légaux : étant dans le layout racine,
+            ils sont atteignables depuis N'IMPORTE QUELLE page. Le disclaimer
+            « formatif, non certifiant » vit ICI et nulle part ailleurs. */}
+        <footer className="mt-8 border-t border-[var(--border)] pb-24 pt-8 text-xs text-[var(--muted)] sm:pb-10">
+          <div className="mx-auto max-w-5xl px-5">
+            {isPublic ? (
+              <>
+                <div className="grid gap-8 sm:grid-cols-3">
+                  <FooterColumn titre="Produit">
+                    <FooterLink href="/domaines">Domaines</FooterLink>
+                    <FooterLink href="/tarifs">Tarifs</FooterLink>
+                    <FooterLink href="/demande-demo">Écoles</FooterLink>
+                    <FooterLink href="/blog">Blog</FooterLink>
+                  </FooterColumn>
+                  <FooterColumn titre="Programme">
+                    <FooterLink href="/ambassadeurs">Ambassadeurs</FooterLink>
+                    <FooterLink href="/conditions-ambassadeurs">
+                      Conditions du programme
+                    </FooterLink>
+                    {user && <FooterLink href="/avis">Laisser un avis</FooterLink>}
+                  </FooterColumn>
+                  <FooterColumn titre="Légal et contact">
+                    <FooterLink href="/mentions-legales">Mentions légales</FooterLink>
+                    <FooterLink href="/cgv-cgu">CGV / CGU</FooterLink>
+                    <FooterLink href="/confidentialite">Confidentialité</FooterLink>
+                    <FooterLink href="/contact">Contact</FooterLink>
+                  </FooterColumn>
+                </div>
+                <p className="mt-8 border-t border-[var(--border)] pt-5">
+                  MELETA — outil formatif, non certifiant. Les cas cliniques sont fictifs ; le
+                  service complète la formation et la supervision humaines sans s&apos;y
+                  substituer.
+                </p>
+              </>
+            ) : (
+              <div className="text-center">
+                {brandName} · <span className="opacity-70">propulsé par MELETA</span> ·{" "}
+                <Link
+                  href="/mentions-legales"
+                  className="underline hover:text-[var(--foreground)]"
+                >
+                  Mentions légales
+                </Link>{" "}
+                ·{" "}
+                <Link
+                  href="/confidentialite"
+                  className="underline hover:text-[var(--foreground)]"
+                >
+                  Confidentialité
+                </Link>
+              </div>
+            )}
+          </div>
         </footer>
 
         {/* Navigation mobile (connectés) : le header cache ses liens sous `sm`. */}

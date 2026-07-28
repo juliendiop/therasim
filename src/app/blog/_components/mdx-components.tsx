@@ -1,8 +1,36 @@
 // Composants MDX custom pour le blog, rendus entièrement côté serveur (aucun
 // JS client). Passés à compileMDX() (next-mdx-remote/rsc) dans /blog/[slug].
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
+import Link from "next/link";
 import { HelpCircle, Sparkles } from "lucide-react";
 import { slugify } from "@/lib/blog/posts";
+import { resolveDomaineLink } from "@/lib/catalogue";
+
+/**
+ * Lien contextuel INLINE vers un référentiel : `<Domaine slug="em">l'entretien
+ * motivationnel</Domaine>`. `slug` accepte l'id technique OU le slug public.
+ * Dégradation propre : si le référentiel est inconnu ou non publié, on rend le texte
+ * brut (jamais de lien mort ni d'échec de build). Composant serveur asynchrone.
+ */
+export async function Domaine({
+  slug,
+  children,
+}: {
+  slug?: string;
+  children?: ReactNode;
+}) {
+  const key = (slug ?? "").trim();
+  const resolved = key ? await resolveDomaineLink(key) : null;
+  if (!resolved) return <>{children}</>;
+  return (
+    <Link
+      href={`/domaines/${resolved.slug}`}
+      className="font-medium text-[var(--accent)] underline decoration-[var(--accent-border)] underline-offset-2 hover:decoration-[var(--accent)]"
+    >
+      {children ?? resolved.nom}
+    </Link>
+  );
+}
 
 /** Dialogue clinique stylisé : réplique du patient ou du praticien. */
 export function Verbatim({
@@ -125,6 +153,7 @@ export const mdxComponents = {
   PointCle,
   FAQ,
   FaqItem,
+  Domaine,
   h2: H2,
   h3: H3,
 };

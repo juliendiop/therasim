@@ -6402,6 +6402,7 @@ async function seedRef(def: RefDef) {
     },
     create: {
       id: def.fw,
+      slug: def.fw, // slug public par défaut = id ; ajustable en admin
       nom: def.nom,
       type: def.type,
       gridId: def.gridId,
@@ -6529,6 +6530,7 @@ async function main() {
     },
     create: {
       id: FW,
+      slug: FW, // slug public par défaut = id ; ajustable en admin
       nom: "Entretien motivationnel",
       type: "approche",
       gridId: GRID,

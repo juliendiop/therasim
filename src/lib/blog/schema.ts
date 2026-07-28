@@ -28,6 +28,9 @@ export const postFrontmatterSchema = z.object({
   audience: z.enum(AUDIENCES),
   draft: z.boolean().default(false),
   cover: z.string().optional(),
+  // Référentiels liés (id technique ou slug public) : alimente la carte « domaine lié »
+  // en fin d'article. Les slugs inconnus/non publiés sont ignorés à l'affichage.
+  framework: z.array(z.string()).default([]),
 });
 
 export type PostFrontmatter = z.infer<typeof postFrontmatterSchema>;

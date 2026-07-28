@@ -6,6 +6,7 @@ import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { getAllPosts, getPostBySlug, extractHeadings, readingTime } from "@/lib/blog/posts";
 import { AUDIENCE_LABEL, type Audience } from "@/lib/blog/schema";
+import { resolveDomaineLink } from "@/lib/catalogue";
 import { mdxComponents } from "../_components/mdx-components";
 
 export const revalidate = 3600;
@@ -54,6 +55,11 @@ export default async function BlogPostPage({
 
   const headings = extractHeadings(content);
   const minutes = readingTime(content);
+
+  // Référentiels liés (frontmatter) : résolus + filtrés (inconnus/non publiés ignorés).
+  const relatedDomaines = (
+    await Promise.all(frontmatter.framework.map((f) => resolveDomaineLink(f)))
+  ).filter((d): d is { slug: string; nom: string } => d !== null);
 
   const { content: rendered } = await compileMDX({
     source: content,
@@ -113,6 +119,25 @@ export default async function BlogPostPage({
       )}
 
       <article className="prose-blog mt-8">{rendered}</article>
+
+      {relatedDomaines.length > 0 && (
+        <div className="not-prose mt-10 rounded-xl border border-[var(--border)] bg-[var(--surface-tint)] p-5">
+          <div className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+            {relatedDomaines.length > 1 ? "Domaines liés" : "Domaine lié"}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {relatedDomaines.map((d) => (
+              <Link
+                key={d.slug}
+                href={`/domaines/${d.slug}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent-border)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+              >
+                {d.nom} <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <PostCta audience={frontmatter.audience} />
 

@@ -342,11 +342,22 @@ model TenantFrameworkOverride {
 
 model Framework {
   id          String  @id // 'em', 'act', 'anamnese', 'burnout'
+  // Slug PUBLIC, distinct de l'id technique : porte le SEO (/domaines/[slug]).
+  slug        String  @unique
   nom         String
   type        String // 'approche' | 'transversale' | 'situation'
   gridId      String  @map("grid_id")
-  description String?
+  // `description` reste INTERNE. `introPublique` = texte d'accroche public (200-300 mots),
+  // affiché sur la page domaine (repli sur description si absent).
+  description   String?
+  introPublique String? @map("intro_publique")
+  // Métadonnées publiques optionnelles (texte libre, affichées seulement si renseignées).
+  auteurs         String?
+  cadreReference  String? @map("cadre_reference")
   statut      String  @default("brouillon") // 'brouillon' | 'calibre' | 'publie'
+  // Suivi de fraîcheur (SEO : lastmod). @default(now()) pour peupler les lignes existantes
+  // au `db push` ; @updatedAt le rafraîchit à chaque enrichissement.
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
   // Nature commerciale : 'socle' = accessible à TOUT compte (gratuit compris), hors
   // quota ; 'specialite' = compté dans le quota du forfait. String + union TS + Zod
   // (convention du dépôt, pas d'enum natif). Défaut prudent : 'specialite'.
@@ -389,6 +400,7 @@ model Competency {
   ancrage3     String? @map("ancrage_3")
   ancrage5     String? @map("ancrage_5")
   ordre        Int     @default(0)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@unique([gridId, code])
   @@map("competencies")
@@ -400,6 +412,7 @@ model Scenario {
   frameworkId String  @map("framework_id")
   titre       String
   contexte    String?
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("scenarios")
 }

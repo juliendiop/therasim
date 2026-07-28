@@ -96,7 +96,7 @@ export default async function ReferentielDetail({
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium">Description</label>
+            <label className="text-xs font-medium">Description (interne)</label>
             <textarea
               name="description"
               defaultValue={fw.description ?? ""}
@@ -104,6 +104,58 @@ export default async function ReferentielDetail({
               className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm"
             />
           </div>
+
+          {/* Champs PUBLICS (page /domaines) */}
+          <div className="border-t border-[var(--border)] pt-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+              Page publique /domaines
+            </div>
+            <div className="mt-2 grid gap-3">
+              <div>
+                <label className="text-xs font-medium">Slug public (URL)</label>
+                <input
+                  name="slug"
+                  defaultValue={fw.slug ?? ""}
+                  placeholder="entretien-motivationnel"
+                  className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm font-mono"
+                />
+                <p className="mt-0.5 text-[11px] text-[var(--muted)]">
+                  /domaines/<b>{fw.slug ?? fw.id}</b> — évitez de le changer une fois indexé.
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium">Intro publique (200-300 mots)</label>
+                <textarea
+                  name="introPublique"
+                  defaultValue={fw.introPublique ?? ""}
+                  rows={5}
+                  placeholder="Texte d'accroche affiché en tête de la page publique (repli sur la description si vide)."
+                  className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm"
+                />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-xs font-medium">Auteur(s)</label>
+                  <input
+                    name="auteurs"
+                    defaultValue={fw.auteurs ?? ""}
+                    placeholder="ex. Dr X, Y"
+                    className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs font-medium">Cadre de référence</label>
+                  <input
+                    name="cadreReference"
+                    defaultValue={fw.cadreReference ?? ""}
+                    placeholder="ex. d'après Miller & Rollnick"
+                    className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
             Enregistrer
           </button>
