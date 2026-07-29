@@ -333,11 +333,12 @@ body {
 }
 
 /* Feedback de pression universel : retour visuel instantané au clic sur tout bouton
-   (et lien stylé en bouton). Évite le sentiment « il ne se passe rien ». */
+   ET tout lien stylé en bouton ou en carte (repéré par un coin arrondi — les liens de
+   texte en ligne, sans arrondi, ne sont pas concernés). Évite le « il ne se passe rien ». */
 @media (prefers-reduced-motion: no-preference) {
   button:not(:disabled):active,
-  a[role="button"]:not([aria-disabled="true"]):active {
-    transform: scale(0.97);
+  a[class*="rounded"]:not([aria-disabled="true"]):active {
+    transform: scale(0.98);
   }
 }
 
