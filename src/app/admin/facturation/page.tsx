@@ -1,13 +1,11 @@
 import { CreditCard, Gift, Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { getConfig } from "@/lib/config";
-import { CREDIT_PACKS } from "@/lib/credits";
 import { freeFrameworkIds } from "@/lib/entitlements";
 import { isStripeConfigured } from "@/lib/stripe";
 import { planQuotaLabel } from "@/lib/ui";
 import {
   createPlan,
-  savePackPriceIds,
+  saveCreditPack,
   saveFrameworkOffer,
   saveFreeFrameworks,
   togglePlanActive,
@@ -17,9 +15,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function FacturationPage() {
-  const [plans, packPriceIds, frameworks, offers, freeIds] = await Promise.all([
+  const [plans, packs, frameworks, offers, freeIds] = await Promise.all([
     prisma.subscriptionPlan.findMany({ orderBy: { ordre: "asc" } }),
-    Promise.all(CREDIT_PACKS.map((p) => getConfig(`stripe.price.pack.${p.id}`))),
+    prisma.creditPack.findMany({ orderBy: { ordre: "asc" } }),
     prisma.framework.findMany({ where: { statut: "publie" }, orderBy: { nom: "asc" } }),
     prisma.frameworkOffer.findMany(),
     freeFrameworkIds(),
@@ -76,31 +74,57 @@ export default async function FacturationPage() {
         </div>
       </div>
 
-      {/* Packs de crédits */}
+      {/* Packs de crédits (recharge abonnés — source de vérité : modèle CreditPack) */}
       <h3 className="mt-7 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
-        Packs de crédits (paiement unique)
+        Packs de crédits (recharge, paiement unique)
       </h3>
-      <form action={savePackPriceIds} className="mt-3 space-y-3">
-        {CREDIT_PACKS.map((pack, i) => (
-          <div
+      <div className="mt-3 space-y-2">
+        {packs.map((pack) => (
+          <form
             key={pack.id}
-            className="flex flex-col gap-2 rounded-xl border border-[var(--border)] bg-white p-4 sm:flex-row sm:items-center"
+            action={saveCreditPack}
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border)] bg-white p-4"
           >
-            <div className="w-40 shrink-0 text-sm">
-              <b>{pack.credits}</b> crédits · {pack.priceEur} €
-            </div>
+            <input type="hidden" name="id" value={pack.id} />
+            <label className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+              Crédits
+              <input
+                name="credits"
+                type="number"
+                min={1}
+                defaultValue={pack.credits}
+                className="w-20 rounded-lg border border-[var(--border)] p-2 text-xs"
+              />
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+              €
+              <input
+                name="priceEur"
+                type="number"
+                min={0}
+                step="0.01"
+                defaultValue={(pack.priceEurCents / 100).toString()}
+                className="w-20 rounded-lg border border-[var(--border)] p-2 text-xs"
+              />
+            </label>
             <input
-              name={`price_${pack.id}`}
-              defaultValue={packPriceIds[i] ?? ""}
+              name="stripePriceId"
+              defaultValue={pack.stripePriceId ?? ""}
               placeholder="price_..."
-              className="flex-1 rounded-lg border border-[var(--border)] p-2 text-sm font-mono"
+              className="min-w-40 flex-1 rounded-lg border border-[var(--border)] p-2 text-xs font-mono"
             />
-          </div>
+            <label className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+              <input type="checkbox" name="active" defaultChecked={pack.active} /> actif
+            </label>
+            <button className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium hover:border-[var(--accent)]">
+              Enregistrer
+            </button>
+          </form>
         ))}
-        <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
-          Enregistrer les Price ID
-        </button>
-      </form>
+        {packs.length === 0 && (
+          <p className="text-sm text-[var(--muted)]">Aucun pack configuré.</p>
+        )}
+      </div>
 
       {/* Forfaits d'abonnement */}
       <h3 className="mt-8 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">

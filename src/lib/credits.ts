@@ -6,6 +6,7 @@ import { prisma } from "./prisma";
 import { getConfig } from "./config";
 import { isSubscriptionEntitled } from "./entitlements";
 import { periodIndexFor } from "./billing-period";
+import { splitDebit } from "./credit-split";
 
 export type SimKind = "miniscene" | "simulation";
 
@@ -17,13 +18,37 @@ export const CREDIT_DEFAULTS = {
   costSimulation: 2,
 };
 
-// Packs proposés à l'achat (paiement unique via Stripe Checkout — voir src/lib/billing.ts).
-// Le Price ID Stripe de chaque pack se configure dans /admin/facturation.
-export const CREDIT_PACKS = [
-  { id: "s", credits: 20, priceEur: 19 },
-  { id: "m", credits: 50, priceEur: 39 },
-  { id: "l", credits: 100, priceEur: 69 },
-];
+// Packs de crédits (recharge ponctuelle, réservée aux abonnés). Source de vérité UNIQUE
+// désormais en base (modèle CreditPack) : plus de constante en dur ni de lecture des
+// clés app_config `stripe.price.pack.*`.
+export type CreditPackView = {
+  id: string;
+  credits: number;
+  priceEurCents: number;
+  stripePriceId: string | null;
+};
+
+/** Packs actifs, du plus petit au plus grand. */
+export async function getCreditPacks(): Promise<CreditPackView[]> {
+  const rows = await prisma.creditPack.findMany({
+    where: { active: true },
+    orderBy: { ordre: "asc" },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    credits: r.credits,
+    priceEurCents: r.priceEurCents,
+    stripePriceId: r.stripePriceId,
+  }));
+}
+
+/** Un pack par id (actif ou non). Null si inconnu. */
+export async function getCreditPack(id: string): Promise<CreditPackView | null> {
+  const r = await prisma.creditPack.findUnique({ where: { id } });
+  return r
+    ? { id: r.id, credits: r.credits, priceEurCents: r.priceEurCents, stripePriceId: r.stripePriceId }
+    : null;
+}
 
 export class InsufficientCreditsError extends Error {}
 
@@ -53,6 +78,17 @@ export async function creditSettings(): Promise<CreditSettings> {
 
 export function costFor(kind: SimKind, s: CreditSettings): number {
   return kind === "simulation" ? s.costSimulation : s.costMiniscene;
+}
+
+/**
+ * Seuil (en crédits) du bandeau bas-solde. Sans rapport avec le pack de bienvenue :
+ * défaut = 2 × le coût d'une séance complète (« de quoi mener 2 séances »). Éditable
+ * via `limits.lowBalanceThreshold` en admin.
+ */
+export async function lowBalanceThreshold(s: CreditSettings): Promise<number> {
+  const v = await getConfig("limits.lowBalanceThreshold");
+  const n = v == null ? NaN : parseInt(v, 10);
+  return Number.isFinite(n) && n > 0 ? n : 2 * s.costSimulation;
 }
 
 // Index de mois absolu (année*12 + mois) pour comparer deux dates au mois près.
@@ -125,11 +161,6 @@ export async function getCredits(userId: string): Promise<number> {
 }
 
 /**
- * Débite le solde de façon atomique, en puisant D'ABORD dans l'allocation de
- * forfait (périssable : autant l'utiliser avant qu'elle n'expire), PUIS dans le
- * portefeuille persistant. Lève InsufficientCreditsError si le total est insuffisant.
- */
-/**
  * Vrai si l'utilisateur bénéficie d'un forfait « sans compter » (abonnement entitled
  * dont le plan a `monthlyCredits == null`). Les mises en situation ne sont alors pas
  * décomptées — le garde-fou anti-abus (usage-limits) reste seul en vigueur.
@@ -141,6 +172,15 @@ export async function isUnlimited(userId: string): Promise<boolean> {
   return Boolean(plan && plan.monthlyCredits == null);
 }
 
+/**
+ * Débite le solde de façon atomique.
+ *
+ * ORDRE DE CONSOMMATION (contrat, couvert par un test) : on puise D'ABORD dans
+ * l'allocation d'abonnement (`planCredits`, périssable — autant l'utiliser avant qu'elle
+ * n'expire en fin de période), PUIS dans le portefeuille persistant (`credits` : packs
+ * achetés + crédits gratuits, sans péremption). Lève InsufficientCreditsError si le total
+ * est insuffisant. Un forfait « sans compter » ne débite jamais rien.
+ */
 export async function debit(
   userId: string,
   amount: number,
@@ -156,8 +196,9 @@ export async function debit(
     const total = u.credits + u.planCredits;
     if (total < amount) throw new InsufficientCreditsError("solde insuffisant");
 
-    const fromPlan = Math.min(u.planCredits, amount); // forfait d'abord
-    const fromWallet = amount - fromPlan;
+    // Ordre de consommation (allocation d'abord, portefeuille ensuite) — logique PURE,
+    // couverte par test/consumption-order.test.ts.
+    const { fromPlan, fromWallet } = splitDebit(u.planCredits, u.credits, amount);
     const balanceAfter = total - amount;
     await tx.user.update({
       where: { id: userId },

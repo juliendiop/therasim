@@ -25,6 +25,9 @@ export async function checkoutPackAction(formData: FormData) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
   const packId = String(formData.get("packId") ?? "");
+  const cta = String(formData.get("cta") ?? "");
+  const wall = String(formData.get("wall") ?? "");
+  const fromPlan = String(formData.get("plan") ?? "");
   const baseUrl = await appBaseUrlFromRequest();
 
   let url: string;
@@ -33,7 +36,10 @@ export async function checkoutPackAction(formData: FormData) {
   } catch (e) {
     redirect(`/credits?error=${encodeURIComponent(errorMessage(e))}`);
   }
-  await recordFunnel("checkout_start", { userId: user.id, meta: { kind: "pack", packId } });
+  await recordFunnel("checkout_start", {
+    userId: user.id,
+    meta: { kind: "pack", packId, cta, wall, fromPlan },
+  });
   redirect(url);
 }
 
@@ -51,6 +57,8 @@ export async function checkoutPlanAction(formData: FormData) {
   const planId = String(formData.get("planId") ?? "");
   const cycle = String(formData.get("cycle") ?? "monthly") === "yearly" ? "yearly" : "monthly";
   const cta = String(formData.get("cta") ?? ""); // identifiant analytics du bouton d'origine
+  const wall = String(formData.get("wall") ?? ""); // mur déclencheur si venu d'une modale
+  const fromPlan = String(formData.get("plan") ?? ""); // plan au moment du déclenchement
   const baseUrl = await appBaseUrlFromRequest();
 
   let url: string;
@@ -61,7 +69,7 @@ export async function checkoutPlanAction(formData: FormData) {
   }
   await recordFunnel("checkout_start", {
     userId: user.id,
-    meta: { kind: "plan", planId, cycle, cta },
+    meta: { kind: "plan", planId, cycle, cta, wall, fromPlan },
   });
   redirect(url);
 }

@@ -90,6 +90,30 @@ export async function recordFunnelOncePerUser(
   }
 }
 
+/**
+ * Événement d'INTERACTION (hors entonnoir linéaire) : murs de crédits, etc. Écrit dans
+ * la même table mais absent de FUNNEL_STEPS, donc invisible au récap d'entonnoir.
+ * Best-effort, ne lève jamais.
+ */
+export async function recordInteraction(
+  event: string,
+  opts: { userId?: string | null; meta?: Record<string, unknown> } = {},
+): Promise<void> {
+  try {
+    const visitorId = (await peekVisitorId()) ?? `srv_${crypto.randomUUID()}`;
+    await prisma.funnelEvent.create({
+      data: {
+        visitorId,
+        userId: opts.userId ?? null,
+        event,
+        meta: (opts.meta ?? undefined) as Prisma.InputJsonValue | undefined,
+      },
+    });
+  } catch (e) {
+    console.error("[funnel] interaction", event, e);
+  }
+}
+
 export type FunnelSummaryStep = {
   event: FunnelEventName;
   label: string;

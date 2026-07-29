@@ -4,18 +4,31 @@ import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/auth";
 import { setConfig } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
-import { CREDIT_PACKS } from "@/lib/credits";
 import { FREE_FRAMEWORKS_CONFIG_KEY } from "@/lib/entitlements";
 
-// Price ID Stripe (paiement unique) de chaque pack de crédits — stocké en app_config,
-// même mécanisme que la config des modèles LLM (voir src/lib/config.ts).
-export async function savePackPriceIds(formData: FormData) {
+// Met à jour un pack de crédits (source de vérité : modèle CreditPack). Crédits et prix
+// sont ceux affichés/facturés ; les achats passés gardent leurs valeurs figées (metadata).
+export async function saveCreditPack(formData: FormData) {
   await requireSuperAdmin();
-  for (const pack of CREDIT_PACKS) {
-    const value = String(formData.get(`price_${pack.id}`) ?? "").trim();
-    await setConfig(`stripe.price.pack.${pack.id}`, value);
-  }
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return;
+  const credits = parseInt(String(formData.get("credits") ?? ""), 10);
+  const priceEur = parseFloat(String(formData.get("priceEur") ?? ""));
+  const stripePriceId = String(formData.get("stripePriceId") ?? "").trim();
+  const active = formData.get("active") != null;
+
+  const data: {
+    stripePriceId: string | null;
+    active: boolean;
+    credits?: number;
+    priceEurCents?: number;
+  } = { stripePriceId: stripePriceId || null, active };
+  if (Number.isFinite(credits) && credits >= 1) data.credits = credits;
+  if (Number.isFinite(priceEur) && priceEur >= 0) data.priceEurCents = Math.round(priceEur * 100);
+
+  await prisma.creditPack.update({ where: { id }, data });
   revalidatePath("/admin/facturation");
+  revalidatePath("/credits");
 }
 
 // Crée un nouveau forfait d'abonnement (nom/prix/crédits/quota définis par l'admin —

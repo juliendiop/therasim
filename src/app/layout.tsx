@@ -1,14 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import type { CSSProperties } from "react";
+import { Suspense, type CSSProperties } from "react";
 import Link from "next/link";
 import { Brain, ClipboardList, Coins, Eye, GraduationCap, LogOut, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { canManageLive, canSupervise } from "@/lib/roles";
-import { creditSettings, syncWallet, syncSubscriptionCredits, getWalletView } from "@/lib/credits";
+import {
+  creditSettings,
+  syncWallet,
+  syncSubscriptionCredits,
+  getWalletView,
+  isUnlimited,
+  lowBalanceThreshold,
+} from "@/lib/credits";
+import { isSubscriptionEntitled } from "@/lib/entitlements";
 import { prisma } from "@/lib/prisma";
 import { stopImpersonation } from "./admin/impersonate-actions";
 import MobileNav from "./_components/mobile-nav";
 import LowCreditsBanner from "./_components/low-credits-banner";
+import CreditsWall from "./_components/credits-wall";
 import SupportWidget from "./_components/support-widget";
 import "./globals.css";
 
@@ -65,9 +74,23 @@ export default async function RootLayout({
   // `syncWallet` renvoie le TOTAL (portefeuille + allocation de forfait).
   const credits = user && user.role === "learner" ? await syncWallet(user.id) : null;
   const wallet = user && user.role === "learner" ? await getWalletView(user.id) : null;
+  const subscription =
+    user && user.role === "learner"
+      ? await prisma.userSubscription.findUnique({ where: { userId: user.id } })
+      : null;
   const settings = credits !== null ? await creditSettings() : null;
-  // Seuil du bandeau bas-solde : 20 % du pack de bienvenue.
-  const lowThreshold = settings ? Math.ceil(settings.welcome * 0.2) : 0;
+  // Compte « sans compter » : ni bandeau ni modale ne doivent apparaître.
+  const unlimited =
+    user && user.role === "learner" ? await isUnlimited(user.id) : false;
+  // Seuil bas-solde paramétrable (défaut = 2 × le coût d'une séance), et non lié au
+  // pack de bienvenue. Recharge in-app : abonnés -> /credits, gratuit -> /tarifs.
+  const lowThreshold = settings ? await lowBalanceThreshold(settings) : 0;
+  const canRecharge = Boolean(
+    user &&
+      user.role === "learner" &&
+      subscription &&
+      isSubscriptionEntitled(subscription.status),
+  );
   const creditsTooltip = settings
     ? `${credits} crédits\n${
         wallet && wallet.plan > 0
@@ -264,8 +287,23 @@ export default async function RootLayout({
           </div>
         </header>
 
-        {/* Bandeau discret bas-solde (apprenants uniquement, 1× par session navigateur). */}
-        {credits !== null && <LowCreditsBanner credits={credits} threshold={lowThreshold} />}
+        {/* Bandeau discret bas-solde (apprenants, jamais « sans compter », 1×/session). */}
+        {credits !== null && !unlimited && settings && (
+          <LowCreditsBanner
+            credits={credits}
+            threshold={lowThreshold}
+            costSimulation={settings.costSimulation}
+            canRecharge={canRecharge}
+          />
+        )}
+
+        {/* Modale des murs (crédits / niveau 3), pilotée par ?creditwall= — jamais sur
+            un compte « sans compter ». useSearchParams -> Suspense. */}
+        {credits !== null && !unlimited && (
+          <Suspense fallback={null}>
+            <CreditsWall />
+          </Suspense>
+        )}
 
         {/* pb-20 sur mobile : réserve la place de la barre de navigation basse. */}
         <main className="mx-auto max-w-5xl px-5 py-8 pb-24 sm:pb-8">{children}</main>

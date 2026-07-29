@@ -6,7 +6,7 @@ import type Stripe from "stripe";
 import { prisma } from "./prisma";
 import { getConfig } from "./config";
 import { grant, syncSubscriptionCredits, topUpPlanCredits, zeroPlanCredits } from "./credits";
-import { CREDIT_PACKS } from "./credits";
+import { getCreditPack } from "./credits";
 import { isSubscriptionEntitled } from "./entitlements";
 import { periodIndexFor } from "./billing-period";
 import { BETA_PLAN_LABEL } from "./beta-constants";
@@ -23,23 +23,40 @@ export async function createCreditsCheckout(
   packId: string,
   baseUrl: string,
 ): Promise<string> {
-  const pack = CREDIT_PACKS.find((p) => p.id === packId);
+  const pack = await getCreditPack(packId);
   if (!pack) throw new Error("pack de crédits inconnu");
-  const priceId = await getConfig(`stripe.price.pack.${packId}`);
-  if (!priceId) {
+  if (!pack.stripePriceId) {
     throw new Error(
       "Ce pack n'a pas encore de Price ID Stripe configuré (voir /admin/facturation).",
     );
+  }
+  const [user, sub] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.userSubscription.findUnique({ where: { userId } }),
+  ]);
+  if (!user) throw new Error("utilisateur introuvable");
+  // Recharge RÉSERVÉE aux abonnés : un compte Découverte (sans abonnement actif) ne
+  // recharge pas — il passe à l'abonnement.
+  if (!sub || !isSubscriptionEntitled(sub.status)) {
+    throw new Error("Les recharges de crédits sont réservées aux abonnés.");
   }
 
   const customerId = await ensureStripeCustomer(userId);
   const session = await stripeClient().checkout.sessions.create({
     mode: "payment",
     customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
+    line_items: [{ price: pack.stripePriceId, quantity: 1 }],
     success_url: `${baseUrl}/credits?success=pack`,
     cancel_url: `${baseUrl}/credits?canceled=1`,
-    metadata: { userId, packId, credits: String(pack.credits) },
+    // Crédits ET prix FIGÉS au moment de l'achat (metadata) : modifier un pack plus tard
+    // ne réécrit pas l'historique. `tenant_id` inclus pour la traçabilité.
+    metadata: {
+      userId,
+      tenantId: user.tenantId,
+      packId,
+      credits: String(pack.credits),
+      priceEurCents: String(pack.priceEurCents),
+    },
   });
   if (!session.url) throw new Error("Stripe n'a pas renvoyé d'URL de paiement.");
   return session.url;
@@ -181,12 +198,18 @@ export async function handleCheckoutCompleted(event: Stripe.Event): Promise<void
       await recordFunnelOncePerUser("purchase", userId, { meta: { kind: "framework" } });
       return;
     }
-    // Pack de crédits.
+    // Pack de crédits. On journalise les CRÉDITS et le PRIX figés à l'achat (metadata,
+    // + montant réellement facturé par Stripe) : l'historique ne dépend pas du pack actuel.
     const credits = Number(session.metadata?.credits ?? 0);
     if (credits > 0) {
       await grant(userId, credits, "purchase", {
         sessionId: session.id,
         packId: session.metadata?.packId,
+        tenantId: session.metadata?.tenantId,
+        creditsPurchased: credits,
+        priceEurCents: Number(session.metadata?.priceEurCents ?? 0),
+        amountPaidCents: session.amount_total ?? null,
+        currency: session.currency ?? null,
       });
       await recordFunnelOncePerUser("purchase", userId, { meta: { kind: "pack" } });
     }

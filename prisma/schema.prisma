@@ -210,6 +210,22 @@ model UserSubscription {
   @@map("user_subscriptions")
 }
 
+// Pack de crédits (recharge ponctuelle, RÉSERVÉE aux abonnés). Source de vérité UNIQUE
+// du couple crédits/prix/Price ID — remplace la constante CREDIT_PACKS en dur et les
+// clés app_config `stripe.price.pack.*` (laissées en place, inutilisées, le temps de
+// valider un vrai achat en production, puis supprimées au lot suivant).
+model CreditPack {
+  id            String   @id // 's' | 'm' | 'l' — identifiant stable (= ancien packId)
+  credits       Int
+  priceEurCents Int      @map("price_eur_cents")
+  stripePriceId String?  @map("stripe_price_id")
+  active        Boolean  @default(true)
+  ordre         Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("credit_packs")
+}
+
 // Offre d'achat à l'unité d'un référentiel (paiement unique, accès à vie).
 model FrameworkOffer {
   frameworkId   String  @id @map("framework_id")

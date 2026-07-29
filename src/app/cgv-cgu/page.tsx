@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import LegalPage, { LegalSection, ToFill } from "@/app/_components/legal-page";
 import { EDITEUR, SERVICE } from "@/lib/legal";
-import { CREDIT_PACKS } from "@/lib/credits";
+import { getCreditPacks } from "@/lib/credits";
 import { usageSettings } from "@/lib/usage-limits";
 
 // Les plafonds d'usage loyal sont paramétrables en base : la page lit les valeurs
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CgvCguPage() {
-  const limits = await usageSettings();
+  const [limits, packs] = await Promise.all([usageSettings(), getCreditPacks()]);
 
   return (
     <LegalPage
@@ -100,9 +100,9 @@ export default async function CgvCguPage() {
             souscrit. Sans engagement de durée.
           </li>
           <li>
-            <b>Pack de crédits</b> — achat unique, sans abonnement. Les packs actuellement
-            proposés comptent {CREDIT_PACKS.map((p) => p.credits).join(", ")} crédits. Un pack
-            n&apos;ouvre aucune spécialité : il ajoute uniquement du volume de mises en
+            <b>Pack de crédits</b> — achat unique, réservé aux abonnés. Les packs
+            actuellement proposés comptent {packs.map((p) => p.credits).join(", ")} crédits. Un
+            pack n&apos;ouvre aucune spécialité : il ajoute uniquement du volume de mises en
             situation.
           </li>
         </ul>

@@ -3,13 +3,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Coins, Dumbbell, Layers, MessagesSquare, RotateCcw } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { userFrameworkAccess } from "@/lib/entitlements";
-import { creditSettings } from "@/lib/credits";
-import { startMiniSceneAction } from "@/app/sim/actions";
+import { userFrameworkAccess, resolveB2CEntitlement } from "@/lib/entitlements";
+import { creditSettings, getWalletView, isUnlimited } from "@/lib/credits";
 import { buildFrameworkDetail } from "@/lib/progress";
 import { palier } from "@/lib/mastery";
 import { PALIER_COLOR, TYPE_LABEL, pct } from "@/lib/ui";
 import FrameworkPaywall from "./paywall";
+import { MiniSceneLauncher, SeanceLauncher } from "./session-launchers";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +50,25 @@ export default async function FrameworkPage({
   }
   const detail = await buildFrameworkDetail(user.id, framework_id);
   if (!detail) notFound();
-  const credits = await creditSettings();
+  // Contexte pour le pré-check client des lancements (mini-scène / séance).
+  const [credits, wallet, ent, unlimited, u] = await Promise.all([
+    creditSettings(),
+    getWalletView(user.id),
+    resolveB2CEntitlement(user.id),
+    isUnlimited(user.id),
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { discoveryInterviewUsedAt: true },
+    }),
+  ]);
+  const launch = {
+    frameworkId: framework_id,
+    total: wallet.total,
+    isUnlimited: unlimited,
+    entitledSub: ent.entitledSub,
+    // Séance découverte encore disponible (gratuite, à vie) : compte gratuit non encore utilisé.
+    discoveryAvailable: !ent.entitledSub && !u?.discoveryInterviewUsedAt,
+  };
 
   const { framework, overall, categories, priorites } = detail;
 
@@ -148,12 +166,12 @@ export default async function FrameworkPage({
             desc="Un court échange de quelques tours avec un patient, sur 2 compétences. Le pont vers la vraie pratique."
             icon={<Layers className="h-4 w-4" />}
           >
-            <form action={startMiniSceneAction}>
-              <input type="hidden" name="frameworkId" value={framework.id} />
-              <button className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]">
-                Lancer une mini-scène
-              </button>
-            </form>
+            <MiniSceneLauncher
+              frameworkId={launch.frameworkId}
+              total={launch.total}
+              isUnlimited={launch.isUnlimited}
+              costMini={credits.costMiniscene}
+            />
             <CreditNote cost={credits.costMiniscene} />
           </ModeCard>
 
@@ -163,12 +181,14 @@ export default async function FrameworkPage({
             desc="Une séance complète, sans filet, débriefée à la fin. Pour éprouver votre autonomie."
             icon={<MessagesSquare className="h-4 w-4" />}
           >
-            <Link
-              href={`/f/${framework.id}/simulation`}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
-            >
-              Démarrer une séance
-            </Link>
+            <SeanceLauncher
+              frameworkId={launch.frameworkId}
+              total={launch.total}
+              isUnlimited={launch.isUnlimited}
+              costSim={credits.costSimulation}
+              entitledSub={launch.entitledSub}
+              discoveryAvailable={launch.discoveryAvailable}
+            />
             <CreditNote cost={credits.costSimulation} />
           </ModeCard>
         </div>

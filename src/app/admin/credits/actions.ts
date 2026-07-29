@@ -30,6 +30,8 @@ export async function saveCreditSettings(formData: FormData) {
     ["limits.sim.monthly", "simMonthly"],
     ["limits.sim.alert", "simAlert"],
     ["limits.drill.daily", "drillDaily"],
+    // Seuil du bandeau bas-solde (en crédits). Défaut = 2 × coût d'une séance.
+    ["limits.lowBalanceThreshold", "lowBalanceThreshold"],
   ];
   for (const [cfgKey, field] of limits) {
     const n = parseInt(String(formData.get(field) ?? "").trim(), 10);

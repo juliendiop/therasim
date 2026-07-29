@@ -2,6 +2,13 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import type { Debrief } from "@/lib/simulator";
+import {
+  creditSettings,
+  getWalletView,
+  isUnlimited,
+  lowBalanceThreshold,
+} from "@/lib/credits";
+import { isSubscriptionEntitled } from "@/lib/entitlements";
 import SimChat from "./sim-chat";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +54,19 @@ export default async function SimPage({
     }
   }
 
+  // Carte discrète post-débrief : la séance a été débitée au lancement, donc le solde
+  // lu ici reflète déjà l'état final. Jamais sur un compte « sans compter ».
+  const [wallet, cs, unlimited, sub] = await Promise.all([
+    getWalletView(user.id),
+    creditSettings(),
+    isUnlimited(user.id),
+    prisma.userSubscription.findUnique({ where: { userId: user.id } }),
+  ]);
+  const lowBalance = {
+    show: !unlimited && wallet.total <= (await lowBalanceThreshold(cs)),
+    canRecharge: Boolean(sub && isSubscriptionEntitled(sub.status)),
+  };
+
   return (
     <SimChat
       sessionId={id}
@@ -61,6 +81,7 @@ export default async function SimPage({
       initialMessages={messages.map((m) => ({ role: m.role, content: m.content }))}
       initialDebrief={(session.debrief as unknown as Debrief) ?? null}
       initialSelfAssessment={(session.selfAssessment as Record<string, number> | null) ?? null}
+      lowBalance={lowBalance}
     />
   );
 }

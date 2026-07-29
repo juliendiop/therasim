@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ArrowLeft, Coins, History, RefreshCw, Sparkles } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CREDIT_PACKS, creditSettings, syncWallet, syncSubscriptionCredits, getWalletView } from "@/lib/credits";
-import { canBuyIndividualOffers } from "@/lib/entitlements";
+import { getCreditPacks, creditSettings, syncWallet, syncSubscriptionCredits, getWalletView } from "@/lib/credits";
+import { canBuyIndividualOffers, isSubscriptionEntitled } from "@/lib/entitlements";
 import { resolveCommissionRate } from "@/lib/affiliation";
 import { palier, palierRank, PALIER_LABEL, type Palier } from "@/lib/mastery";
 import { isStripeConfigured } from "@/lib/stripe";
@@ -52,19 +52,24 @@ export default async function CreditsPage({
   // Détail du solde : portefeuille persistant vs allocation de forfait (non reportée).
   const walletView = await getWalletView(user.id);
 
-  const [balance, settings, history, plans, subscription, freemium, rates] = await Promise.all([
-    syncWallet(user.id),
-    creditSettings(),
-    prisma.creditLedger.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    }),
-    prisma.subscriptionPlan.findMany({ where: { active: true }, orderBy: { ordre: "asc" } }),
-    prisma.userSubscription.findUnique({ where: { userId: user.id } }),
-    canBuyIndividualOffers(user),
-    resolveCommissionRate(),
-  ]);
+  const [balance, settings, history, plans, subscription, freemium, rates, packs] =
+    await Promise.all([
+      syncWallet(user.id),
+      creditSettings(),
+      prisma.creditLedger.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+      prisma.subscriptionPlan.findMany({ where: { active: true }, orderBy: { ordre: "asc" } }),
+      prisma.userSubscription.findUnique({ where: { userId: user.id } }),
+      canBuyIndividualOffers(user),
+      resolveCommissionRate(),
+      getCreditPacks(),
+    ]);
+  // La recharge par pack est RÉSERVÉE aux abonnés (un compte Découverte passe à
+  // l'abonnement, il ne recharge pas).
+  const canRecharge = Boolean(subscription && isSubscriptionEntitled(subscription.status));
 
   // Écran dédié "plus de crédits" (need défini) : récap de progression + le
   // forfait Praticien (recommandé) + un lien de retour vers le référentiel visé.
@@ -87,7 +92,7 @@ export default async function CreditsPage({
           : Promise.resolve(null),
       ])
     : [null, null, null];
-  const recommendedPack = CREDIT_PACKS[0];
+  const recommendedPack = packs[0] ?? null;
   const activePlan = subscription
     ? plans.find((p) => p.id === subscription.planId) ??
       (await prisma.subscriptionPlan.findUnique({ where: { id: subscription.planId } }))
@@ -187,26 +192,30 @@ export default async function CreditsPage({
           )}
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {/* Pack recommandé : le plus petit, reprise rapide sans engagement. */}
-            <div className="rounded-xl border border-[var(--border)] bg-white p-4">
-              <div className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                Reprise rapide
+            {/* Pack recommandé : réservé aux abonnés (recharge). */}
+            {canRecharge && recommendedPack && (
+              <div className="rounded-xl border border-[var(--border)] bg-white p-4">
+                <div className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+                  Reprise rapide
+                </div>
+                <div className="mt-1 text-2xl font-bold">
+                  {recommendedPack.credits}{" "}
+                  <span className="text-sm font-normal text-[var(--muted)]">crédits</span>
+                </div>
+                <div className="text-sm font-semibold">
+                  {(recommendedPack.priceEurCents / 100).toFixed(2).replace(".00", "")} €
+                </div>
+                <form action={checkoutPackAction} className="mt-3">
+                  <input type="hidden" name="packId" value={recommendedPack.id} />
+                  <button
+                    disabled={!stripeReady}
+                    className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                  >
+                    Recharger maintenant
+                  </button>
+                </form>
               </div>
-              <div className="mt-1 text-2xl font-bold">
-                {recommendedPack.credits}{" "}
-                <span className="text-sm font-normal text-[var(--muted)]">crédits</span>
-              </div>
-              <div className="text-sm font-semibold">{recommendedPack.priceEur} €</div>
-              <form action={checkoutPackAction} className="mt-3">
-                <input type="hidden" name="packId" value={recommendedPack.id} />
-                <button
-                  disabled={!stripeReady}
-                  className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
-                >
-                  Recharger maintenant
-                </button>
-              </form>
-            </div>
+            )}
 
             {/* Forfait Praticien : proposé uniquement aux comptes éligibles aux
                 abonnements (pas aux membres B2B sans opt-in). */}
@@ -368,26 +377,28 @@ export default async function CreditsPage({
         </>
       )}
 
-      {/* Packs de crédits (achat unique) — masqué quand l'écran dédié
-          "plus de crédits" est affiché (ci-dessus, déjà son propre CTA). */}
-      {!need && (
+      {/* Recharge par pack — RÉSERVÉE aux abonnés (Découverte passe à l'abonnement).
+          Masqué sur l'écran dédié "plus de crédits" (ci-dessus, son propre CTA). */}
+      {!need && canRecharge && packs.length > 0 && (
         <>
           <h2 className="mt-7 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
             Recharger
           </h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            {CREDIT_PACKS.map((p) => (
+            {packs.map((p) => (
               <div
                 key={p.id}
                 className="flex flex-col rounded-xl border border-[var(--border)] bg-white p-4 text-center"
               >
                 <div className="text-2xl font-bold">{p.credits}</div>
                 <div className="text-xs text-[var(--muted)]">crédits</div>
-                <div className="mt-2 text-sm font-semibold">{p.priceEur} €</div>
+                <div className="mt-2 text-sm font-semibold">
+                  {(p.priceEurCents / 100).toFixed(2).replace(".00", "")} €
+                </div>
                 <form action={checkoutPackAction} className="mt-3">
                   <input type="hidden" name="packId" value={p.id} />
                   <button
-                    disabled={!stripeReady}
+                    disabled={!stripeReady || !p.stripePriceId}
                     className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
                   >
                     Acheter

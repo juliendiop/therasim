@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Flag, Lightbulb, Send, Sparkles, Target, Trophy } from "lucide-react";
+import { ArrowLeft, Coins, Flag, Lightbulb, Send, Sparkles, Target, Trophy } from "lucide-react";
 import type { Debrief } from "@/lib/simulator";
 import { matchMoments } from "@/lib/moment-match";
 import { patientDisplayName } from "@/lib/patient";
@@ -25,6 +25,7 @@ export default function SimChat({
   initialMessages,
   initialDebrief,
   initialSelfAssessment,
+  lowBalance,
 }: {
   sessionId: string;
   frameworkId: string;
@@ -38,6 +39,9 @@ export default function SimChat({
   initialMessages: Msg[];
   initialDebrief: Debrief | null;
   initialSelfAssessment: Record<string, number> | null;
+  // Carte discrète post-débrief (jamais sur « sans compter »). Calculée côté serveur :
+  // la séance ayant été débitée au lancement, le solde au chargement de /sim est déjà à jour.
+  lowBalance: { show: boolean; canRecharge: boolean };
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
@@ -420,6 +424,7 @@ export default function SimChat({
           nomByCode={nomByCode}
           selfAssessment={selfAssessment}
           unmatchedMoments={moments?.unmatched ?? debrief.moments}
+          lowBalance={lowBalance}
         />
       )}
     </div>
@@ -503,6 +508,7 @@ function DebriefView({
   nomByCode,
   selfAssessment,
   unmatchedMoments,
+  lowBalance,
 }: {
   debrief: Debrief;
   frameworkId: string;
@@ -510,6 +516,7 @@ function DebriefView({
   nomByCode: Map<string, string>;
   selfAssessment: Record<string, number>;
   unmatchedMoments: { quote: string; comment: string }[];
+  lowBalance: { show: boolean; canRecharge: boolean };
 }) {
   const scored = debrief.scores.filter((s) => !s.non_evalue);
   const hasSelfAssessment = Object.keys(selfAssessment).length > 0;
@@ -585,6 +592,24 @@ function DebriefView({
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Carte discrète bas-solde — après le contenu du débrief, avant le CTA de retour. */}
+      {lowBalance.show && (
+        <div className="mt-6 flex flex-col items-start gap-2 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-4 text-sm sm:flex-row sm:items-center">
+          <Coins className="h-5 w-5 shrink-0 text-[var(--accent)]" />
+          <p className="flex-1 text-[var(--ink-soft)]">
+            {lowBalance.canRecharge
+              ? "Votre solde devient bas. Rechargez pour enchaîner d'autres mises en situation."
+              : "Votre solde devient bas. Un abonnement débloque bien plus de mises en situation."}
+          </p>
+          <Link
+            href={lowBalance.canRecharge ? "/credits" : "/tarifs"}
+            className="shrink-0 rounded-lg border border-[var(--accent)] px-4 py-2 font-semibold text-[var(--accent)] hover:bg-white"
+          >
+            {lowBalance.canRecharge ? "Recharger" : "Voir les forfaits"}
+          </Link>
         </div>
       )}
 

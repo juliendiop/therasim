@@ -35,8 +35,9 @@ export async function startSimulationAction(formData: FormData) {
       data: { discoveryInterviewUsedAt: new Date() },
     });
     if (claimed.count === 0) {
-      // Déjà utilisé : message d'explication + proposition d'abonnement (pas une erreur).
-      redirect(`/credits?need=discovery&fw=${frameworkId}`);
+      // Séance découverte déjà consommée (mur « niveau 3 ») : ouvre la MÊME modale que
+      // le pré-check client (jamais une erreur ni un toast). L'endpoint recalcule le mur.
+      redirect(`/f/${frameworkId}?creditwall=simulation`);
     }
     let sessionId: string;
     try {
@@ -67,8 +68,9 @@ export async function startSimulationAction(formData: FormData) {
   try {
     await debit(user.id, s.costSimulation, "consume_simulation", { frameworkId });
   } catch (e) {
+    // Mur « crédits » : ouvre la même modale (garde-fou serveur du pré-check client).
     if (e instanceof InsufficientCreditsError)
-      redirect(`/credits?need=simulation&fw=${frameworkId}`);
+      redirect(`/f/${frameworkId}?creditwall=simulation`);
     throw e;
   }
 
@@ -111,8 +113,9 @@ export async function startMiniSceneAction(formData: FormData) {
   try {
     await debit(user.id, s.costMiniscene, "consume_miniscene", { frameworkId });
   } catch (e) {
+    // Mur « crédits » : ouvre la même modale (garde-fou serveur du pré-check client).
     if (e instanceof InsufficientCreditsError)
-      redirect(`/credits?need=miniscene&fw=${frameworkId}`);
+      redirect(`/f/${frameworkId}?creditwall=miniscene`);
     throw e;
   }
 

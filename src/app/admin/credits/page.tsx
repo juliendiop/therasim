@@ -1,6 +1,6 @@
 import { Coins, Mail, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { creditSettings } from "@/lib/credits";
+import { creditSettings, lowBalanceThreshold } from "@/lib/credits";
 import { usageSettings } from "@/lib/usage-limits";
 import { getOffers } from "@/lib/offers";
 import { ROLE_LABELS } from "@/lib/roles";
@@ -22,9 +22,10 @@ export default async function AdminCreditsPage({
   const emailQ = sp.email?.trim() || undefined;
   const maxCredits = sp.max !== undefined && sp.max !== "" ? Number(sp.max) : undefined;
 
-  const [s, limits, offers, tenants, users] = await Promise.all([
+  const [s, limits, lowBalance, offers, tenants, users] = await Promise.all([
     creditSettings(),
     usageSettings(),
+    creditSettings().then((cs) => lowBalanceThreshold(cs)),
     getOffers(),
     prisma.tenant.findMany({ orderBy: { nom: "asc" }, select: { id: true, nom: true } }),
     prisma.user.findMany({
@@ -267,6 +268,7 @@ export default async function AdminCreditsPage({
           <Field name="simMonthly" label="Filet mensuel" hint="Plafond très haut, dernier recours (30 j)." value={limits.simMonthly} />
           <Field name="simAlert" label="Seuil d'alerte admin" hint="Email au franchissement (mises en situation, 30 j)." value={limits.simAlert} />
           <Field name="drillDaily" label="Drills notés / jour" hint="Évaluations IA d'exercices (gratuites) par utilisateur / 24 h." value={limits.drillDaily} />
+          <Field name="lowBalanceThreshold" label="Seuil bandeau bas-solde" hint="En crédits. Défaut = 2 × le coût d'une séance." value={lowBalance} />
         </form>
       </section>
 
