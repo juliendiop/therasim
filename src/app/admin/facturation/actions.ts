@@ -76,13 +76,14 @@ export async function updatePlanPriceId(formData: FormData) {
   const quota = quotaRaw === "" ? null : parseInt(quotaRaw, 10);
   if (quota !== null && (!Number.isFinite(quota) || quota < 1)) return;
 
-  // Champ présent (input rendu) : "" => null (sans compter) ; sinon entier >= 0.
+  // Champs présents (inputs rendus) : "" a un sens différent selon le champ.
   const mcRaw = formData.get("monthlyCredits");
   const data: {
     stripePriceId: string | null;
     stripePriceIdYearly: string | null;
     frameworkQuota: number | null;
     monthlyCredits?: number | null;
+    priceEurCents?: number;
   } = {
     stripePriceId: stripePriceId || null,
     stripePriceIdYearly: stripePriceIdYearly || null,
@@ -90,15 +91,26 @@ export async function updatePlanPriceId(formData: FormData) {
   };
   if (mcRaw !== null) {
     const s = String(mcRaw).trim();
-    if (s === "") data.monthlyCredits = null;
+    if (s === "") data.monthlyCredits = null; // vide = « sans compter »
     else {
       const n = parseInt(s, 10);
       if (Number.isFinite(n) && n >= 0) data.monthlyCredits = n;
     }
   }
+  // Prix mensuel affiché (€) : on ne touche à `priceEurCents` que si une valeur valide
+  // est fournie (vide => on garde le prix actuel, jamais 0 par accident).
+  const priceRaw = formData.get("priceEur");
+  if (priceRaw !== null) {
+    const s = String(priceRaw).trim();
+    if (s !== "") {
+      const n = parseFloat(s);
+      if (Number.isFinite(n) && n >= 0) data.priceEurCents = Math.round(n * 100);
+    }
+  }
 
   await prisma.subscriptionPlan.update({ where: { id }, data });
   revalidatePath("/admin/facturation");
+  revalidatePath("/tarifs");
 }
 
 // Enregistre l'offre à l'unité d'un référentiel (prix affiché + Price ID + actif).

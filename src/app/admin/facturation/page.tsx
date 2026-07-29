@@ -136,6 +136,17 @@ export default async function FacturationPage() {
               </div>
               <form action={updatePlanPriceId} className="mt-2 flex flex-wrap items-center gap-2">
                 <input type="hidden" name="id" value={plan.id} />
+                <label className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+                  €/mois
+                  <input
+                    name="priceEur"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    defaultValue={(plan.priceEurCents / 100).toString()}
+                    className="w-20 rounded-lg border border-[var(--border)] p-2 text-xs"
+                  />
+                </label>
                 <input
                   name="stripePriceId"
                   defaultValue={plan.stripePriceId ?? ""}
