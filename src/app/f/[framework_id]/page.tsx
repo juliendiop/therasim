@@ -61,14 +61,27 @@ export default async function FrameworkPage({
       select: { discoveryInterviewUsedAt: true },
     }),
   ]);
+  const discoveryAvailable = !ent.entitledSub && !u?.discoveryInterviewUsedAt;
   const launch = {
     frameworkId: framework_id,
     total: wallet.total,
     isUnlimited: unlimited,
     entitledSub: ent.entitledSub,
     // Séance découverte encore disponible (gratuite, à vie) : compte gratuit non encore utilisé.
-    discoveryAvailable: !ent.entitledSub && !u?.discoveryInterviewUsedAt,
+    discoveryAvailable,
   };
+  // Mentions sous les cartes de lancement, adaptées au statut (le coût réel n'est pas
+  // "2 crédits" pour un compte Découverte, dont la séance est offerte une seule fois).
+  const miniNote = unlimited
+    ? "Sans compter"
+    : `${credits.costMiniscene} crédit${credits.costMiniscene > 1 ? "s" : ""}`;
+  const seanceNote = unlimited
+    ? "Sans compter"
+    : !ent.entitledSub
+      ? discoveryAvailable
+        ? "1 séance offerte, à vie"
+        : "Réservé aux abonnés"
+      : `${credits.costSimulation} crédits`;
 
   const { framework, overall, categories, priorites } = detail;
 
@@ -172,7 +185,7 @@ export default async function FrameworkPage({
               isUnlimited={launch.isUnlimited}
               costMini={credits.costMiniscene}
             />
-            <CreditNote cost={credits.costMiniscene} />
+            <CreditNote label={miniNote} />
           </ModeCard>
 
           <ModeCard
@@ -189,7 +202,7 @@ export default async function FrameworkPage({
               entitledSub={launch.entitledSub}
               discoveryAvailable={launch.discoveryAvailable}
             />
-            <CreditNote cost={credits.costSimulation} />
+            <CreditNote label={seanceNote} />
           </ModeCard>
         </div>
       </section>
@@ -302,10 +315,10 @@ export default async function FrameworkPage({
   );
 }
 
-function CreditNote({ cost }: { cost: number }) {
+function CreditNote({ label }: { label: string }) {
   return (
     <p className="mt-1.5 flex items-center justify-center gap-1 text-[11px] text-[var(--muted)]">
-      <Coins className="h-3 w-3 text-[var(--accent)]" /> {cost} crédit{cost > 1 ? "s" : ""}
+      <Coins className="h-3 w-3 text-[var(--accent)]" /> {label}
     </p>
   );
 }
