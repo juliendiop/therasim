@@ -1,5 +1,5 @@
 // Portefeuille de crédits IA (B2C). Les drills QCM sont gratuits ; seules les
-// mini-scènes (N2) et les entretiens simulés (N3) consomment des crédits.
+// mini-scènes (N2) et les séances simulées (N3) consomment des crédits.
 import "server-only";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";

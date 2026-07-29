@@ -45,7 +45,7 @@ export default async function AdminUsagePage() {
           <h2 className="text-lg font-semibold">Consommation IA</h2>
         </div>
         <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">
-          Mises en situation (mini-scènes + entretiens) lancées par utilisateur. Les plafonds
+          Mises en situation (mini-scènes + séances) lancées par utilisateur. Les plafonds
           ci-dessous sont des garde-fous anti-abus, jamais des limites de produit — l&apos;usage
           normal ne doit jamais les atteindre. Réglables dans « Crédits &amp; quotas ».
         </p>

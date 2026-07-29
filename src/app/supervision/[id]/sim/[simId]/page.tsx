@@ -44,7 +44,7 @@ export default async function SupervisionSimPage({
   const nomByCode = new Map(competencies.map((c) => [c.code, c.nom]));
   const debrief = session.debrief as unknown as Debrief | null;
   const notesForSession = notes.filter((n) => n.sessionId === simId);
-  const patientName = patientDisplayName(scenario?.titre ?? "Entretien");
+  const patientName = patientDisplayName(scenario?.titre ?? "Séance");
   const avatarSeed = scenario?.titre ?? simId;
   const moments = debrief ? matchMoments(messages, debrief.moments) : null;
   const unmatchedMoments = moments?.unmatched ?? debrief?.moments ?? [];
@@ -64,7 +64,7 @@ export default async function SupervisionSimPage({
           <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]">
             {KIND_LABEL[session.kind] ?? session.kind}
           </span>
-          <h1 className="mt-1.5 text-lg font-semibold">{scenario?.titre ?? "Entretien"}</h1>
+          <h1 className="mt-1.5 text-lg font-semibold">{scenario?.titre ?? "Séance"}</h1>
           <p className="text-xs text-[var(--muted)]">
             {framework?.nom} · {fmtDateTime(session.createdAt)}
             {session.statut === "en_cours" && " · en cours"}
@@ -131,7 +131,7 @@ export default async function SupervisionSimPage({
                 >
                   <Trophy className="h-5 w-5 shrink-0 text-[var(--accent)]" />
                   <span>
-                    <b>{lu.nom}</b> — palier <b>{lu.palier}</b> atteint sur cet entretien.
+                    <b>{lu.nom}</b> — palier <b>{lu.palier}</b> atteint sur cette séance.
                   </span>
                 </div>
               ))}
@@ -192,7 +192,7 @@ export default async function SupervisionSimPage({
             name="body"
             required
             rows={2}
-            placeholder="Votre retour sur cet entretien précis…"
+            placeholder="Votre retour sur cette séance précise…"
             className="flex-1 rounded-lg border border-[var(--border)] p-2.5 text-sm outline-none focus:border-[var(--accent)]"
           />
           <button className="shrink-0 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">

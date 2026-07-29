@@ -16,7 +16,7 @@ export default function AddModuleForm({
   if (frameworks.length === 0) {
     return (
       <p className="text-sm text-[var(--muted)]">
-        Aucun référentiel disponible. Demandez l&apos;accès à un pack.
+        Aucun domaine disponible. Demandez l&apos;accès à votre administrateur.
       </p>
     );
   }

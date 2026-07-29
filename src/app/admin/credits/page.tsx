@@ -53,7 +53,7 @@ export default async function AdminCreditsPage({
           <h2 className="text-lg font-semibold">Crédits & quotas IA</h2>
         </div>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Les exercices QCM restent gratuits. Seules les mini-scènes et les entretiens simulés
+          Les exercices QCM restent gratuits. Seules les mini-scènes et les séances simulées
           consomment des crédits.
         </p>
       </div>
@@ -245,7 +245,7 @@ export default async function AdminCreditsPage({
           <Field name="welcome" label="Pack de bienvenue" hint="Crédits offerts à la création du compte." value={s.welcome} />
           <Field name="monthly" label="Recharge mensuelle" hint="Plancher de crédits gratuits rechargé chaque mois." value={s.monthly} />
           <Field name="costMiniscene" label="Coût d'une mini-scène" hint="Crédits débités au lancement." value={s.costMiniscene} />
-          <Field name="costSimulation" label="Coût d'un entretien simulé" hint="Crédits débités au lancement." value={s.costSimulation} />
+          <Field name="costSimulation" label="Coût d'une séance simulée" hint="Crédits débités au lancement." value={s.costSimulation} />
           <div className="sm:col-span-2">
             <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
               Enregistrer

@@ -45,17 +45,24 @@ export async function createCreditsCheckout(
   return session.url;
 }
 
-/** Session de paiement RÉCURRENTE pour un forfait d'abonnement. Renvoie l'URL Stripe. */
+export type BillingCycle = "monthly" | "yearly";
+
+/** Session de paiement RÉCURRENTE pour un forfait d'abonnement (mensuel ou annuel).
+ *  Renvoie l'URL Stripe. Le Price ID (mensuel vs annuel) est choisi selon `cycle`. */
 export async function createSubscriptionCheckout(
   userId: string,
   planId: string,
   baseUrl: string,
+  cycle: BillingCycle = "monthly",
 ): Promise<string> {
   const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
   if (!plan || !plan.active) throw new Error("forfait inconnu ou inactif");
-  if (!plan.stripePriceId) {
+  const priceId = cycle === "yearly" ? plan.stripePriceIdYearly : plan.stripePriceId;
+  if (!priceId) {
     throw new Error(
-      "Ce forfait n'a pas encore de Price ID Stripe configuré (voir /admin/facturation).",
+      cycle === "yearly"
+        ? "L'abonnement annuel de ce forfait n'est pas encore disponible (Price annuel non configuré)."
+        : "Ce forfait n'a pas encore de Price ID Stripe configuré (voir /admin/facturation).",
     );
   }
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -65,11 +72,11 @@ export async function createSubscriptionCheckout(
   const session = await stripeClient().checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
-    line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+    line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${baseUrl}/credits?success=plan`,
     cancel_url: `${baseUrl}/credits?canceled=1`,
-    metadata: { userId, planId },
-    subscription_data: { metadata: { userId, planId, tenantId: user.tenantId } },
+    metadata: { userId, planId, cycle },
+    subscription_data: { metadata: { userId, planId, tenantId: user.tenantId, cycle } },
   });
   if (!session.url) throw new Error("Stripe n'a pas renvoyé d'URL de paiement.");
   return session.url;

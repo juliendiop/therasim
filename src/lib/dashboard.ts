@@ -94,7 +94,7 @@ export async function buildDashboard(
     ongoingSim = {
       id: ongoing.id,
       kind: ongoing.kind,
-      scenarioTitre: scenario?.titre ?? "Entretien",
+      scenarioTitre: scenario?.titre ?? "Séance",
       frameworkNom: fwById.get(ongoing.frameworkId)?.nom ?? ongoing.frameworkId,
       createdAt: ongoing.createdAt,
     };

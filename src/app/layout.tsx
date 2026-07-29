@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Brain, ClipboardList, Coins, Eye, Gift, GraduationCap, LogOut, Radio, ShieldCheck, Users } from "lucide-react";
+import { Brain, ClipboardList, Coins, Eye, GraduationCap, LogOut, Radio, ShieldCheck, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { canManageLive, canSupervise } from "@/lib/roles";
 import { creditSettings, syncWallet, syncSubscriptionCredits, getWalletView } from "@/lib/credits";
@@ -12,10 +12,12 @@ import LowCreditsBanner from "./_components/low-credits-banner";
 import SupportWidget from "./_components/support-widget";
 import "./globals.css";
 
+// Metadata par DÉFAUT de l'application. La page d'accueil la surcharge avec une
+// description construite depuis le catalogue (voir src/app/page.tsx).
 export const metadata: Metadata = {
-  title: "MELETA — entraînement clinique par compétences",
+  title: "MELETA — simulation clinique par compétences",
   description:
-    "Apprendre et s'entraîner sur des cas cliniques réalistes, du feedback au fil de l'eau à l'autonomie complète.",
+    "S'entraîner à mener de vraies séances cliniques avec un patient simulé, et voir progresser chaque compétence.",
 };
 
 // Viewport mobile explicite : garantit l'échelle 1:1 (évite l'effet « page
@@ -71,7 +73,7 @@ export default async function RootLayout({
         wallet && wallet.plan > 0
           ? `dont ${wallet.plan} de forfait (non reportés au mois suivant)\n`
           : ""
-      }Mini-scène : ${settings.costMiniscene} crédit${settings.costMiniscene > 1 ? "s" : ""} · Entretien simulé : ${settings.costSimulation} crédits\nExercices : gratuits`
+      }Mini-scène : ${settings.costMiniscene} crédit${settings.costMiniscene > 1 ? "s" : ""} · Séance simulée : ${settings.costSimulation} crédits\nExercices : gratuits`
     : undefined;
 
   const isPublic = !tenant || tenant.type === "public";
@@ -126,7 +128,7 @@ export default async function RootLayout({
             </Link>
             {isPublic && !user && (
               <span className="hidden text-xs text-[var(--muted)] sm:inline">
-                entraînement clinique par compétences
+                simulation clinique par compétences
               </span>
             )}
             {user && (
@@ -303,20 +305,28 @@ export default async function RootLayout({
                 </p>
               </>
             ) : (
-              <div className="text-center">
-                {brandName} · <span className="opacity-70">propulsé par MELETA</span> ·{" "}
-                <Link
-                  href="/mentions-legales"
-                  className="underline hover:text-[var(--foreground)]"
-                >
+              /* Plateforme en marque blanche : pas de liens produit ni de
+                 programme ambassadeur, mais les pages légales de l'éditeur
+                 restent accessibles depuis toutes les pages. */
+              <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
+                <span>
+                  {brandName} · <span className="opacity-70">propulsé par MELETA</span>
+                </span>
+                <span aria-hidden>·</span>
+                <Link href="/mentions-legales" className="underline hover:text-[var(--foreground)]">
                   Mentions légales
-                </Link>{" "}
-                ·{" "}
-                <Link
-                  href="/confidentialite"
-                  className="underline hover:text-[var(--foreground)]"
-                >
+                </Link>
+                <span aria-hidden>·</span>
+                <Link href="/cgv-cgu" className="underline hover:text-[var(--foreground)]">
+                  CGV / CGU
+                </Link>
+                <span aria-hidden>·</span>
+                <Link href="/confidentialite" className="underline hover:text-[var(--foreground)]">
                   Confidentialité
+                </Link>
+                <span aria-hidden>·</span>
+                <Link href="/contact" className="underline hover:text-[var(--foreground)]">
+                  Contact
                 </Link>
               </div>
             )}

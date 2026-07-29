@@ -139,7 +139,13 @@ export default async function FacturationPage() {
                 <input
                   name="stripePriceId"
                   defaultValue={plan.stripePriceId ?? ""}
-                  placeholder="price_... (récurrent)"
+                  placeholder="price_... (mensuel)"
+                  className="min-w-40 flex-1 rounded-lg border border-[var(--border)] p-2 text-xs font-mono"
+                />
+                <input
+                  name="stripePriceIdYearly"
+                  defaultValue={plan.stripePriceIdYearly ?? ""}
+                  placeholder="price_... (annuel)"
                   className="min-w-40 flex-1 rounded-lg border border-[var(--border)] p-2 text-xs font-mono"
                 />
                 <label className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
@@ -194,6 +200,14 @@ export default async function FacturationPage() {
           <label className="text-xs font-medium">Prix (€ / mois)</label>
           <input name="priceEur" type="number" min={0} step="0.01" required className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm" />
         </div>
+        <div>
+          <label className="text-xs font-medium">Price ID mensuel (Stripe)</label>
+          <input name="stripePriceId" placeholder="price_… (mensuel)" className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm font-mono" />
+        </div>
+        <div>
+          <label className="text-xs font-medium">Price ID annuel (Stripe)</label>
+          <input name="stripePriceIdYearly" placeholder="price_… (annuel, optionnel)" className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm font-mono" />
+        </div>
         <div className="sm:col-span-2">
           <label className="text-xs font-medium">
             Spécialités au choix de l&apos;abonné (vide = toutes les spécialités)
@@ -209,10 +223,6 @@ export default async function FacturationPage() {
             L&apos;abonné débloque lui-même les domaines qui l&apos;intéressent, dans la
             limite de ce quota. Choix définitifs tant qu&apos;il est abonné (pas d&apos;échange).
           </p>
-        </div>
-        <div className="sm:col-span-2">
-          <label className="text-xs font-medium">Price ID Stripe (optionnel — peut être ajouté après coup)</label>
-          <input name="stripePriceId" placeholder="price_..." className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm font-mono" />
         </div>
         <button className="sm:col-span-2 mt-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
           <Plus className="h-4 w-4" /> Créer le forfait

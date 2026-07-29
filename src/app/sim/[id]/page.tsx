@@ -28,7 +28,7 @@ export default async function SimPage({
   const focusCodes = Array.isArray(session.focus) ? (session.focus as string[]) : [];
   let focusNoms: string[] = [];
   // Compétences réellement évaluées par le débrief (mêmes règles que endSimulation) :
-  // les 2 ciblées en mini-scène, toute la grille en entretien complet. Sert à l'auto-
+  // les 2 ciblées en mini-scène, toute la grille en séance complète. Sert à l'auto-
   // évaluation ET à résoudre les noms dans l'affichage du débrief.
   let competencies: { code: string; nom: string }[] = [];
   if (framework) {
@@ -51,7 +51,7 @@ export default async function SimPage({
     <SimChat
       sessionId={id}
       frameworkId={session.frameworkId}
-      titre={scenario?.titre ?? "Entretien"}
+      titre={scenario?.titre ?? "Séance"}
       contexte={scenario?.contexte ?? ""}
       statut={session.statut}
       kind={session.kind}

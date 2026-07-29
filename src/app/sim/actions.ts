@@ -25,11 +25,11 @@ export async function startSimulationAction(formData: FormData) {
 
   const ent = await resolveB2CEntitlement(user.id);
 
-  // --- Compte gratuit (Découverte) : UN entretien complet dans la vie du compte,
-  // gratuit en crédits. Porte d'accès N3, tracée à vie par discoveryInterviewUsedAt
+  // --- Compte gratuit (Découverte) : UNE séance complète dans la vie du compte,
+  // gratuite en crédits. Porte d'accès N3, tracée par discoveryInterviewUsedAt
   // (jamais réinitialisée par la recharge mensuelle).
   if (!ent.entitledSub) {
-    // Réservation atomique : ne « brûle » l'entretien gratuit que si encore disponible.
+    // Réservation atomique : ne « brûle » la séance gratuite que si encore disponible.
     const claimed = await prisma.user.updateMany({
       where: { id: user.id, discoveryInterviewUsedAt: null },
       data: { discoveryInterviewUsedAt: new Date() },
@@ -47,7 +47,7 @@ export async function startSimulationAction(formData: FormData) {
         scenarioId,
       }));
     } catch (e) {
-      // Échec technique : on rend son entretien découverte (ne pas pénaliser).
+      // Échec technique : on rend sa séance découverte (ne pas pénaliser).
       await prisma.user.update({
         where: { id: user.id },
         data: { discoveryInterviewUsedAt: null },

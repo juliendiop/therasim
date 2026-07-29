@@ -22,7 +22,7 @@ export function pct(x: number | null): string {
 }
 
 export const KIND_LABEL: Record<string, string> = {
-  simulation: "Entretien simulé",
+  simulation: "Séance simulée",
   miniscene: "Mini-scène guidée",
 };
 

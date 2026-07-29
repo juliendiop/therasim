@@ -58,7 +58,7 @@ export default function ConfidentialitePage() {
               </tr>
               <tr>
                 <td>
-                  Contenu des exercices et des entretiens simulés, scores, progression par
+                  Contenu des exercices et des séances simulées, scores, progression par
                   compétence
                 </td>
                 <td>Fourniture du service pédagogique et suivi de progression</td>
@@ -280,7 +280,7 @@ export default function ConfidentialitePage() {
           <b>Suppression du compte.</b> Le Service ne propose pas encore de suppression en
           autonomie depuis l&apos;espace personnel : la demande est traitée manuellement à
           réception de votre message. Elle entraîne l&apos;effacement du compte, de la
-          progression, de l&apos;historique des entretiens et des tickets de support, à
+          progression, de l&apos;historique des séances et des tickets de support, à
           l&apos;exception des pièces comptables que la loi impose de conserver.
         </p>
         <p>

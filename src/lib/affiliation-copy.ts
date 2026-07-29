@@ -4,8 +4,12 @@
 // seuil, lien, prénom, montants) sont injectées via les placeholders indiqués.
 //
 // Placeholders : {T1} = taux niveau 1, {T2} = taux niveau 2, {SEUIL} = seuil
-// de paiement en €, {LIEN} = lien de parrainage, {PRENOM} = prénom.
+// de paiement en €, {COOKIE} = fenêtre d'attribution en jours, {LIEN} = lien de
+// parrainage, {PRENOM} = prénom.
 // Lire les valeurs depuis AppConfig (voir la spec §2) — ne rien coder en dur.
+//
+// ⚠️ Ne jamais promettre une commission perpétuelle : elle court tant que le filleul
+// reste abonné ET tant que le programme est maintenu (cf. /conditions-ambassadeurs §7).
 
 // ─────────────────────────────────────────────────────────────────────────
 // PAGE PUBLIQUE DE RECRUTEMENT  —  /ambassadeurs
@@ -15,7 +19,7 @@ export const AMBASSADEURS_PAGE = {
   seo: {
     title: "Programme ambassadeur — MELETA",
     description:
-      "Recommandez MELETA et touchez une commission récurrente à vie sur les abonnements. Gratuit, sans engagement. Kit de diffusion fourni.",
+      "Recommandez MELETA et touchez une commission récurrente sur les abonnements, tant que votre filleul reste abonné. Gratuit, sans engagement. Kit de diffusion fourni.",
   },
   eyebrow: "Programme ambassadeur",
   h1: "Recommandez MELETA. Gagnez à chaque fois.",
@@ -23,10 +27,15 @@ export const AMBASSADEURS_PAGE = {
   ctaPrimary: "Devenir ambassadeur", // → /affiliation si connecté, /inscription sinon
   ctaSecondaryNote: "Gratuit · sans engagement · résiliable à tout moment",
 
-  // Bandeau chiffres clés (réassurance immédiate)
+  // Bandeau chiffres clés (réassurance immédiate). Le niveau 2 n'y figure PAS :
+  // un second taux dans le hero brouille le message et fait « plan de rémunération ».
+  // Le mécanisme est expliqué plus bas, section « Deux niveaux de revenus ».
   highlights: [
-    { value: "{T1} %", label: "de commission à vie sur chaque abonnement parrainé" },
-    { value: "{T2} %", label: "en plus sur les ventes des ambassadeurs que vous recrutez" },
+    {
+      value: "{T1} %",
+      label: "de commission sur chaque abonnement parrainé, tant que votre filleul reste abonné",
+    },
+    { value: "{COOKIE} jours", label: "de fenêtre d'attribution après un clic sur votre lien" },
     { value: "À partir de {SEUIL} €", label: "seuil de paiement, réglé sur simple demande" },
   ],
 
@@ -46,11 +55,19 @@ export const AMBASSADEURS_PAGE = {
     },
     {
       n: "3",
-      titre: "Vous touchez à vie",
+      titre: "Vous touchez chaque mois",
       texte:
         "Vous recevez {T1} % de chaque paiement d'abonnement, chaque mois, tant que votre filleul reste client. Suivi en temps réel dans votre espace.",
     },
   ],
+
+  // Prérequis affiché AVANT le formulaire d'activation : mieux vaut le savoir
+  // avant de s'engager qu'au moment de réclamer son premier paiement.
+  prerequisTitre: "Avant de vous lancer : il faut pouvoir facturer",
+  prerequisTexte:
+    "Les commissions sont versées sur facture. Vous devez donc disposer d'un statut vous permettant d'émettre une facture (micro-entrepreneur, société, association). Sans cela, votre solde reste acquis mais ne peut pas vous être réglé. MELETA ne vous emploie pas et ne peut pas verser de rémunération autrement.",
+
+  exempleTitre: "Concrètement, ça donne quoi ?",
 
   twoLevelsTitle: "Deux niveaux de revenus",
   twoLevelsText:
@@ -96,9 +113,9 @@ export const AMBASSADEURS_PAGE = {
 // ─────────────────────────────────────────────────────────────────────────
 export const AFFILIATION_ACTIVATION = {
   h1: "Devenez ambassadeur MELETA",
-  lead: "Recommandez MELETA autour de vous et touchez une commission récurrente à vie sur les abonnements générés. Gratuit, sans engagement.",
+  lead: "Recommandez MELETA autour de vous et touchez une commission récurrente sur les abonnements générés, tant que vos filleuls restent abonnés. Gratuit, sans engagement.",
   benefits: [
-    "{T1} % de commission à vie sur chaque abonnement de vos filleuls",
+    "{T1} % de commission sur chaque abonnement de vos filleuls, tant qu'ils restent abonnés",
     "{T2} % supplémentaires sur les ventes des ambassadeurs que vous recrutez",
     "Un lien unique et un kit de diffusion prêt à l'emploi (textes + visuels)",
     "Suivi de vos filleuls et de vos revenus en temps réel",
@@ -119,7 +136,7 @@ export const AFFILIATION_DASHBOARD = {
   h1: "Espace ambassadeur",
   linkSectionTitle: "Votre lien de parrainage",
   linkSectionHint:
-    "Partagez ce lien : toute personne qui crée son compte après avoir cliqué vous est rattachée à vie.",
+    "Partagez ce lien : toute personne qui crée son compte après avoir cliqué vous est rattachée définitivement.",
   copyLink: "Copier le lien",
 
   statsTitle: "Vos revenus",

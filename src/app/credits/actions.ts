@@ -49,15 +49,20 @@ export async function checkoutPlanAction(formData: FormData) {
     );
   }
   const planId = String(formData.get("planId") ?? "");
+  const cycle = String(formData.get("cycle") ?? "monthly") === "yearly" ? "yearly" : "monthly";
+  const cta = String(formData.get("cta") ?? ""); // identifiant analytics du bouton d'origine
   const baseUrl = await appBaseUrlFromRequest();
 
   let url: string;
   try {
-    url = await createSubscriptionCheckout(user.id, planId, baseUrl);
+    url = await createSubscriptionCheckout(user.id, planId, baseUrl, cycle);
   } catch (e) {
     redirect(`/credits?error=${encodeURIComponent(errorMessage(e))}`);
   }
-  await recordFunnel("checkout_start", { userId: user.id, meta: { kind: "plan", planId } });
+  await recordFunnel("checkout_start", {
+    userId: user.id,
+    meta: { kind: "plan", planId, cycle, cta },
+  });
   redirect(url);
 }
 

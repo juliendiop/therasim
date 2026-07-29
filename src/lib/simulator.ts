@@ -1,4 +1,4 @@
-// Moteur du simulateur N3 (entretien simulé complet).
+// Moteur du simulateur N3 (séance simulée complète).
 // - Patient incarné par un LLM, RÉACTIF à la qualité du praticien.
 // - Fin libre (bouton « Terminer ») ; débrief sommatif complet.
 // - Le débrief écrit des Attempt (source='simulation') -> même carte que les drills.
@@ -227,7 +227,7 @@ export async function endSimulation(
     .join("\n");
 
   const sys = [
-    `Tu es un superviseur clinique. Tu évalues un entretien simulé (approche « ${framework.nom} »).`,
+    `Tu es un superviseur clinique. Tu évalues une séance simulée (approche « ${framework.nom} »).`,
     "Pour CHAQUE compétence de la grille, donne une note de 1 à 5 selon les ancrages, avec une justification courte et une citation (evidence) tirée du verbatim du PRATICIEN.",
     "Si une compétence n'a pas pu être observée, mets non_evalue=true (elle ne sera pas comptée).",
     "Ajoute un retour narratif global (narrative) et 2 à 3 moments clés (moments : citation + commentaire).",

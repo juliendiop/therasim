@@ -15,7 +15,7 @@ import { periodIndexFor } from "./billing-period";
 import type { Role } from "./auth";
 
 /** `key` du forfait gratuit (Découverte) : repli quand l'utilisateur n'a pas
- *  d'abonnement actif — socle + 1 spécialité au choix, 1 entretien N3 à vie. */
+ *  d'abonnement actif — socle + 1 spécialité au choix, 1 séance complète N3, une seule fois. */
 export const FREE_PLAN_KEY = "decouverte";
 /** Quota de spécialités du gratuit si le plan Découverte n'est pas encore en base. */
 export const FREE_SPECIALTY_QUOTA = 1;

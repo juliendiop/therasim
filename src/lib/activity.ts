@@ -37,7 +37,7 @@ export type ActivityKpis = {
 export const ACTIVITY_TYPE_LABEL: Record<ActivityType, string> = {
   drill: "Exercice",
   miniscene: "Mini-scène",
-  simulation: "Entretien simulé",
+  simulation: "Séance simulée",
   credit: "Crédits",
   signup: "Inscription",
   login: "Connexion",
@@ -49,7 +49,7 @@ const CREDIT_REASON_LABEL: Record<string, string> = {
   welcome: "Pack de bienvenue",
   monthly: "Recharge mensuelle",
   consume_miniscene: "Mini-scène",
-  consume_simulation: "Entretien",
+  consume_simulation: "Séance",
   refund: "Remboursement",
   admin_grant: "Crédits offerts",
   purchase: "Achat",

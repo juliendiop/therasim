@@ -191,7 +191,7 @@ export default async function FrameworkPaywall({
               <span className="text-xs font-normal text-[var(--muted)]"> · une fois, accès à vie</span>
             </div>
             <p className="mt-1 flex-1 text-xs text-[var(--muted)]">
-              Exercices illimités, mini-scènes et entretiens simulés (avec vos crédits), carte
+              Exercices illimités, mini-scènes et séances simulées (avec vos crédits), carte
               de progression dédiée. N&apos;entame pas votre quota de spécialités.
             </p>
             <form action={checkoutFrameworkAction} className="mt-3">

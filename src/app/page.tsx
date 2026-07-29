@@ -17,8 +17,10 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { getPublicCatalogue } from "@/lib/catalogue";
+import { demoDrills, enumereFr, specialitesPhares } from "@/lib/landing-copy";
 import DemoDrill from "./demo-drill";
 import Track from "./_components/track";
 import DomaineCardView from "./_components/domaine-card";
@@ -26,13 +28,38 @@ import TestimonialsSection from "./_components/testimonials-section";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Metadata de la page d'acquisition. Les domaines cités viennent de la BASE : la
+ * description suit le catalogue au lieu de vieillir avec le code. Limitée à trois
+ * noms — les intitulés en base sont longs, et une description trop longue serait
+ * tronquée par les moteurs.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const domaines = await specialitesPhares(3);
+  const liste = enumereFr(domaines);
+  return {
+    title:
+      "Simulateur de séances cliniques avec patient IA — thérapeutes et coachs | MELETA",
+    description: liste
+      ? `Entraînez-vous à mener de vraies séances avec un patient simulé qui réagit : ${liste}. Feedback par compétence. Sans carte bancaire.`
+      : "Entraînez-vous à mener de vraies séances avec un patient simulé qui réagit. Feedback par compétence. Sans carte bancaire.",
+  };
+}
+
 // Page publique d'acquisition : praticiens/coachs (B2C) + écoles (B2B),
 // avec un exercice de démonstration jouable sans compte (et sans LLM).
 export default async function LandingPage() {
   const user = await getSessionUser();
   if (user) redirect("/accueil");
 
-  const { socle, specialites } = await getPublicCatalogue();
+  const [{ socle, specialites }, phares, demos] = await Promise.all([
+    getPublicCatalogue(),
+    specialitesPhares(4),
+    demoDrills(),
+  ]);
+  // Domaines cités dans le hero : jamais codés en dur, toujours les spécialités
+  // les mieux fournies en cas jouables (cf. src/lib/landing-copy.ts).
+  const domainesPhares = enumereFr(phares);
 
   return (
     <div className="animate-in">
@@ -41,22 +68,23 @@ export default async function LandingPage() {
       {/* ---- Héro ---- */}
       <section className="mx-auto max-w-3xl pt-8 text-center sm:pt-14">
         <span className="text-xs font-semibold uppercase tracking-widest text-[var(--ochre)]">
-          Simulation clinique pour thérapeutes &amp; coachs
+          Simulation clinique pour thérapeutes, coachs et étudiants
         </span>
         <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
           La pratique clinique, ça s&apos;entraîne.
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-base text-[var(--ink-soft)] sm:text-lg">
-          Entraînez vos compétences relationnelles sur des cas réalistes — du feedback
-          immédiat à l&apos;entretien complet avec un <b>patient simulé par IA</b> qui
-          réagit à votre posture — et visualisez vos progrès, compétence par compétence.
+          Menez de vraies séances avec un <b>patient simulé</b> qui réagit à votre posture
+          {domainesPhares ? `, sur votre domaine de pratique : ${domainesPhares}.` : "."} Et
+          voyez progresser chaque compétence, une par une.
         </p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
             href="#demo"
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--accent-hover)]"
           >
-            <Dumbbell className="h-4 w-4" /> Essayer un exercice — gratuit, sans compte
+            <MessagesSquare className="h-4 w-4" /> Parler à un patient simulé — gratuit, sans
+            compte
           </a>
           <Link
             href="/inscription"
@@ -66,23 +94,25 @@ export default async function LandingPage() {
           </Link>
         </div>
         <p className="mt-4 text-xs text-[var(--muted)]">
-          Sans carte bancaire · cas réalistes mais fictifs
+          Sans carte bancaire · patients simulés, cas fictifs
         </p>
       </section>
 
-      {/* ---- Démo interactive ---- */}
-      <section id="demo" className="mx-auto mt-16 max-w-3xl scroll-mt-24 text-center">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          Essayez, là, maintenant.
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Un patient vous parle. Que répondez-vous ? Feedback immédiat, comme dans
-          l&apos;application.
-        </p>
-        <div className="mt-6">
-          <DemoDrill />
-        </div>
-      </section>
+      {/* ---- Démo interactive (contenu tiré de la base, 3 domaines distincts) ---- */}
+      {demos.length > 0 && (
+        <section id="demo" className="mx-auto mt-16 max-w-3xl scroll-mt-24 text-center">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Essayez, là, maintenant.
+          </h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Un patient vous parle. Que répondez-vous ? Feedback immédiat, comme dans
+            l&apos;application — sur {demos.length} domaines différents.
+          </p>
+          <div className="mt-6">
+            <DemoDrill drills={demos} />
+          </div>
+        </section>
+      )}
 
       {/* ---- Comment ça marche ---- */}
       <section className="mt-20">
@@ -109,8 +139,8 @@ export default async function LandingPage() {
           <StepCard
             icon={<MessagesSquare className="h-5 w-5" />}
             step="Niveau 3"
-            titre="Entretien complet"
-            desc="Un entretien entier, sans filet, avec un patient qui réagit à votre posture. Débrief détaillé à la fin."
+            titre="Séance complète"
+            desc="Une séance entière, sans filet, avec un patient qui réagit à votre posture. Débrief détaillé à la fin."
           />
           <StepCard
             icon={<BarChart3 className="h-5 w-5" />}
@@ -205,9 +235,9 @@ export default async function LandingPage() {
             </span>
             <h3 className="mt-3 font-semibold">Une évaluation ancrée sur des grilles cliniques</h3>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              Chaque compétence est notée selon des critères explicites définis par
-              référentiel (entretien motivationnel, ACT, anamnèse…), avec justification et
-              citation de vos propres mots — pas une impression générale.
+              Chaque compétence est notée selon des critères explicites, propres au domaine
+              travaillé{phares.length > 0 ? ` (${phares.slice(0, 3).join(", ")}…)` : ""}, avec
+              justification et citation de vos propres mots — pas une impression générale.
             </p>
           </div>
           <div className="card-soft p-5">
@@ -291,11 +321,11 @@ export default async function LandingPage() {
       {/* ---- Bandeau final ---- */}
       <section className="mt-16 rounded-2xl bg-[var(--accent)] px-6 py-10 text-center text-white">
         <h2 className="text-2xl font-semibold tracking-tight">
-          Votre prochain patient mérite votre meilleure écoute.
+          Votre prochaine séance ne devrait pas être votre premier essai.
         </h2>
         <p className="mx-auto mt-2 max-w-xl text-sm text-white/80">
-          Créez votre compte en une minute — un email suffit — et faites votre premier
-          entraînement aujourd&apos;hui.
+          Créez votre compte en une minute, un email suffit, et menez votre première séance
+          aujourd&apos;hui.
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link

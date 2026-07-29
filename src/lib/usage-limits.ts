@@ -3,7 +3,7 @@
 // Le coût marginal d'une mise en situation IA (~0,01–0,03 €) est négligeable devant
 // le revenu : ces plafonds ne sont donc PAS des limites de produit, mais des
 // garde-fous ANTI-ABUS (bots, usage automatisé). Deux surfaces couvertes :
-//  1. mises en situation IA (mini-scènes + entretiens) — plafond journalier + filet
+//  1. mises en situation IA (mini-scènes + séances) — plafond journalier + filet
 //     mensuel très haut, avec alerte admin au seuil ;
 //  2. évaluations de drills « production » — la SEULE dépense IA non facturée et
 //     désormais non bornée par le catalogue (tout le catalogue est ouvert au gratuit).

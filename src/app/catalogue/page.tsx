@@ -49,7 +49,7 @@ export default async function CataloguePage() {
       <h1 className="text-2xl font-semibold tracking-tight">Domaines d&apos;entraînement</h1>
       <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">
         Entraînez-vous à la pratique clinique sur des cas réalistes — du feedback immédiat
-        jusqu&apos;à l&apos;entretien complet — et suivez vos progrès, compétence par compétence.
+        jusqu&apos;à la séance complète — et suivez vos progrès, compétence par compétence.
       </p>
 
       {/* Comment ça marche */}

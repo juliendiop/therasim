@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, GraduationCap } from "lucide-react";
+import { ArrowLeft, Clock, GraduationCap } from "lucide-react";
 import DemoRequestForm from "./demo-form";
 
 export const dynamic = "force-dynamic";
@@ -22,8 +22,11 @@ export default function DemandeDemo() {
           Demander une démo
         </h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Pour les écoles et organismes de formation. Nous revenons vers vous rapidement
-          pour organiser une présentation.
+          Pour les écoles et organismes de formation. Nous organisons avec vous une
+          présentation adaptée à vos apprenants.
+        </p>
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--accent-border)] bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
+          <Clock className="h-3.5 w-3.5" /> Réponse sous 2 jours ouvrés
         </p>
       </div>
 

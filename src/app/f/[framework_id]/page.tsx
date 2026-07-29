@@ -159,15 +159,15 @@ export default async function FrameworkPage({
 
           <ModeCard
             niveau="Autonome"
-            titre="Entretien simulé"
-            desc="Un entretien complet, sans filet, débriefé à la fin. Pour éprouver votre autonomie."
+            titre="Séance simulée"
+            desc="Une séance complète, sans filet, débriefée à la fin. Pour éprouver votre autonomie."
             icon={<MessagesSquare className="h-4 w-4" />}
           >
             <Link
               href={`/f/${framework.id}/simulation`}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
             >
-              Démarrer un entretien
+              Démarrer une séance
             </Link>
             <CreditNote cost={credits.costSimulation} />
           </ModeCard>

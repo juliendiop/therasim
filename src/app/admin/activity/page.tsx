@@ -52,7 +52,7 @@ export default async function AdminActivityPage({
         <h2 className="text-lg font-semibold">Journal d&apos;activité</h2>
       </div>
       <p className="mt-1 text-sm text-[var(--muted)]">
-        Toutes les actions menées sur les plateformes (exercices, mini-scènes, entretiens,
+        Toutes les actions menées sur les plateformes (exercices, mini-scènes, séances,
         crédits, inscriptions), avec l&apos;email et la plateforme.
       </p>
 
@@ -122,7 +122,7 @@ export default async function AdminActivityPage({
         <Kpi k={kpis.activeUsers} l="Utilisateurs actifs" />
         <Kpi k={kpis.drills} l="Exercices" />
         <Kpi k={kpis.miniscenes} l="Mini-scènes" />
-        <Kpi k={kpis.simulations} l="Entretiens" />
+        <Kpi k={kpis.simulations} l="Séances" />
         <Kpi k={kpis.creditsConsumed} l="Crédits consommés" />
       </div>
 

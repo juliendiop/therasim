@@ -1,15 +1,15 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({ baseDirectory: __dirname });
+// eslint-config-next 16 expose directement des « flat configs » (tableaux).
+// Les passer par FlatCompat les faisait valider comme des configs .eslintrc
+// legacy : la validation échouait, et le formateur d'erreurs plantait en
+// sérialisant les plugins (références circulaires) — d'où un message
+// « Converting circular structure to JSON » qui masquait la vraie cause.
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-  { ignores: [".next/**", "node_modules/**"] },
+  ...nextCoreWebVitals,
+  ...nextTypescript,
+  { ignores: [".next/**", "node_modules/**", "next-env.d.ts"] },
 ];
 
 export default eslintConfig;

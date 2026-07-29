@@ -65,7 +65,7 @@ export async function runAnalysis(): Promise<Analysis> {
     .join("\n");
 
   const system = `Tu es un expert growth / CRO (optimisation du taux de conversion) pour un produit SaaS B2C+B2B.
-Le produit s'appelle MELETA : un outil d'entraînement clinique par compétences pour thérapeutes, coachs et écoles de formation. On s'entraîne sur des cas cliniques (exercices QCM gratuits, mini-scènes et entretiens simulés par IA payés en crédits). Modèle : essai gratuit (1 domaine + crédits offerts à l'inscription), puis packs de crédits et forfaits d'abonnement.
+Le produit s'appelle MELETA : un outil d'entraînement clinique par compétences pour thérapeutes, coachs et écoles de formation. On s'entraîne sur des cas cliniques (exercices QCM gratuits, mini-scènes et séances simulées par IA payées en crédits). Modèle : essai gratuit (1 domaine + crédits offerts à l'inscription), puis packs de crédits et forfaits d'abonnement.
 Pages clés de l'acquisition : "/" (landing avec une démo jouable sans compte), "/tarifs", "/inscription", "/blog", et l'espace connecté (/accueil, /catalogue, exercices, /credits).
 
 Ta mission : à partir des mesures d'entonnoir fournies, proposer 3 à 5 optimisations de conversion PRIORISÉES et CONCRÈTES, actionnables dans le code de l'app.

@@ -37,7 +37,7 @@ Bonne découverte,
     label: "Post LinkedIn",
     body: `On sait expliquer l'écoute active ou l'entretien motivationnel. Les mobiliser sous pression, face à un vrai patient, c'est autre chose.
 
-J'utilise MELETA pour entraîner ces compétences relationnelles sur des cas cliniques réalistes : feedback immédiat, mises en situation avec un patient simulé par IA, et une carte de progression qui montre où je progresse et où je cale.
+J'utilise MELETA pour entraîner ces compétences cliniques sur des cas réalistes : feedback immédiat, séances avec un patient simulé par IA, et une carte de progression qui montre où je progresse et où je cale.
 
 Outil formatif, non certifiant. Essai gratuit sans carte bancaire → {LIEN}
 

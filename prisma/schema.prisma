@@ -171,7 +171,10 @@ model SubscriptionPlan {
   // est possible une fois par période sur les forfaits intermédiaires.
   frameworkQuota Int?     @map("framework_quota")
   priceEurCents  Int      @map("price_eur_cents") // affichage seul — Stripe fait foi pour la facturation
-  stripePriceId  String?  @map("stripe_price_id") // Price ID récurrent (Dashboard Stripe)
+  stripePriceId  String?  @map("stripe_price_id") // Price ID récurrent MENSUEL (Dashboard Stripe)
+  // Price ID récurrent ANNUEL (facturation annuelle, 2 mois offerts = mensuel×10).
+  // null = annuel non proposé. L'affichage du prix annuel est dérivé du mensuel.
+  stripePriceIdYearly String? @map("stripe_price_id_yearly")
   active         Boolean  @default(true)
   ordre          Int      @default(0)
   createdAt      DateTime @default(now()) @map("created_at")

@@ -29,6 +29,7 @@ export async function createPlan(formData: FormData) {
   const monthlyCredits = mcRaw === "" ? null : parseInt(mcRaw, 10);
   const priceEur = parseFloat(String(formData.get("priceEur") ?? ""));
   const stripePriceId = String(formData.get("stripePriceId") ?? "").trim();
+  const stripePriceIdYearly = String(formData.get("stripePriceIdYearly") ?? "").trim();
   // Quota de SPÉCIALITÉS au choix de l'abonné. Vide = toutes les spécialités.
   const quotaRaw = String(formData.get("frameworkQuota") ?? "").trim();
   const quota = quotaRaw === "" ? null : parseInt(quotaRaw, 10);
@@ -47,6 +48,7 @@ export async function createPlan(formData: FormData) {
       frameworkQuota: quota,
       priceEurCents: Math.round(priceEur * 100),
       stripePriceId: stripePriceId || null,
+      stripePriceIdYearly: stripePriceIdYearly || null,
       ordre: count,
     },
   });
@@ -69,6 +71,7 @@ export async function updatePlanPriceId(formData: FormData) {
   await requireSuperAdmin();
   const id = String(formData.get("id") ?? "");
   const stripePriceId = String(formData.get("stripePriceId") ?? "").trim();
+  const stripePriceIdYearly = String(formData.get("stripePriceIdYearly") ?? "").trim();
   const quotaRaw = String(formData.get("frameworkQuota") ?? "").trim();
   const quota = quotaRaw === "" ? null : parseInt(quotaRaw, 10);
   if (quota !== null && (!Number.isFinite(quota) || quota < 1)) return;
@@ -77,9 +80,14 @@ export async function updatePlanPriceId(formData: FormData) {
   const mcRaw = formData.get("monthlyCredits");
   const data: {
     stripePriceId: string | null;
+    stripePriceIdYearly: string | null;
     frameworkQuota: number | null;
     monthlyCredits?: number | null;
-  } = { stripePriceId: stripePriceId || null, frameworkQuota: quota };
+  } = {
+    stripePriceId: stripePriceId || null,
+    stripePriceIdYearly: stripePriceIdYearly || null,
+    frameworkQuota: quota,
+  };
   if (mcRaw !== null) {
     const s = String(mcRaw).trim();
     if (s === "") data.monthlyCredits = null;

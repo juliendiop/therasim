@@ -94,7 +94,7 @@ export const SOUS_TRAITANTS: SousTraitant[] = [
   {
     nom: "Neon Inc.",
     finalite: "Hébergement de la base de données PostgreSQL",
-    donnees: "Compte, progression, historique des entretiens simulés, facturation",
+    donnees: "Compte, progression, historique des séances simulées, facturation",
     localisation: HEBERGEUR_BDD.region,
     source: "package.json (@neondatabase/serverless), src/lib/prisma.ts",
   },
@@ -191,7 +191,7 @@ export const RETENTIONS: Retention[] = [
     verifie: false,
   },
   {
-    donnee: "Historique des entretiens simulés et évaluations",
+    donnee: "Historique des séances simulées et évaluations",
     duree: TODO("proposition : durée du compte, suppression avec le compte"),
     verifie: false,
   },

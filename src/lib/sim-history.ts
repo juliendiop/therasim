@@ -1,4 +1,4 @@
-// Historique des mises en situation (mini-scènes N2 + entretiens N3).
+// Historique des mises en situation (mini-scènes N2 + séances complètes N3).
 // Enrichit les SimSession de l'utilisateur : cas, référentiel, tours, note moyenne.
 
 import { prisma } from "./prisma";
@@ -58,7 +58,7 @@ export async function listSimHistory(userId: string, take = 50): Promise<SimHist
     id: s.id,
     kind: s.kind,
     statut: s.statut,
-    scenarioTitre: scenarioById.get(s.scenarioId) ?? "Entretien",
+    scenarioTitre: scenarioById.get(s.scenarioId) ?? "Séance",
     frameworkId: s.frameworkId,
     frameworkNom: frameworkById.get(s.frameworkId) ?? s.frameworkId,
     createdAt: s.createdAt,

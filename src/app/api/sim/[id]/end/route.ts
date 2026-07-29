@@ -6,7 +6,7 @@ import { EvaluatorNotConfiguredError } from "@/lib/evaluator";
 
 export const dynamic = "force-dynamic";
 
-// POST /api/sim/{id}/end — clôt l'entretien, calcule le débrief, alimente la carte.
+// POST /api/sim/{id}/end — clôt la séance, calcule le débrief, alimente la carte.
 // Body optionnel : { selfAssessment: { [competency_code]: note 1..5 } } — auto-évaluation
 // de l'apprenant, recueillie avant qu'il ne voie la note IA (comparaison côté client).
 export async function POST(

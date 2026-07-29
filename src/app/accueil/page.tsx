@@ -24,7 +24,7 @@ import AffiliationNudge from "@/app/_components/affiliation-nudge";
 export const dynamic = "force-dynamic";
 
 // Tableau de bord d'accueil : répond à « que faire aujourd'hui ? ».
-// Reprise en un clic (entretien en cours, dernier domaine), révisions dues,
+// Reprise en un clic (séance en cours, dernier domaine), révisions dues,
 // activité de la semaine, dernières mises en situation.
 export default async function AccueilPage({
   searchParams,
@@ -165,7 +165,7 @@ export default async function AccueilPage({
           nouvel inscrit (rien à reprendre), affiché dès la première activité. */}
       {d.hasFrameworks && !(bienvenue || premierePratique) && (
         <>
-          {/* Entretien laissé en cours : reprise en un clic */}
+          {/* Séance laissée en cours : reprise en un clic */}
           {d.ongoingSim && (
             <div className="mt-6 flex flex-col items-start gap-3 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-5 sm:flex-row sm:items-center">
               <div className="flex-1">

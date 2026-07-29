@@ -45,7 +45,7 @@ export async function submitDemoRequest(
     await sendDemoRequest(CONTACT_EMAIL, { nom, email, organisme, message, parrainage });
     return {
       ok: true,
-      message: "Merci ! Votre demande est bien envoyée, nous revenons vers vous rapidement.",
+      message: `Merci ${nom.split(" ")[0]} — nous avons bien reçu votre demande à l'adresse ${email}.`,
     };
   } catch (e) {
     console.error("[demande-demo] envoi échoué", e);

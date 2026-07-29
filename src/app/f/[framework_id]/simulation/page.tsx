@@ -34,9 +34,9 @@ export default async function SimulationStart({
       >
         <ArrowLeft className="h-4 w-4" /> {framework.nom}
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold">Entretien simulé</h1>
+      <h1 className="mt-2 text-2xl font-semibold">Séance simulée</h1>
       <p className="mt-1 text-sm text-[var(--muted)]">
-        Mène un entretien complet, sans filet. Le patient est incarné et réagit à ta posture.
+        Mène une séance complète, sans filet. Le patient est incarné et réagit à ta posture.
         À la fin, tu reçois un débrief et ta carte de progression se met à jour.
       </p>
 

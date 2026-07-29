@@ -42,7 +42,7 @@ export default async function CgvCguPage() {
         <p>
           {SERVICE.nom} est une plateforme d&apos;entraînement à la relation clinique. Elle
           propose trois types d&apos;activités : des exercices ciblés, des mini-scènes et des
-          entretiens complets avec un patient simulé par intelligence artificielle, assortis
+          séances complètes avec un patient simulé par intelligence artificielle, assorties
           d&apos;un suivi de progression par compétence.
         </p>
         <p>
@@ -288,7 +288,7 @@ Signature (uniquement en cas de notification sur papier) :`}
           écrite préalable.
         </p>
         <p>
-          Les transcriptions des entretiens simulés produites par l&apos;utilisateur lui restent
+          Les transcriptions des séances simulées produites par l&apos;utilisateur lui restent
           accessibles depuis son historique. L&apos;éditeur se réserve le droit de les exploiter
           sous forme <b>anonymisée et agrégée</b> à des fins d&apos;amélioration du Service,
           dans les conditions décrites dans la{" "}

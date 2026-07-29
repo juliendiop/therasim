@@ -322,7 +322,7 @@ export default function SimChat({
       {confirmEnd && !ended && !awaitingSelfAssessment && (
         <div className="mt-4 flex flex-col gap-2 rounded-lg border border-[var(--border)] bg-white p-3 text-sm sm:flex-row sm:items-center">
           <span className="flex-1">
-            Terminer {isMini ? "la mini-scène" : "l'entretien"} et recevoir le débrief&nbsp;?
+            Terminer {isMini ? "la mini-scène" : "la séance"} et recevoir le débrief&nbsp;?
             Cette action est définitive.
           </span>
           <div className="flex gap-2">
@@ -407,7 +407,7 @@ export default function SimChat({
       {!ended && !awaitingSelfAssessment && !isMini && (
         <p className="mt-2 text-center text-xs text-[var(--muted)]">
           {turns} tour(s)
-          {turns >= 15 ? " — pensez à clôturer l'entretien." : ""}
+          {turns >= 15 ? " — pensez à clôturer la séance." : ""}
         </p>
       )}
 
@@ -447,7 +447,7 @@ function SelfAssessmentForm({
         Avant de voir votre débrief…
       </h2>
       <p className="mt-0.5 text-sm text-[var(--ink-soft)]">
-        Comment estimez-vous avoir mobilisé chaque compétence, sur cet entretien&nbsp;?
+        Comment estimez-vous avoir mobilisé chaque compétence, sur cette séance&nbsp;?
       </p>
       <div className="mt-3 space-y-2.5">
         {competencies.map((c) => (
@@ -517,7 +517,7 @@ function DebriefView({
     <div className="mt-8 border-t border-[var(--border)] pt-6">
       <h2 className="text-lg font-semibold">Débrief</h2>
 
-      {/* Célébration : palier(s) franchi(s) sur cet entretien */}
+      {/* Célébration : palier(s) franchi(s) sur cette séance */}
       {debrief.level_ups && debrief.level_ups.length > 0 && (
         <div className="mt-3 space-y-2">
           {debrief.level_ups.map((lu) => (

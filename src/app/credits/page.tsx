@@ -17,7 +17,7 @@ const REASON_LABEL: Record<string, string> = {
   welcome: "Pack de bienvenue",
   monthly: "Recharge mensuelle",
   consume_miniscene: "Mini-scène",
-  consume_simulation: "Entretien simulé",
+  consume_simulation: "Séance simulée",
   refund: "Remboursement",
   admin_grant: "Crédits offerts",
   purchase: "Achat de crédits",
@@ -105,15 +105,15 @@ export default async function CreditsPage({
         <h1 className="text-xl font-semibold">Mes crédits</h1>
       </div>
 
-      {/* Entretien complet « découverte » déjà utilisé : explication + abonnement
-          (jamais une erreur technique). L'entretien N3 sur le gratuit est unique à vie. */}
+      {/* Séance complète « découverte » déjà utilisée : explication + abonnement
+          (jamais une erreur technique). La séance N3 sur le gratuit est unique. */}
       {need === "discovery" && (
         <div className="mt-4 rounded-2xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-5">
-          <h2 className="font-semibold">Vous avez utilisé votre entretien complet découverte</h2>
+          <h2 className="font-semibold">Vous avez utilisé votre séance complète découverte</h2>
           <p className="mt-1 text-sm text-[var(--ink-soft)]">
-            Le compte gratuit inclut <b>un entretien complet</b>, offert une fois — vous
+            Le compte gratuit inclut <b>une séance complète</b>, offerte une fois — vous
             l&apos;avez fait, bravo. Les <b>exercices</b> et les <b>mini-scènes</b> restent
-            ouverts sur toutes vos spécialités. Pour enchaîner les entretiens complets, un
+            ouverts sur toutes vos spécialités. Pour enchaîner les séances complètes, un
             abonnement les débloque (2 crédits chacun).
           </p>
           {fwName && (
@@ -134,7 +134,7 @@ export default async function CreditsPage({
                 <span className="text-sm font-normal text-[var(--muted)]">/mois</span>
               </div>
               <div className="text-sm text-[var(--muted)]">
-                Entretiens complets débloqués · socle + 3 spécialités
+                Séances complètes débloquées · socle + 3 spécialités
               </div>
               <form action={checkoutPlanAction} className="mt-3">
                 <input type="hidden" name="planId" value={recommendedPlan.id} />
@@ -161,7 +161,7 @@ export default async function CreditsPage({
         <div className="mt-4 rounded-2xl border border-[var(--accent-border)] bg-[var(--accent-soft)] p-5">
           <h2 className="font-semibold">
             Il vous manque des crédits pour{" "}
-            {need === "simulation" ? "lancer cet entretien simulé" : "lancer cette mini-scène"}
+            {need === "simulation" ? "lancer cette séance simulée" : "lancer cette mini-scène"}
           </h2>
           {progress && (
             <p className="mt-1 text-sm text-[var(--ink-soft)]">
@@ -276,7 +276,7 @@ export default async function CreditsPage({
         </div>
         <div className="text-right text-xs text-[var(--muted)]">
           <p>Mini-scène : <b>{settings.costMiniscene}</b> crédit{settings.costMiniscene > 1 ? "s" : ""}</p>
-          <p>Entretien simulé : <b>{settings.costSimulation}</b> crédits</p>
+          <p>Séance simulée : <b>{settings.costSimulation}</b> crédits</p>
           <p className="mt-1">Exercices (QCM) : <b>gratuits</b></p>
         </div>
       </div>

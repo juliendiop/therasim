@@ -20,7 +20,7 @@ export default async function HistoriquePage() {
         <History className="h-6 w-6 text-[var(--accent)]" /> Mon historique
       </h1>
       <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">
-        Toutes vos mises en situation — mini-scènes et entretiens simulés. Rouvrez-en une
+        Toutes vos mises en situation — mini-scènes et séances simulées. Rouvrez-en une
         pour relire la conversation et son débrief, ou reprendre là où vous l&apos;aviez
         laissée.
       </p>
@@ -29,7 +29,7 @@ export default async function HistoriquePage() {
         <div className="mt-6 rounded-lg border border-dashed border-[var(--border)] bg-white p-8 text-center text-sm text-[var(--muted)]">
           <MessagesSquare className="mx-auto mb-2 h-6 w-6" />
           Aucune mise en situation pour l&apos;instant. Lancez une mini-scène ou un
-          entretien simulé depuis un{" "}
+          séance simulée depuis un{" "}
           <Link href="/catalogue" className="font-medium text-[var(--accent)] hover:underline">
             domaine du catalogue
           </Link>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Gift, Users2, History, Megaphone, Download } from "lucide-react";
+import { Gift, Users2, History, Megaphone, Download, FileText } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -9,7 +9,11 @@ import {
   getActivePayoutRequest,
   resolveCommissionRate,
 } from "@/lib/affiliation";
-import { AFFILIATION_ACTIVATION, AFFILIATION_DASHBOARD } from "@/lib/affiliation-copy";
+import {
+  AFFILIATION_ACTIVATION,
+  AFFILIATION_DASHBOARD,
+  AMBASSADEURS_PAGE,
+} from "@/lib/affiliation-copy";
 import { KIT_BLOCKS, KIT_IMAGES, fillTemplate, KIT_DISCLAIMER } from "@/lib/affiliation-kit";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import CopyPrompt from "@/app/admin/optimisation/copy-prompt";
@@ -81,7 +85,25 @@ export default async function AffiliationPage({
           ))}
         </ul>
 
-        <form action={activateAmbassadorAction} className="mt-6 rounded-xl border border-[var(--border)] bg-white p-4">
+        {/* Prérequis de facturation : affiché AVANT le formulaire, pas découvert
+            au moment de réclamer son premier paiement. */}
+        <div className="mt-5 flex gap-3 rounded-xl border border-[var(--ochre)] bg-[var(--ochre-soft)] p-4">
+          <FileText className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ochre)]" />
+          <div>
+            <div className="text-sm font-semibold">{AMBASSADEURS_PAGE.prerequisTitre}</div>
+            <p className="mt-0.5 text-sm text-[var(--ink-soft)]">
+              {AMBASSADEURS_PAGE.prerequisTexte}
+            </p>
+            <Link
+              href="/conditions-ambassadeurs"
+              className="mt-1.5 inline-block text-sm font-semibold text-[var(--accent)] hover:underline"
+            >
+              Lire les conditions du programme
+            </Link>
+          </div>
+        </div>
+
+        <form action={activateAmbassadorAction} className="mt-5 rounded-xl border border-[var(--border)] bg-white p-4">
           <label className="flex items-start gap-2.5 text-sm">
             <input type="checkbox" name="consent" required className="mt-1" />
             <span>{AFFILIATION_ACTIVATION.consentLabel}</span>

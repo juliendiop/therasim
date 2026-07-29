@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Send } from "lucide-react";
+import { CheckCircle2, Send } from "lucide-react";
 import { submitDemoRequest, type DemoRequestState } from "./actions";
 
 const initialState: DemoRequestState = { ok: false, message: "" };
@@ -12,11 +12,33 @@ export default function DemoRequestForm() {
   const inputCls =
     "mt-1 w-full rounded-lg border border-[var(--border)] p-2.5 text-sm outline-none focus:border-[var(--accent)]";
 
+  // Confirmation explicite : ce qui a été fait, ce qui va se passer, et quoi faire
+  // si rien n'arrive — un simple « envoyé ✓ » laisse le visiteur sans repère.
   if (state.ok) {
     return (
-      <div className="card-soft p-6 text-center text-sm">
-        <p className="font-medium text-green-700">Demande envoyée ✓</p>
-        <p className="mt-1 text-[var(--muted)]">{state.message}</p>
+      <div className="card-soft p-6 text-sm">
+        <p className="flex items-center gap-2 font-semibold text-green-700">
+          <CheckCircle2 className="h-5 w-5" /> Votre demande est bien envoyée
+        </p>
+        <p className="mt-2 text-[var(--ink-soft)]">{state.message}</p>
+        <ul className="mt-3 space-y-1.5 text-[var(--muted)]">
+          <li className="flex gap-2">
+            <span className="text-[var(--accent)]">1.</span> Nous étudions votre besoin et
+            préparons une démonstration adaptée à votre établissement.
+          </li>
+          <li className="flex gap-2">
+            <span className="text-[var(--accent)]">2.</span> Vous recevez notre réponse par
+            email <b>sous 2 jours ouvrés</b>, avec des créneaux de rendez-vous.
+          </li>
+        </ul>
+        <p className="mt-4 border-t border-[var(--border)] pt-3 text-xs text-[var(--muted)]">
+          Sans nouvelle de notre part passé ce délai, pensez à vérifier vos indésirables, ou
+          écrivez-nous directement à{" "}
+          <a href="mailto:contact@meleta.app" className="underline">
+            contact@meleta.app
+          </a>
+          .
+        </p>
       </div>
     );
   }

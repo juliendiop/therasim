@@ -6,7 +6,7 @@ import { EvaluatorNotConfiguredError } from "@/lib/evaluator";
 
 export const dynamic = "force-dynamic";
 
-// POST /api/sim/{id}/message — body { content } : un tour de l'entretien.
+// POST /api/sim/{id}/message — body { content } : un tour de la séance.
 // Réponse : text/plain STREAMÉ (la réplique du patient arrive au fil de l'eau).
 // Les erreurs restent en JSON — le client les distingue par le Content-Type.
 export async function POST(
