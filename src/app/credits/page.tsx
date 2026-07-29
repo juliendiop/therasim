@@ -9,6 +9,7 @@ import { palier, palierRank, PALIER_LABEL, type Palier } from "@/lib/mastery";
 import { isStripeConfigured } from "@/lib/stripe";
 import { planQuotaLabel, monthlyCreditsLabel } from "@/lib/ui";
 import AffiliationNudge from "@/app/_components/affiliation-nudge";
+import SubmitButton from "@/app/_components/submit-button";
 import { checkoutPackAction, checkoutPlanAction, manageBillingAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -143,12 +144,13 @@ export default async function CreditsPage({
               </div>
               <form action={checkoutPlanAction} className="mt-3">
                 <input type="hidden" name="planId" value={recommendedPlan.id} />
-                <button
+                <SubmitButton
                   disabled={!stripeReady || !recommendedPlan.stripePriceId}
-                  className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                  pendingText="Redirection…"
+                  className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
                 >
                   S&apos;abonner
-                </button>
+                </SubmitButton>
               </form>
             </div>
           )}
@@ -207,12 +209,13 @@ export default async function CreditsPage({
                 </div>
                 <form action={checkoutPackAction} className="mt-3">
                   <input type="hidden" name="packId" value={recommendedPack.id} />
-                  <button
+                  <SubmitButton
                     disabled={!stripeReady}
-                    className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                    pendingText="Redirection…"
+                    className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
                   >
                     Recharger maintenant
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
             )}
@@ -233,12 +236,13 @@ export default async function CreditsPage({
                 </div>
                 <form action={checkoutPlanAction} className="mt-3">
                   <input type="hidden" name="planId" value={recommendedPlan.id} />
-                  <button
+                  <SubmitButton
                     disabled={!stripeReady || !recommendedPlan.stripePriceId}
-                    className="w-full rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent-soft)] disabled:opacity-50"
+                    pendingText="Redirection…"
+                    className="w-full rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent-soft)]"
                   >
                     S&apos;abonner
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
             )}
@@ -323,9 +327,12 @@ export default async function CreditsPage({
               </p>
             </div>
             <form action={manageBillingAction}>
-              <button className="rounded-lg border border-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-white">
+              <SubmitButton
+                pendingText="Ouverture…"
+                className="rounded-lg border border-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-white"
+              >
                 Gérer mon abonnement
-              </button>
+              </SubmitButton>
             </form>
           </div>
         </div>
@@ -364,12 +371,13 @@ export default async function CreditsPage({
                 </div>
                 <form action={checkoutPlanAction} className="mt-3">
                   <input type="hidden" name="planId" value={p.id} />
-                  <button
+                  <SubmitButton
                     disabled={!stripeReady || !p.stripePriceId}
-                    className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                    pendingText="Redirection…"
+                    className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
                   >
                     S&apos;abonner
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
             ))}
@@ -397,12 +405,13 @@ export default async function CreditsPage({
                 </div>
                 <form action={checkoutPackAction} className="mt-3">
                   <input type="hidden" name="packId" value={p.id} />
-                  <button
+                  <SubmitButton
                     disabled={!stripeReady || !p.stripePriceId}
-                    className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                    pendingText="Redirection…"
+                    className="w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
                   >
                     Acheter
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
             ))}

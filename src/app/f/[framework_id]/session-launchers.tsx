@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { startMiniSceneAction } from "@/app/sim/actions";
+import SubmitButton from "@/app/_components/submit-button";
 
 type Common = {
   frameworkId: string;
@@ -36,9 +37,12 @@ export function MiniSceneLauncher({
       }}
     >
       <input type="hidden" name="frameworkId" value={frameworkId} />
-      <button className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]">
+      <SubmitButton
+        pendingText="Lancement…"
+        className="w-full rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+      >
         Lancer une mini-scène
-      </button>
+      </SubmitButton>
     </form>
   );
 }

@@ -11,6 +11,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Coins, Sparkles, X } from "lucide-react";
 import { checkoutPackAction, checkoutPlanAction } from "@/app/credits/actions";
+import SubmitButton from "@/app/_components/submit-button";
 
 type WallData = {
   show: boolean;
@@ -134,9 +135,12 @@ export default function CreditsWall() {
                 <input type="hidden" name="cta" value="credits_recharge" />
                 <input type="hidden" name="wall" value={analytics.wall} />
                 <input type="hidden" name="plan" value={analytics.plan} />
-                <button className="mt-3 w-full rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent-soft)]">
+                <SubmitButton
+                  pendingText="Redirection…"
+                  className="mt-3 w-full rounded-lg border border-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                >
                   Recharger maintenant
-                </button>
+                </SubmitButton>
               </form>
             )}
 
@@ -167,9 +171,12 @@ export default function CreditsWall() {
                 <input type="hidden" name="cta" value="credits_upgrade" />
                 <input type="hidden" name="wall" value={analytics.wall} />
                 <input type="hidden" name="plan" value={analytics.plan} />
-                <button className="mt-3 w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]">
+                <SubmitButton
+                  pendingText="Redirection…"
+                  className="mt-3 w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
+                >
                   Passer à {data.upgrade.label}
-                </button>
+                </SubmitButton>
               </form>
             ) : (
               !data.recharge && (

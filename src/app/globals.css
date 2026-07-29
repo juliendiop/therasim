@@ -331,3 +331,17 @@ body {
     font-weight: 600;
   }
 }
+
+/* Feedback de pression universel : retour visuel instantané au clic sur tout bouton
+   (et lien stylé en bouton). Évite le sentiment « il ne se passe rien ». */
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):active,
+  a[role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.97);
+  }
+}
+
+/* Curseur d'attente pendant une soumission (aria-busy posé par SubmitButton). */
+button[aria-busy="true"] {
+  cursor: progress;
+}

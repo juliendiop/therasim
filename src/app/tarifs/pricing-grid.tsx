@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Star } from "lucide-react";
 import { checkoutPlanAction } from "@/app/credits/actions";
+import SubmitButton from "@/app/_components/submit-button";
 
 export type PricingPlan = {
   id: string;
@@ -232,13 +233,13 @@ function PlanCard({
             <input type="hidden" name="planId" value={plan.id} />
             <input type="hidden" name="cycle" value={cycle} />
             <input type="hidden" name="cta" value={analytics} />
-            <button
-              data-analytics={analytics}
+            <SubmitButton
               disabled={!stripeReady || !priceAvailable}
-              className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+              pendingText="Redirection…"
+              className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
             >
               S&apos;abonner
-            </button>
+            </SubmitButton>
             {!priceAvailable && cycle === "yearly" && (
               <p className="mt-1.5 text-center text-[11px] text-[var(--muted)]">
                 Formule annuelle bientôt disponible.
