@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/auth";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import {
@@ -13,8 +14,9 @@ import {
   createCreditsCheckout,
   createFrameworkCheckout,
   createSubscriptionCheckout,
+  changeSubscriptionPlan,
 } from "@/lib/billing";
-import { recordFunnel } from "@/lib/funnel";
+import { recordFunnel, recordInteraction } from "@/lib/funnel";
 
 function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : "Une erreur est survenue.";
@@ -118,6 +120,30 @@ export async function swapFrameworkChoiceAction(formData: FormData) {
     redirect(`/f/${addFrameworkId}?error=${encodeURIComponent(result.message)}`);
   }
   redirect(`/f/${addFrameworkId}`);
+}
+
+/** Change de forfait depuis l'appli : montée immédiate (prorata), descente au
+ *  renouvellement, dans le cycle courant. La synchro locale vient du webhook. */
+export async function changePlanAction(formData: FormData) {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+  const newPlanId = String(formData.get("planId") ?? "");
+
+  let res: { ok: boolean; message: string; kind?: "upgrade" | "downgrade" };
+  try {
+    res = await changeSubscriptionPlan(user.id, newPlanId);
+  } catch (e) {
+    redirect(`/credits?error=${encodeURIComponent(errorMessage(e))}`);
+  }
+  if (!res.ok) redirect(`/credits?error=${encodeURIComponent(res.message)}`);
+
+  await recordInteraction("plan_change", {
+    userId: user.id,
+    meta: { kind: res.kind ?? "", to: newPlanId },
+  });
+  revalidatePath("/credits");
+  revalidatePath("/", "layout");
+  redirect(`/credits?planchanged=${encodeURIComponent(res.message)}`);
 }
 
 /** Ouvre le portail Stripe (résiliation, moyen de paiement) pour un abonné existant. */

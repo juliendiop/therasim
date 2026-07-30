@@ -10,7 +10,7 @@ import { isStripeConfigured } from "@/lib/stripe";
 import { planQuotaLabel, monthlyCreditsLabel } from "@/lib/ui";
 import AffiliationNudge from "@/app/_components/affiliation-nudge";
 import SubmitButton from "@/app/_components/submit-button";
-import { checkoutPackAction, checkoutPlanAction, manageBillingAction } from "./actions";
+import { checkoutPackAction, checkoutPlanAction, changePlanAction, manageBillingAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +41,11 @@ export default async function CreditsPage({
     canceled?: string;
     error?: string;
     fw?: string;
+    planchanged?: string;
   }>;
 }) {
   const user = await requireUser();
-  const { need, success, canceled, error, fw } = await searchParams;
+  const { need, success, canceled, error, fw, planchanged } = await searchParams;
   const stripeReady = isStripeConfigured();
 
   // Allocation du forfait (essai inclus) avant la lecture du solde, et avant le
@@ -260,6 +261,11 @@ export default async function CreditsPage({
           Paiement annulé — rien n&apos;a été débité.
         </div>
       )}
+      {planchanged && (
+        <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+          ✓ {planchanged}
+        </div>
+      )}
       {error && (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error}
@@ -311,16 +317,19 @@ export default async function CreditsPage({
                 Abonnement {activePlan?.label ?? ""} —{" "}
                 {SUBSCRIPTION_STATUS_LABEL[subscription!.status] ?? subscription!.status}
               </div>
-              {subscription!.currentPeriodEnd && (
-                <p className="mt-0.5 text-xs text-[var(--muted)]">
-                  {subscription!.cancelAtPeriodEnd
-                    ? "Résiliation programmée au "
-                    : "Prochain renouvellement le "}
-                  {subscription!.currentPeriodEnd.toLocaleDateString("fr-FR", {
+              {subscription!.currentPeriodEnd &&
+                (() => {
+                  const d = subscription!.currentPeriodEnd.toLocaleDateString("fr-FR", {
                     timeZone: "Europe/Paris",
-                  })}
-                </p>
-              )}
+                  });
+                  return (
+                    <p className="mt-0.5 text-xs text-[var(--muted)]">
+                      {subscription!.cancelAtPeriodEnd
+                        ? `Votre forfait reste actif jusqu'au ${d}, puis prend fin — vous gardez tous vos avantages d'ici là.`
+                        : `Prochain renouvellement le ${d}.`}
+                    </p>
+                  );
+                })()}
               <p className="mt-0.5 text-xs text-[var(--muted)]">
                 Le socle est inclus partout ; votre forfait ouvre des spécialités au choix —
                 ouvrez-les ou échangez-les depuis le catalogue.
@@ -336,6 +345,77 @@ export default async function CreditsPage({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Changer de forfait — met en avant ce qu'on gagne (conversion). Montée
+          immédiate, descente au renouvellement (géré côté serveur). */}
+      {!need && canRecharge && activePlan && (
+        <section className="mt-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+            Changer de forfait
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {plans
+              .filter((p) => p.priceEurCents > 0 && p.id !== activePlan.id)
+              .map((p) => {
+                const upgrade = p.priceEurCents > activePlan.priceEurCents;
+                const creditsLabel =
+                  p.monthlyCredits == null
+                    ? "Séances sans compter"
+                    : upgrade && activePlan.monthlyCredits != null
+                      ? `+${p.monthlyCredits - activePlan.monthlyCredits} crédits de mise en situation / mois`
+                      : `${p.monthlyCredits} crédits / mois`;
+                const specialtiesLabel =
+                  p.frameworkQuota == null
+                    ? "Toutes les spécialités actuelles"
+                    : `${p.frameworkQuota} spécialité${p.frameworkQuota > 1 ? "s" : ""} au choix`;
+                return (
+                  <div
+                    key={p.id}
+                    className={`flex flex-col rounded-xl border bg-white p-4 ${
+                      upgrade ? "border-[var(--accent)]" : "border-[var(--border)]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold">{p.label}</span>
+                      <span className="shrink-0 text-sm font-semibold">
+                        {(p.priceEurCents / 100).toFixed(2).replace(".00", "")} €
+                        <span className="text-xs font-normal text-[var(--muted)]">/mois</span>
+                      </span>
+                    </div>
+                    <ul className="mt-2 flex-1 space-y-1 text-xs text-[var(--ink-soft)]">
+                      <li className="flex items-start gap-1.5">
+                        <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-[var(--accent)]" />
+                        {creditsLabel}
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-[var(--accent)]" />
+                        {specialtiesLabel}
+                      </li>
+                    </ul>
+                    <form action={changePlanAction} className="mt-3">
+                      <input type="hidden" name="planId" value={p.id} />
+                      <SubmitButton
+                        pendingText="Changement…"
+                        className={
+                          upgrade
+                            ? "w-full rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
+                            : "w-full rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                        }
+                      >
+                        {upgrade ? `Passer à ${p.label}` : `Redescendre à ${p.label}`}
+                      </SubmitButton>
+                    </form>
+                    <p className="mt-1 text-center text-[11px] text-[var(--muted)]">
+                      {upgrade
+                        ? "Effet immédiat — prorata calculé par Stripe."
+                        : "Au prochain renouvellement, sans rien perdre d'ici là."}
+                    </p>
+                  </div>
+                );
+              })}
+          </div>
+        </section>
       )}
 
       {/* Programme ambassadeur : rappel discret pour un utilisateur éligible et

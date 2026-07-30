@@ -4,7 +4,23 @@ import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/auth";
 import { setConfig } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
+import { resyncSubscription } from "@/lib/billing";
 import { FREE_FRAMEWORKS_CONFIG_KEY } from "@/lib/entitlements";
+
+// Filet de sécurité : relit un abonnement depuis Stripe et corrige la base (utile quand
+// un webhook a été manqué — ex. résiliation en fin de période non redescendue).
+export async function resyncSubscriptionAction(formData: FormData) {
+  await requireSuperAdmin();
+  const subId = String(formData.get("subId") ?? "").trim();
+  if (!subId) return;
+  try {
+    await resyncSubscription(subId);
+  } catch (e) {
+    console.error("[admin] re-sync abonnement échoué", subId, e);
+  }
+  revalidatePath("/admin/facturation");
+  revalidatePath("/credits");
+}
 
 // Met à jour un pack de crédits (source de vérité : modèle CreditPack). Crédits et prix
 // sont ceux affichés/facturés ; les achats passés gardent leurs valeurs figées (metadata).

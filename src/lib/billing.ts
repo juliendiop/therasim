@@ -376,14 +376,24 @@ function subscriptionPriceId(sub: Stripe.Subscription): string | null {
  * éternellement figé sur l'ancien forfait (bug préexistant).
  */
 async function resolvePlanForSubscription(sub: Stripe.Subscription) {
+  // Le prix courant fait foi : il reflète toujours l'état réel de l'abonnement, y compris
+  // après un changement de forfait (montée immédiate ou descente au renouvellement). On
+  // matche le tarif mensuel ET annuel. Metadata n'est qu'un filet si le prix n'est pas
+  // (encore) rattaché à un plan — sinon une metadata figée à la création masquerait le
+  // changement.
+  const priceId = subscriptionPriceId(sub);
+  if (priceId) {
+    const byPrice = await prisma.subscriptionPlan.findFirst({
+      where: { OR: [{ stripePriceId: priceId }, { stripePriceIdYearly: priceId }] },
+    });
+    if (byPrice) return byPrice;
+  }
   const metaPlanId = sub.metadata?.planId;
   if (metaPlanId) {
     const byMeta = await prisma.subscriptionPlan.findUnique({ where: { id: metaPlanId } });
     if (byMeta) return byMeta;
   }
-  const priceId = subscriptionPriceId(sub);
-  if (!priceId) return null;
-  return prisma.subscriptionPlan.findFirst({ where: { stripePriceId: priceId } });
+  return null;
 }
 
 /** Utilisateur rattaché à un abonnement : metadata, sinon Customer Stripe. */
@@ -586,4 +596,94 @@ export async function handleSubscriptionDeleted(event: Stripe.Event): Promise<vo
   if (user?.isBetaTester) {
     console.log(`[beta] fin d'accès bêta · ${user.email} · cohorte ${user.betaCohort ?? "?"}`);
   }
+}
+
+// --- Re-synchronisation & changement de forfait -----------------------------
+
+/**
+ * Relit un abonnement depuis Stripe et réapplique son état local — filet de sécurité
+ * quand un webhook a été manqué (réseau, indisponibilité). Réutilise EXACTEMENT la
+ * logique de `customer.subscription.updated` (statut, résiliation programmée, période,
+ * forfait, crédits).
+ */
+export async function resyncSubscription(stripeSubscriptionId: string): Promise<void> {
+  const sub = await stripeClient().subscriptions.retrieve(stripeSubscriptionId);
+  await handleSubscriptionUpdated({ data: { object: sub } } as unknown as Stripe.Event);
+}
+
+export type PlanChangeResult = { ok: boolean; message: string; kind?: "upgrade" | "downgrade" };
+
+/**
+ * Change le forfait d'un abonné, DANS le cycle courant (mensuel/annuel) :
+ * - montée en gamme -> IMMÉDIATE, différence facturée au prorata tout de suite ;
+ * - descente en gamme -> au PROCHAIN RENOUVELLEMENT (planning d'abonnement Stripe).
+ * La synchro locale (forfait + crédits) est faite par le webhook `subscription.updated`.
+ */
+export async function changeSubscriptionPlan(
+  userId: string,
+  newPlanId: string,
+): Promise<PlanChangeResult> {
+  const local = await prisma.userSubscription.findUnique({ where: { userId } });
+  if (!local || !isSubscriptionEntitled(local.status)) {
+    return { ok: false, message: "Aucun abonnement actif à modifier." };
+  }
+  const [currentPlan, newPlan] = await Promise.all([
+    prisma.subscriptionPlan.findUnique({ where: { id: local.planId } }),
+    prisma.subscriptionPlan.findUnique({ where: { id: newPlanId } }),
+  ]);
+  if (!newPlan || !newPlan.active) return { ok: false, message: "Ce forfait n'est pas disponible." };
+  if (newPlan.id === local.planId) return { ok: false, message: "C'est déjà votre forfait actuel." };
+
+  const stripeSub = await stripeClient().subscriptions.retrieve(local.stripeSubscriptionId);
+  const item = stripeSub.items.data[0];
+  if (!item?.price?.id) return { ok: false, message: "Abonnement Stripe introuvable." };
+  const currentPriceId = item.price.id;
+
+  // Respect du cycle : annuel si le prix courant = Price annuel du plan, sinon mensuel.
+  const cycle: "monthly" | "yearly" =
+    currentPlan?.stripePriceIdYearly && currentPlan.stripePriceIdYearly === currentPriceId
+      ? "yearly"
+      : "monthly";
+  const newPriceId = cycle === "yearly" ? newPlan.stripePriceIdYearly : newPlan.stripePriceId;
+  if (!newPriceId) {
+    return {
+      ok: false,
+      message:
+        cycle === "yearly"
+          ? "Ce forfait n'est pas encore disponible en formule annuelle."
+          : "Ce forfait n'a pas de tarif configuré.",
+    };
+  }
+
+  const upgrade = newPlan.priceEurCents > (currentPlan?.priceEurCents ?? 0);
+
+  if (upgrade) {
+    await stripeClient().subscriptions.update(local.stripeSubscriptionId, {
+      items: [{ id: item.id, price: newPriceId }],
+      proration_behavior: "always_invoice",
+    });
+    return { ok: true, kind: "upgrade", message: `Vous êtes passé au forfait ${newPlan.label}.` };
+  }
+
+  // Descente : planning d'abonnement, le nouveau prix s'applique en fin de période.
+  const schedule = await stripeClient().subscriptionSchedules.create({
+    from_subscription: local.stripeSubscriptionId,
+  });
+  const phase0 = schedule.phases[0];
+  await stripeClient().subscriptionSchedules.update(schedule.id, {
+    end_behavior: "release",
+    phases: [
+      {
+        items: [{ price: currentPriceId, quantity: 1 }],
+        start_date: phase0.start_date,
+        end_date: phase0.end_date,
+      },
+      { items: [{ price: newPriceId, quantity: 1 }] },
+    ],
+  });
+  return {
+    ok: true,
+    kind: "downgrade",
+    message: `Votre passage au forfait ${newPlan.label} prendra effet au prochain renouvellement.`,
+  };
 }

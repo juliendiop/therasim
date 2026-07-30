@@ -10,18 +10,26 @@ import {
   saveFreeFrameworks,
   togglePlanActive,
   updatePlanPriceId,
+  resyncSubscriptionAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function FacturationPage() {
-  const [plans, packs, frameworks, offers, freeIds] = await Promise.all([
+  const [plans, packs, frameworks, offers, freeIds, subscriptions] = await Promise.all([
     prisma.subscriptionPlan.findMany({ orderBy: { ordre: "asc" } }),
     prisma.creditPack.findMany({ orderBy: { ordre: "asc" } }),
     prisma.framework.findMany({ where: { statut: "publie" }, orderBy: { nom: "asc" } }),
     prisma.frameworkOffer.findMany(),
     freeFrameworkIds(),
+    prisma.userSubscription.findMany({ orderBy: { updatedAt: "desc" }, take: 50 }),
   ]);
+  const subUsers = await prisma.user.findMany({
+    where: { id: { in: subscriptions.map((s) => s.userId) } },
+    select: { id: true, email: true },
+  });
+  const emailByUser = new Map(subUsers.map((u) => [u.id, u.email]));
+  const labelByPlan = new Map(plans.map((p) => [p.id, p.label]));
   const keyConfigured = isStripeConfigured();
   const webhookConfigured = Boolean(process.env.STRIPE_WEBHOOK_SECRET);
   const offerByFramework = new Map(offers.map((o) => [o.frameworkId, o]));
@@ -263,6 +271,63 @@ export default async function FacturationPage() {
           <Plus className="h-4 w-4" /> Créer le forfait
         </button>
       </form>
+
+      {/* Abonnements + re-synchronisation Stripe (filet quand un webhook a été manqué) */}
+      <h3 className="mt-8 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+        Abonnements
+      </h3>
+      <p className="mt-1 text-xs text-[var(--muted)]">
+        Si une action Stripe (résiliation, changement de forfait) ne s&apos;est pas reflétée
+        ici, « Re-synchroniser » relit l&apos;état réel chez Stripe et corrige la base.
+      </p>
+      {subscriptions.length === 0 ? (
+        <p className="mt-2 text-sm text-[var(--muted)]">Aucun abonnement.</p>
+      ) : (
+        <div className="mt-3 overflow-x-auto rounded-xl border border-[var(--border)] bg-white">
+          <table className="w-full text-sm">
+            <thead className="bg-[var(--surface-tint)] text-left text-xs text-[var(--muted)]">
+              <tr>
+                <th className="px-3 py-2">Utilisateur</th>
+                <th className="px-3 py-2">Forfait</th>
+                <th className="px-3 py-2">Statut</th>
+                <th className="px-3 py-2">Fin de période</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {subscriptions.map((s) => (
+                <tr key={s.id}>
+                  <td className="px-3 py-2 font-medium">{emailByUser.get(s.userId) ?? s.userId}</td>
+                  <td className="px-3 py-2 text-[var(--muted)]">
+                    {labelByPlan.get(s.planId) ?? "—"}
+                  </td>
+                  <td className="px-3 py-2">
+                    {s.status}
+                    {s.cancelAtPeriodEnd && (
+                      <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                        résiliation programmée
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-[var(--muted)]">
+                    {s.currentPeriodEnd
+                      ? s.currentPeriodEnd.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })
+                      : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <form action={resyncSubscriptionAction}>
+                      <input type="hidden" name="subId" value={s.stripeSubscriptionId} />
+                      <button className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium hover:border-[var(--accent)] hover:text-[var(--accent)]">
+                        Re-synchroniser
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Référentiels gratuits à l'inscription (freemium) */}
       <h3 className="mt-8 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
