@@ -21,7 +21,9 @@ import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { getPublicCatalogue } from "@/lib/catalogue";
 import { demoDrills, enumereFr, specialitesPhares } from "@/lib/landing-copy";
+import { getDemoCaseViews } from "@/lib/demo-sim";
 import DemoDrill from "./demo-drill";
+import DemoLive from "./_components/demo-live";
 import Track from "./_components/track";
 import DomaineCardView from "./_components/domaine-card";
 import TestimonialsSection from "./_components/testimonials-section";
@@ -52,10 +54,11 @@ export default async function LandingPage() {
   const user = await getSessionUser();
   if (user) redirect("/accueil");
 
-  const [{ socle, specialites }, phares, demos] = await Promise.all([
+  const [{ socle, specialites }, phares, demos, demoCases] = await Promise.all([
     getPublicCatalogue(),
     specialitesPhares(4),
     demoDrills(),
+    getDemoCaseViews(),
   ]);
   // Domaines cités dans le hero : jamais codés en dur, toujours les spécialités
   // les mieux fournies en cas jouables (cf. src/lib/landing-copy.ts).
@@ -98,18 +101,20 @@ export default async function LandingPage() {
         </p>
       </section>
 
-      {/* ---- Démo interactive (contenu tiré de la base, 3 domaines distincts) ---- */}
-      {demos.length > 0 && (
+      {/* ---- Démo interactive : vraie mini-scène jouable (patient IA), sans compte.
+             Repli automatique et silencieux sur la démo statique (DemoDrill) si le
+             budget/quota du jour est atteint ou l'IA indisponible. ---- */}
+      {(demoCases.length > 0 || demos.length > 0) && (
         <section id="demo" className="mx-auto mt-16 max-w-3xl scroll-mt-24 text-center">
           <h2 className="text-2xl font-semibold tracking-tight">
-            Essayez, là, maintenant.
+            Parlez à un patient, là, maintenant.
           </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Un patient vous parle. Que répondez-vous ? Feedback immédiat, comme dans
-            l&apos;application — sur {demos.length} domaines différents.
+          <p className="mx-auto mt-1 max-w-xl text-sm text-[var(--muted)]">
+            Une vraie mise en situation : le patient réagit à ce que vous écrivez, comme dans
+            l&apos;application. Choisissez un cas et menez l&apos;échange.
           </p>
           <div className="mt-6">
-            <DemoDrill drills={demos} />
+            <DemoLive cases={demoCases} fallback={<DemoDrill drills={demos} />} />
           </div>
         </section>
       )}

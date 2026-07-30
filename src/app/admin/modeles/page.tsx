@@ -1,4 +1,4 @@
-import { Cpu, Lock } from "lucide-react";
+import { Cpu, Lock, PlayCircle } from "lucide-react";
 import {
   LLM_USAGES,
   MODELES_SUGGESTS,
@@ -7,14 +7,15 @@ import {
   getAllLlm,
   isEuOnlyUsage,
 } from "@/lib/config";
-import { setModelsAction } from "./actions";
+import { demoUsageToday, DEMO_COST_CENTS_EST } from "@/lib/demo-sim";
+import { setModelsAction, setDemoConfigAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 // Choix du FOURNISSEUR (Mistral ou Claude/Anthropic) + du modèle, par usage.
 // Les clés API restent en variables d'environnement (jamais en base).
 export default async function ModelesPage() {
-  const llm = await getAllLlm();
+  const [llm, demo] = await Promise.all([getAllLlm(), demoUsageToday()]);
   const keys: Record<string, boolean> = {
     mistral: Boolean(process.env.MISTRAL_API_KEY),
     anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
@@ -132,6 +133,90 @@ export default async function ModelesPage() {
         Astuce : si le modèle saisi ne correspond pas au fournisseur choisi (ex. un modèle
         Mistral avec le fournisseur Claude), le modèle par défaut du fournisseur est utilisé.
       </p>
+
+      {/* --- Démo publique jouable (page d'accueil) : usage, coût, garde-fous --- */}
+      <div className="mt-10 border-t border-[var(--border)] pt-6">
+        <div className="flex items-center gap-2">
+          <PlayCircle className="h-5 w-5 text-[var(--accent)]" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+            Démo jouable (accueil)
+          </h2>
+        </div>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          La mini-scène jouable sans compte sur la page d&apos;accueil. Au dépassement du budget
+          quotidien, elle bascule automatiquement (et silencieusement) sur la démo statique — qui
+          reste le filet permanent.
+        </p>
+
+        {/* Compteur du jour + coût estimé */}
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-[var(--border)] bg-white p-4">
+            <div className="text-xs uppercase tracking-wide text-[var(--muted)]">Démos aujourd&apos;hui</div>
+            <div className="mt-1 text-2xl font-semibold tabular">
+              {demo.demos}
+              <span className="text-sm font-normal text-[var(--muted)]"> / {demo.budget}</span>
+            </div>
+          </div>
+          <div className="rounded-xl border border-[var(--border)] bg-white p-4">
+            <div className="text-xs uppercase tracking-wide text-[var(--muted)]">Budget utilisé</div>
+            <div className={`mt-1 text-2xl font-semibold tabular ${demo.overAlert ? "text-amber-600" : ""}`}>
+              {demo.pctUsed}%
+            </div>
+          </div>
+          <div className="rounded-xl border border-[var(--border)] bg-white p-4">
+            <div className="text-xs uppercase tracking-wide text-[var(--muted)]">Coût estimé (jour)</div>
+            <div className="mt-1 text-2xl font-semibold tabular">
+              ~{(demo.estCents / 100).toFixed(2)} €
+            </div>
+            <div className="text-[11px] text-[var(--muted)]">≈ {DEMO_COST_CENTS_EST} c / démo</div>
+          </div>
+        </div>
+
+        {demo.overAlert && (
+          <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+            ⚠️ Seuil d&apos;alerte atteint ({demo.pctUsed}% ≥ {demo.alertPct}%). Au-delà de 100 %,
+            les visiteurs basculent sur la démo statique.
+          </div>
+        )}
+        {!demo.enabled && (
+          <div className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--surface-tint)] p-3 text-sm text-[var(--muted)]">
+            La démo jouable est <b>désactivée</b> : tous les visiteurs voient la démo statique.
+          </div>
+        )}
+
+        <form action={setDemoConfigAction} className="mt-4 space-y-3 rounded-xl border border-[var(--border)] bg-white p-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="enabled" defaultChecked={demo.enabled} className="h-4 w-4" />
+            Activer la démo jouable
+          </label>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label className="flex-1 text-sm">
+              Budget quotidien (nb de démos)
+              <input
+                name="budget"
+                type="number"
+                min={1}
+                defaultValue={demo.budget}
+                className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm"
+              />
+            </label>
+            <label className="flex-1 text-sm">
+              Seuil d&apos;alerte (% du budget)
+              <input
+                name="threshold"
+                type="number"
+                min={1}
+                max={100}
+                defaultValue={demo.alertPct}
+                className="mt-1 w-full rounded-lg border border-[var(--border)] p-2 text-sm"
+              />
+            </label>
+          </div>
+          <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
+            Enregistrer
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

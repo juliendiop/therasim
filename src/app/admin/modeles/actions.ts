@@ -4,6 +4,19 @@ import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/auth";
 import { LLM_USAGES, setConfig, isEuOnlyUsage } from "@/lib/config";
 
+/** Règle la démo publique jouable : interrupteur, budget quotidien, seuil d'alerte. */
+export async function setDemoConfigAction(formData: FormData) {
+  await requireSuperAdmin();
+  await setConfig("demo.enabled", formData.get("enabled") != null ? "1" : "0");
+  const budget = parseInt(String(formData.get("budget") ?? ""), 10);
+  if (Number.isFinite(budget) && budget > 0) await setConfig("demo.budget.daily", String(budget));
+  const threshold = parseInt(String(formData.get("threshold") ?? ""), 10);
+  if (Number.isFinite(threshold) && threshold > 0 && threshold <= 100) {
+    await setConfig("demo.alert.threshold", String(threshold));
+  }
+  revalidatePath("/admin/modeles");
+}
+
 export async function setModelsAction(formData: FormData) {
   await requireSuperAdmin();
   for (const u of LLM_USAGES) {
