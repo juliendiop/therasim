@@ -3,13 +3,21 @@
 Ordre indicatif. Le détail fonctionnel est dans la spec
 (`Conception/spec-v2-entrainement-progression (1).md`).
 
-## ⭐ Migrations Prisma (baseline) — ✅ FAIT (23 juillet)
+## ⭐ Migrations Prisma (baseline) — ✅ FAIT (23 juillet) puis 🔴 DETTE À RATTRAPER (31 juillet)
 
-La production ne passe plus par `db:push` mais par des **migrations relues et
-historisées**. Baseline dans `prisma/migrations/0_init/` (38 tables), flux et pièges
-documentés dans `03_DECISIONS.md` et `00_DEMARRAGE.md`.
-- ⚠️ **`db:push` ne doit plus viser la production.**
-- Le `build` applique les migrations en attente (`prisma migrate deploy`).
+La production est passée de `db:push` à des **migrations relues et historisées**. Baseline
+dans `prisma/migrations/0_init/`, flux et pièges dans `03_DECISIONS.md` et `00_DEMARRAGE.md`.
+- ⚠️ **Le `build` n'applique PLUS `prisma migrate deploy`** (retiré le 30 juillet, commit
+  `61fe5bc`) : il prenait un **verrou d'avis Postgres → P1002** sous déploiements concurrents.
+  Build = `prisma generate && next build`. Les migrations sont appliquées **séparément**.
+- 🔴 **Dette de migrations (à traiter)** : les fichiers de `prisma/migrations/` s'arrêtent au
+  **24 juillet** (`…_testimonial_source`). Les changements de schéma depuis (refonte crédits
+  `planCredits`/`CreditPack`, nature socle/spécialité, `stripePriceIdYearly`, tickets support,
+  feedback bêta…) ont été appliqués en **`db:push`** → ils ne sont **pas** dans les migrations.
+  `schema.prisma` reste la source de vérité et la prod est alignée (db:push), mais un
+  `migrate deploy` sur une base neuve rendrait le schéma du 24 juillet. **À faire** : soit
+  régénérer un baseline (`0_init`) depuis le schéma courant, soit créer les migrations
+  manquantes (`npm run db:migrate:new`), pour re-synchroniser l'historique avec la réalité.
 
 ## 🔴 Suppression de compte incomplète — À TRAITER
 

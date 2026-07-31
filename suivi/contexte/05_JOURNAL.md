@@ -1246,6 +1246,69 @@ Demande porteur : au moins 5 questions différentes par compétence pour EM et A
 
 ---
 
+## Sessions — 24 au 31 juillet 2026 (consolidé)
+
+Rattrapage de journal : ces sessions n'avaient pas été consignées au fil de l'eau. Détail
+complet dans `02_MODULES_FAITS.md` (modules 38-47). Résumé chronologique par thème :
+
+### Support client (24 juillet — module 38)
+- Widget de tickets (tout utilisateur) + espace admin `/admin/support` avec **assistance IA**
+  (projet de réponse). Usage LLM `support` **verrouillé Mistral/UE** (ticket = personne
+  identifiée). Modale du widget corrigée (portail).
+
+### Migrations Prisma avec baseline (24 juillet — module 39)
+- Bascule `db:push` → **`prisma migrate`** : baseline `0_init` + migrations versionnées
+  (`npm run db:migrate:new`). **Le build n'exécute plus `migrate deploy`** (verrou P1002 sous
+  déploiements concurrents) : migrations appliquées séparément.
+- ⚠️ **Dette identifiée** : les fichiers de migration s'arrêtent au 24 juillet. Les schémas
+  des modules 40-46 ont été poussés en `db:push` → non capturés dans `prisma/migrations/`.
+  `schema.prisma` = source de vérité, prod alignée, mais **rattrapage à faire** (baseline ou
+  migrations manquantes) — cf. `04_RESTE_A_FAIRE.md`.
+
+### Programme bêta enrichi (24 juillet — module 40)
+- **Relance J+2** (invités inactifs), **questionnaire à chaud** (3 sims ou J+7), **bilan J+21
+  avec NPS**, **témoignages** promoteurs affichés sur le site (validation admin), **avis libre**
+  `/avis`. 3 crons Vercel (`beta-nudge`, `beta-feedback`, `beta-bilan`).
+
+### Vitrine publique + SEO + catalogue élargi (24 juillet — modules 41-42)
+- Pages `/domaines`, `sitemap.xml`/`robots.txt`, amorce blog MDX. Catalogue porté à
+  **8 référentiels** (ajout Deuil + Hypnose ; Alliance/Ruptures/Ménopause au fil de l'eau).
+
+### Refonte tarifaire + portefeuille de crédits (24-30 juillet — modules 43-44)
+- **Socle (hors quota) vs spécialités (quota)**, **N3 découverte** (1 séance offerte à vie),
+  forfait **« sans compter »**, **abonnement annuel**, `/tarifs` en grille 4 colonnes,
+  garde-fous d'usage loyal (`/admin/usage`).
+- **`planCredits` (forfait, non cumulatif) vs `credits` (portefeuille persistant)**, ordre de
+  débit `splitDebit` (testé), modèle **`CreditPack`**, **2 murs de crédits** (modale) + endpoint
+  autoritaire `/api/me/credits-wall`, pré-check client des lanceurs de séance.
+
+### UX, changement de forfait, démo jouable (30-31 juillet — modules 45-47)
+- **Feedback au clic** (effet de pression + `SubmitButton` anti double-clic).
+- **Changement de forfait depuis l'app** (upgrade immédiat / downgrade au renouvellement) +
+  **re-sync Stripe** admin + « actif jusqu'au X » + **fix resolver** (le prix courant fait foi,
+  mensuel ET annuel — sinon changement invisible dans l'app).
+- **Vraie mini-scène jouable sans compte** sur l'accueil (patient IA réactif, 4 tours, micro-
+  débrief), **sans état ni donnée stockée**, garde-fous coût (budget/quota/rafale sur
+  `RateLimitHit`) + repli silencieux sur la démo statique + panneau admin (usage/coût/budget).
+
+### Décisions / pièges notables
+- **Convention schéma** : `db:push` pour le travail courant, mais la prod a un historique de
+  migrations (baseline 24 juillet) désormais **incomplet** → à réconcilier.
+- **Changement de forfait** : ne nécessite **aucun** nouvel événement webhook (réutilise
+  `subscription.updated` / `invoice.paid`), mais imposait le fix du resolver de forfait.
+- **Démo** : le micro-débrief passe par l'usage `evaluateur` (Claude en prod) → coût réel
+  ~0,25 c/démo, non testable en local (clé Anthropic absente) — testé jusqu'au tour de dialogue
+  inclus via Mistral (ouverture, réactivité, refus d'injection OK).
+
+### État en fin de période
+- `npx tsc --noEmit` + `npx next build` verts. Tout est **poussé sur `main`** (jusqu'à
+  `2c6cbfe`) et déployé.
+- ⚠️ À tester en prod par le porteur : changement de forfait + « Re-synchroniser » (Stripe),
+  micro-débrief de la démo (Anthropic). `npm run lint` reste cassé (config ESLint préexistante).
+- ⚠️ Dette : réconcilier `prisma/migrations/` avec le schéma courant.
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA

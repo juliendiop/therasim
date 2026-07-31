@@ -464,3 +464,145 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 - Fichier : `prisma/seed.ts`. Idempotent (upsert par id) → re-`npm run db:seed` sûr en prod.
 - ⚠️ **Validation clinique + calibration de l'évaluateur EM non faites** (spec §6/§7) :
   le contenu est réaliste mais doit être relu par un clinicien avant usage réel.
+
+---
+
+## 38. Support client — tickets + assistance IA (UE) (24 juillet)
+**État : ✅ Fait** — commits `64250d0`, `034dd96`, `83ff3a2`
+- Widget de support accessible depuis le layout (tout utilisateur connecté) : ouverture
+  d'un **ticket**, fil de messages. Espace admin `/admin/support` (liste, détail) avec un
+  **panneau d'assistance IA** qui analyse le ticket et rédige un **projet de réponse**.
+- L'usage LLM `support` est **verrouillé sur Mistral (UE)** : un ticket se rapporte à une
+  personne identifiée → RGPD (cf. module 19, `EU_ONLY_USAGES` dans `config.ts`).
+- Fix UI : la modale du widget passe par un **portail** (plus rognée en haut, au-dessus du header).
+- Fichiers : `src/lib/support.ts`, `src/app/support/**`, `src/app/admin/support/**`,
+  `src/app/_components/support-widget.tsx`. Table de tickets (`prisma/schema.prisma`).
+
+## 39. Migrations Prisma avec baseline — fin des `db:push` en prod (24 juillet)
+**État : ✅ Fait (mais rattrapage à prévoir, voir ⚠️)** — commits `19580b4`, `61fe5bc`
+- Bascule de `db:push` vers **`prisma migrate`** : baseline **`0_init`** (reflète le schéma
+  prod existant) + migrations versionnées créées via `scripts/new-migration.ts`
+  (`npm run db:migrate:new`). Décision consignée dans `03_DECISIONS.md`.
+- ⚠️ Le **build n'exécute PAS** `prisma migrate deploy` (retiré, commit `61fe5bc`) : il prenait
+  un verrou d'avis Postgres → **P1002** sous déploiements concurrents. Build =
+  `prisma generate && next build`. Les migrations sont donc appliquées **séparément**.
+- ⚠️ **État réel à surveiller** : les fichiers de migration s'arrêtent au **24 juillet**
+  (`…_testimonial_source`). Les changements de schéma des modules 40-46 ci-dessous ont été
+  appliqués en **`db:push`** → ils ne sont **pas capturés** dans `prisma/migrations/`.
+  `schema.prisma` reste la source de vérité et la prod est alignée (db:push), mais un
+  `migrate deploy` sur une base neuve donnerait le schéma du 24 juillet. **À rattraper** :
+  soit régénérer un baseline, soit créer les migrations manquantes (cf. `04_RESTE_A_FAIRE.md`).
+
+## 40. Bêta — relances, feedback à chaud, bilan J+21 (NPS), témoignages, avis libre (24 juillet)
+**État : ✅ Fait** — commits `297544a`, `d43aa4d`, `daeabcb`, `36827d5`
+- **Relance J+2** automatique aux invités bêta **sans activité** (cron `/api/cron/beta-nudge`,
+  email dédié, marqueur anti-doublon en base).
+- **Questionnaire « impression à chaud »** déclenché après **3 simulations ou J+7**
+  (`/beta/feedback`, cron `/api/cron/beta-feedback`, admin `/admin/beta/feedback`).
+- **Bilan J+21 avec NPS** (`/beta/bilan`, cron `/api/cron/beta-bilan`, admin `/admin/beta/bilan`).
+- **Témoignages** : les promoteurs (NPS élevé) peuvent laisser un témoignage
+  (`/beta/temoignage`), affiché sur le site après validation admin (`testimonials-section.tsx`,
+  admin `/admin/beta/temoignages`).
+- **Avis libre** depuis le site pour **tout utilisateur** (`/avis`), même circuit de validation.
+- Fichiers : `src/lib/beta-feedback*.ts`, `src/lib/beta-bilan*.ts`, `src/lib/testimonial-*.ts`,
+  `src/app/beta/{feedback,bilan,temoignage}/**`, `src/app/avis/**`,
+  `src/app/api/cron/beta-{nudge,feedback,bilan}/**`, `src/app/admin/beta/**`. Crons dans `vercel.json`.
+
+## 41. Pages publiques /domaines + SEO + amorce blog (24 juillet)
+**État : ✅ Fait** — commits `77df936`, `8ddf8ca`
+- Pages **publiques catalogue** `/domaines` (socle / spécialités, composant `domaine-card`),
+  page domaine détaillée porteuse du SEO (`Framework.slug` + `introPublique`).
+- **`sitemap.xml` + `robots.txt`** (pages publiques, domaine canonique).
+- Amorce **blog MDX** (`/blog/[slug]`, `mdx-components`), composant `legal-page` partagé.
+- Fichiers : `src/app/domaines/**`, `src/app/blog/**`, `src/app/_components/{domaine-card,legal-page}.tsx`,
+  `sitemap.ts`/`robots.ts`, champs `slug`/`introPublique` (`prisma/schema.prisma`).
+
+## 42. Catalogue élargi — 8 référentiels (24 juillet)
+**État : ✅ Seedé (à valider cliniquement)** — commit `159bcbf` (+ ajouts antérieurs)
+- Le catalogue compte désormais **8 référentiels** : EM, ACT, Anamnèse (produits d'appel
+  historiques), **Alliance thérapeutique** et **Ruptures d'alliance** (transversales *socle*),
+  **Accompagner le deuil** et **Hypnose ericksonienne** (situation/approche), **Ménopause**
+  (situation). `159bcbf` ajoute **Deuil + Hypnose** ; Alliance/Ruptures/Ménopause ont été
+  ajoutés au fil de l'eau (Alliance/Ruptures aussi via `scripts/seed-alliance-ruptures.ts`,
+  encore non versionné — cf. `git status`).
+- ⚠️ Contenu clinique rédigé par Claude → **à relire par un clinicien**.
+
+## 43. Refonte tarifaire — socle/spécialités, « sans compter », N3 découverte, annuel (24 juillet)
+**État : ✅ Fait** — commits `52bd2e9`, `26887cb`, `ed9e195`, `8563c36`
+- Nature commerciale par référentiel : **`Framework.nature`** = `socle` (accessible à tout
+  compte, gratuit compris, **hors quota**) vs `specialite` (comptée dans le quota du forfait).
+- **Entretien N3 en découverte** : le compte gratuit « Découverte » a droit à **1 séance
+  complète offerte, à vie** (au-delà → mur d'upgrade).
+- Forfait **« sans compter »** : `SubscriptionPlan.monthlyCredits = null` → `isUnlimited(userId)`,
+  le **débit de crédits est court-circuité** pour ces abonnés.
+- **Garde-fous d'usage loyal** (modèle « tout inclus ») + page admin **`/admin/usage`**.
+- **Abonnement annuel** : `SubscriptionPlan.stripePriceIdYearly` ; page **`/tarifs` refondue
+  en grille 4 colonnes** (mensuel/annuel). Prix mensuel **éditable** sur un forfait existant.
+- Fichiers : `src/app/tarifs/**`, `src/app/admin/usage/**`, `src/lib/billing.ts`,
+  `src/lib/credits.ts`, `src/app/f/[framework_id]/{page,paywall}.tsx`, schéma (`nature`,
+  `tier`, `stripePriceIdYearly`).
+
+## 44. Refonte du portefeuille de crédits + murs de crédits (24-30 juillet)
+**État : ✅ Fait** — commits `54779b6`, `42e5d73`, `5b98188`
+- Deux compteurs distincts : **`User.planCredits`** (allocation du forfait, **non cumulative**,
+  **remise à 0 en fin d'accès**) et **`User.credits`** (portefeuille packs + crédits offerts,
+  **persistant**). Ordre de consommation : **planCredits d'abord, puis credits** — logique pure
+  extraite dans `src/lib/credit-split.ts` (`splitDebit`, **testée**).
+- **`CreditPack`** (modèle unique : credits / prix / Price ID / actif / ordre ; id `s`/`m`/`l`) :
+  les packs sont une **recharge réservée aux abonnés** (Découverte n'a que l'upgrade). Les
+  métadonnées d'achat **figent** crédits + prix au moment de l'achat.
+- **Deux murs de crédits** (modale `credits-wall.tsx`, ouverte par `?creditwall=`) : mur
+  « credits » (recharge + upgrade) vs mur « level3 » (séance Découverte à vie épuisée →
+  upgrade seul). Endpoint **`/api/me/credits-wall`** (recalcul **autoritaire**, solde frais).
+  Les Server Actions redirigent vers `?creditwall=` en cas de refus (jamais d'erreur/toast).
+- Pré-check client **`session-launchers.tsx`** (mini-scène / séance), bannière
+  **`low-credits-banner.tsx`**, mention de séance **contextuelle** sur `/f/[id]`.
+- Fichiers : `src/lib/credits.ts`, `src/lib/credit-split.ts`, `src/app/_components/{credits-wall,
+  low-credits-banner}.tsx`, `src/app/api/me/credits-wall/route.ts`,
+  `src/app/f/[framework_id]/session-launchers.tsx`, `test/consumption-order.test.ts`.
+
+## 45. Feedback au clic — effet de pression + anti double-clic (30 juillet)
+**État : ✅ Fait** — commits `6381d1d`, `f2dc65f`
+- Constat porteur : un bouton qui met du temps ne donnait **aucun retour** → tendance à
+  recliquer. `SubmitButton` (`useFormStatus` → spinner + désactivé) sur les boutons lents /
+  monétaires ; **effet de pression global CSS** (`:active { scale(0.98) }`) sur les boutons
+  **et** les liens stylés en bouton / carte.
+- Fichiers : `src/app/_components/submit-button.tsx`, `src/app/globals.css`.
+
+## 46. Changement de forfait depuis l'app + re-sync Stripe (30 juillet)
+**État : ✅ Fait (code)** — commit `285d6a0` — ⚠️ à tester en prod (clé Stripe seulement sur Vercel)
+- **Changer de forfait sans passer par le portail Stripe** : montée en gamme **immédiate**
+  (prorata facturé tout de suite, `proration_behavior: "always_invoice"`), descente **au
+  prochain renouvellement** (planning d'abonnement Stripe), toujours **dans le cycle courant**
+  (mensuel reste mensuel, annuel reste annuel).
+- **Sélecteur marketing** sur `/credits` : upgrades mis en avant (« +X crédits/mois »,
+  « immédiat »), downgrades discrets (« au renouvellement »).
+- Affichage **« forfait actif jusqu'au X »** quand une résiliation en fin de période est programmée.
+- **Section admin « Abonnements »** dans `/admin/facturation` avec bouton **« Re-synchroniser »**
+  (relit l'état réel chez Stripe et corrige la base — filet quand un webhook est manqué).
+- **Fix resolver** (`resolvePlanForSubscription`) : le **prix courant fait foi** (mensuel ET
+  annuel), la metadata n'est plus qu'un filet — sans quoi un changement de forfait restait
+  **invisible dans l'app** (metadata figée à la création, tarif annuel non reconnu).
+- La synchro locale (forfait + crédits, y compris différentiel d'upgrade) est faite par le
+  webhook `customer.subscription.updated` / `invoice.paid` **déjà branché** (aucun nouvel
+  événement à ajouter).
+- Fichiers : `src/lib/billing.ts` (`changeSubscriptionPlan`, `resyncSubscription`),
+  `src/app/credits/{actions,page}.tsx`, `src/app/admin/facturation/{actions,page}.tsx`.
+
+## 47. Démo jouable — vraie mini-scène IA sur l'accueil, sans compte (31 juillet)
+**État : ✅ Fait, testé en local (Mistral)** — commit `2c6cbfe` — ⚠️ micro-débrief à valider en prod (clé Anthropic)
+- Remplace la démo statique (QCM) par une **mini-scène N2 jouable sans compte** : le visiteur
+  choisit un **cas réel** (Anamnèse `ANA-PREM-01`, Ménopause `MEN-PERI-01`, ACT `ACT-ANX-01`),
+  dialogue en **texte libre (4 tours)**, le patient **réagit à sa posture**, puis **micro-débrief
+  immédiat et gratuit** (LLM) + CTA création de compte (séance complète offerte).
+- **Sans état serveur** : le navigateur porte le fil, le serveur ne fait qu'appeler le LLM.
+  **Aucune** `SimSession`/`Attempt`, **aucune donnée personnelle** stockée.
+- **Garde-fous coût** (adossés à `RateLimitHit`, **aucune table dédiée**) : budget quotidien
+  réglable (**défaut 250**), **5 démos/IP/jour**, contrôle de rafale. Au dépassement / IA
+  indisponible / interrupteur off → **repli silencieux** sur la démo statique (`DemoDrill`,
+  qui **reste dans le code**). **Panneau admin** dans `/admin/modeles` (compteur, % budget,
+  coût estimé ~0,25 c/démo, alerte de seuil, réglages).
+- **Sécurité** : entrée non fiable bornée/assainie, prompt patient **durci anti-injection**.
+  Analytics via `funnel_events` (`demo_started` / `demo_turn_played` / `demo_finished`).
+- Fichiers : `src/lib/demo-sim.ts`, `src/app/api/demo/turn/route.ts`,
+  `src/app/_components/demo-live.tsx`, branchements `src/app/page.tsx` + `/admin/modeles`.
