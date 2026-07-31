@@ -1309,6 +1309,43 @@ complet dans `02_MODULES_FAITS.md` (modules 38-47). Résumé chronologique par t
 
 ---
 
+## Session — 31 juillet 2026 (suite) : réconciliation de l'historique de migrations
+
+Dette identifiée le matin même (cf. modules 39 et 04_RESTE_A_FAIRE) : les fichiers de
+`prisma/migrations/` s'arrêtaient au 24 juillet alors que les schémas des modules 43-46 avaient
+été poussés en `db:push` → un `migrate deploy` sur une base neuve aurait rendu le schéma du
+24 juillet. Objectif : que `migrate deploy` reproduise le schéma courant.
+
+### Phase 0 — diagnostic (lecture seule)
+- `migrate diff --from-config-datasource --to-schema` = **migration vide** → **prod == `schema.prisma`**
+  (db:push avait tout synchronisé).
+- `migrate status` = « up to date » **mais** ne compare que `_prisma_migrations`, aveugle à la
+  dérive de colonnes.
+- Écart précis (par inspection) : table `credit_packs` absente, `subscription_plans.stripe_price_id_yearly`
+  absente, `frameworks` privée de `slug`/`intro_publique`/`auteurs`/`cadre_reference`/`updated_at`/
+  `nature`/`tier`. L'écart exact au SQL près exigeait une base fantôme (`--from-migrations`) — évitée.
+- **Point décisif** : `new-migration.ts` diffe base réelle → schéma ; prod == schéma → ce diff est
+  **vide**, donc l'outil maison **ne peut pas** générer la migration de rattrapage (l'option b aurait
+  imposé une base fantôme). → recommandation **option (a)**, validée par le porteur.
+
+### Phase 1 — option (a), baseline régénéré
+- **Local** : `0_init` régénéré depuis le schéma (`migrate diff --from-empty --to-schema`, 42 tables,
+  741 lignes) ; les 6 anciennes migrations déplacées dans `prisma/migrations-archive-20260724/`
+  (+ README explicatif).
+- **Prod (destructive, SQL montré et validé avant)** : sauvegarde JSON des 6 lignes de
+  `_prisma_migrations`, puis `DELETE FROM "_prisma_migrations"` (suivi uniquement, aucune donnée
+  métier ni schéma touché), puis `npx prisma migrate resolve --applied 0_init` (inscrit le baseline
+  avec le bon checksum, **sans rejouer le SQL**).
+- **Vérifié** : `migrate status` = « 1 migration, up to date » ; `_prisma_migrations` = 1 ligne
+  `0_init`, finished, **checksum aligné** avec le fichier.
+
+### À retenir
+- **Ne plus utiliser `db:push` pour un changement destiné à la prod** — toujours `db:migrate:new`,
+  sinon l'outil (qui diffe base réelle → schéma) ne pourra plus générer la migration et la dérive
+  repart.
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA

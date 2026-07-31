@@ -3,21 +3,28 @@
 Ordre indicatif. Le détail fonctionnel est dans la spec
 (`Conception/spec-v2-entrainement-progression (1).md`).
 
-## ⭐ Migrations Prisma (baseline) — ✅ FAIT (23 juillet) puis 🔴 DETTE À RATTRAPER (31 juillet)
+## ⭐ Migrations Prisma (baseline) — ✅ FAIT (23 juillet), ✅ RÉCONCILIÉ (31 juillet)
 
 La production est passée de `db:push` à des **migrations relues et historisées**. Baseline
 dans `prisma/migrations/0_init/`, flux et pièges dans `03_DECISIONS.md` et `00_DEMARRAGE.md`.
 - ⚠️ **Le `build` n'applique PLUS `prisma migrate deploy`** (retiré le 30 juillet, commit
   `61fe5bc`) : il prenait un **verrou d'avis Postgres → P1002** sous déploiements concurrents.
   Build = `prisma generate && next build`. Les migrations sont appliquées **séparément**.
-- 🔴 **Dette de migrations (à traiter)** : les fichiers de `prisma/migrations/` s'arrêtent au
-  **24 juillet** (`…_testimonial_source`). Les changements de schéma depuis (refonte crédits
-  `planCredits`/`CreditPack`, nature socle/spécialité, `stripePriceIdYearly`, tickets support,
-  feedback bêta…) ont été appliqués en **`db:push`** → ils ne sont **pas** dans les migrations.
-  `schema.prisma` reste la source de vérité et la prod est alignée (db:push), mais un
-  `migrate deploy` sur une base neuve rendrait le schéma du 24 juillet. **À faire** : soit
-  régénérer un baseline (`0_init`) depuis le schéma courant, soit créer les migrations
-  manquantes (`npm run db:migrate:new`), pour re-synchroniser l'historique avec la réalité.
+- ✅ **Dette de migrations résolue (31 juillet, option a — baseline régénéré)** : les fichiers
+  de migration s'étaient arrêtés au 24 juillet alors que les changements de schéma des modules
+  43-46 (refonte crédits `CreditPack`, `Framework.nature`/`tier`/`slug`…, `stripePriceIdYearly`)
+  avaient été appliqués en `db:push` → absents de l'historique. **Diagnostic** :
+  `migrate diff --from-config-datasource --to-schema` = **vide** (prod == `schema.prisma`, db:push
+  avait bien synchronisé). **Correctif** : `0_init` **régénéré depuis le schéma courant**
+  (`migrate diff --from-empty --to-schema`, 42 tables), les 6 anciennes migrations **archivées**
+  dans `prisma/migrations-archive-20260724/`, et `_prisma_migrations` en prod **réconcilié**
+  (purge des 6 lignes + `migrate resolve --applied 0_init`, sauvegarde JSON conservée). Vérifié :
+  `migrate status` = « 1 migration, up to date », checksum aligné. Un `migrate deploy` sur une
+  base neuve reproduit désormais le schéma courant.
+- ℹ️ **Piège à retenir** : `scripts/new-migration.ts` diffe **base réelle → schéma**. Quand un
+  changement a déjà été poussé en `db:push`, ce diff est **vide** → l'outil ne peut pas générer
+  la migration correspondante. **Toujours passer par `db:migrate:new` (jamais `db:push`) pour un
+  changement de schéma destiné à la prod**, sinon la dérive recommence.
 
 ## 🔴 Suppression de compte incomplète — À TRAITER
 

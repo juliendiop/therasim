@@ -36,7 +36,6 @@ CREATE TABLE "users" (
     "password_hash" TEXT,
     "consent_at" TIMESTAMP(3),
     "credits" INTEGER NOT NULL DEFAULT 0,
-    "plan_credits" INTEGER NOT NULL DEFAULT 0,
     "credits_refreshed_at" TIMESTAMP(3),
     "stripe_customer_id" TEXT,
     "referral_code" TEXT,
@@ -45,8 +44,6 @@ CREATE TABLE "users" (
     "ambassador_terms_at" TIMESTAMP(3),
     "is_beta_tester" BOOLEAN NOT NULL DEFAULT false,
     "beta_cohort" TEXT,
-    "testimonial_invite_at" TIMESTAMP(3),
-    "discovery_interview_used_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
@@ -98,11 +95,10 @@ CREATE TABLE "subscription_plans" (
     "id" UUID NOT NULL,
     "key" TEXT NOT NULL,
     "label" TEXT NOT NULL,
-    "monthly_credits" INTEGER,
+    "monthly_credits" INTEGER NOT NULL,
     "framework_quota" INTEGER,
     "price_eur_cents" INTEGER NOT NULL,
     "stripe_price_id" TEXT,
-    "stripe_price_id_yearly" TEXT,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "ordre" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -122,26 +118,12 @@ CREATE TABLE "user_subscriptions" (
     "cancel_at_period_end" BOOLEAN NOT NULL DEFAULT false,
     "period_anchor_at" TIMESTAMP(3),
     "trial_ends_at" TIMESTAMP(3),
-    "specialty_swap_period_index" INTEGER,
     "mid_trial_email_at" TIMESTAMP(3),
     "trial_end_email_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "user_subscriptions_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "credit_packs" (
-    "id" TEXT NOT NULL,
-    "credits" INTEGER NOT NULL,
-    "price_eur_cents" INTEGER NOT NULL,
-    "stripe_price_id" TEXT,
-    "active" BOOLEAN NOT NULL DEFAULT true,
-    "ordre" INTEGER NOT NULL DEFAULT 0,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "credit_packs_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -256,18 +238,11 @@ CREATE TABLE "tenant_framework_overrides" (
 -- CreateTable
 CREATE TABLE "frameworks" (
     "id" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
     "nom" TEXT NOT NULL,
     "type" TEXT NOT NULL,
     "grid_id" TEXT NOT NULL,
     "description" TEXT,
-    "intro_publique" TEXT,
-    "auteurs" TEXT,
-    "cadre_reference" TEXT,
     "statut" TEXT NOT NULL DEFAULT 'brouillon',
-    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "nature" TEXT NOT NULL DEFAULT 'specialite',
-    "tier" TEXT NOT NULL DEFAULT 'standard',
 
     CONSTRAINT "frameworks_pkey" PRIMARY KEY ("id")
 );
@@ -303,7 +278,6 @@ CREATE TABLE "competencies" (
     "ancrage_3" TEXT,
     "ancrage_5" TEXT,
     "ordre" INTEGER NOT NULL DEFAULT 0,
-    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "competencies_pkey" PRIMARY KEY ("id")
 );
@@ -314,7 +288,6 @@ CREATE TABLE "scenarios" (
     "framework_id" TEXT NOT NULL,
     "titre" TEXT NOT NULL,
     "contexte" TEXT,
-    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "scenarios_pkey" PRIMARY KEY ("id")
 );
@@ -531,63 +504,10 @@ CREATE TABLE "beta_invites" (
     "expires_at" TIMESTAMP(3) NOT NULL,
     "stripe_subscription_id" TEXT,
     "email_sent_at" TIMESTAMP(3),
-    "nudge_email_at" TIMESTAMP(3),
-    "feedback_email_at" TIMESTAMP(3),
-    "bilan_email_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "beta_invites_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "beta_feedback" (
-    "id" UUID NOT NULL,
-    "user_id" UUID NOT NULL,
-    "tenant_id" UUID NOT NULL,
-    "cohort" TEXT,
-    "q1" TEXT NOT NULL,
-    "q2" TEXT NOT NULL,
-    "q3" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "beta_feedback_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "beta_bilan" (
-    "id" UUID NOT NULL,
-    "user_id" UUID NOT NULL,
-    "tenant_id" UUID NOT NULL,
-    "cohort" TEXT,
-    "q1" TEXT NOT NULL,
-    "q2" TEXT NOT NULL,
-    "q3" TEXT NOT NULL,
-    "q4" TEXT NOT NULL,
-    "nps" INTEGER NOT NULL,
-    "nps_why" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "beta_bilan_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "testimonials" (
-    "id" UUID NOT NULL,
-    "user_id" UUID NOT NULL,
-    "tenant_id" UUID NOT NULL,
-    "before_text" TEXT NOT NULL,
-    "during_text" TEXT NOT NULL,
-    "after_text" TEXT NOT NULL,
-    "display_mode" TEXT NOT NULL,
-    "first_name" TEXT,
-    "profession" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'pending',
-    "source" TEXT NOT NULL DEFAULT 'beta',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "published_at" TIMESTAMP(3),
-
-    CONSTRAINT "testimonials_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -654,9 +574,6 @@ CREATE UNIQUE INDEX "auth_tokens_token_key" ON "auth_tokens"("token");
 CREATE UNIQUE INDEX "packs_slug_key" ON "packs"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "frameworks_slug_key" ON "frameworks"("slug");
-
--- CreateIndex
 CREATE UNIQUE INDEX "categories_grid_id_code_key" ON "categories"("grid_id", "code");
 
 -- CreateIndex
@@ -719,23 +636,3 @@ CREATE INDEX "beta_invites_claimed_by_user_id_idx" ON "beta_invites"("claimed_by
 -- CreateIndex
 CREATE INDEX "beta_invites_cohort_idx" ON "beta_invites"("cohort");
 
--- CreateIndex
-CREATE INDEX "beta_feedback_created_at_idx" ON "beta_feedback"("created_at");
-
--- CreateIndex
-CREATE INDEX "beta_feedback_user_id_idx" ON "beta_feedback"("user_id");
-
--- CreateIndex
-CREATE INDEX "beta_bilan_created_at_idx" ON "beta_bilan"("created_at");
-
--- CreateIndex
-CREATE INDEX "beta_bilan_user_id_idx" ON "beta_bilan"("user_id");
-
--- CreateIndex
-CREATE INDEX "beta_bilan_nps_idx" ON "beta_bilan"("nps");
-
--- CreateIndex
-CREATE INDEX "testimonials_status_created_at_idx" ON "testimonials"("status", "created_at");
-
--- CreateIndex
-CREATE INDEX "testimonials_user_id_idx" ON "testimonials"("user_id");
