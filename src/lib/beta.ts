@@ -15,11 +15,8 @@ import { isSubscriptionEntitled } from "./entitlements";
 import { normalizeBetaCode } from "./beta-code";
 import { parseBetaInviteStatus, type BetaInviteStatus } from "./beta-status";
 import { sendBetaWelcome } from "./email";
-import { BETA_PLAN_KEY, BETA_TRIAL_DAYS } from "./beta-constants";
-
-// Constantes dans un module pur (beta-constants.ts) : les scripts ne peuvent pas
-// importer ce fichier-ci, qui est `server-only`. Ré-exportées pour les appelants existants.
-export { BETA_PLAN_KEY, BETA_TRIAL_DAYS } from "./beta-constants";
+import { betaConfig } from "./beta-config";
+import { markBetaEmailDay } from "./beta-email-gate";
 
 export type BetaInviteView = {
   id: string;
@@ -90,13 +87,14 @@ export async function claimBetaInvite(
 
   // 2. Le forfait offert doit être configuré (échec explicite plutôt qu'une erreur
   //    Stripe obscure plus loin).
-  const plan = await prisma.subscriptionPlan.findUnique({ where: { key: BETA_PLAN_KEY } });
+  const planKey = await betaConfig.planKey();
+  const plan = await prisma.subscriptionPlan.findUnique({ where: { key: planKey } });
   if (!plan) {
-    console.error(`[beta] forfait "${BETA_PLAN_KEY}" introuvable en base`);
+    console.error(`[beta] forfait "${planKey}" introuvable en base`);
     return { ok: false, message: "L'offre bêta n'est pas disponible pour le moment." };
   }
   if (!plan.stripePriceId) {
-    console.error(`[beta] forfait "${BETA_PLAN_KEY}" sans stripePriceId (voir /admin/facturation)`);
+    console.error(`[beta] forfait "${planKey}" sans stripePriceId (voir /admin/facturation)`);
     return { ok: false, message: "L'offre bêta n'est pas disponible pour le moment." };
   }
 
@@ -123,7 +121,7 @@ export async function claimBetaInvite(
       {
         customer: customerId,
         items: [{ price: plan.stripePriceId }],
-        trial_period_days: BETA_TRIAL_DAYS,
+        trial_period_days: await betaConfig.trialDays(),
         trial_settings: {
           end_behavior: {
             // Sans carte au terme de l'essai : on annule proprement plutôt que
@@ -190,6 +188,8 @@ export async function claimBetaInvite(
         monthlyCredits: plan.monthlyCredits,
         endsAt: trialEnd,
       });
+      // Déclare l'envoi du jour : un cron bêta le même jour se reportera (anti-collision).
+      await markBetaEmailDay(user.id);
     } catch (e) {
       console.error("[beta] email de bienvenue non envoyé", user.email, e);
     }

@@ -231,7 +231,7 @@ export async function sendBetaInvitation(
   const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
   const credits =
     input.monthlyCredits !== null
-      ? ` avec <b>${input.monthlyCredits} crédits</b> par mois`
+      ? ` avec <b>${input.monthlyCredits} crédits</b> inclus`
       : "";
 
   const html = `
@@ -242,8 +242,8 @@ export async function sendBetaInvitation(
        d'entraînement à la relation clinique : exercices ciblés, mises en situation avec un
        patient simulé, et un suivi de progression compétence par compétence.</p>
     <p>Le forfait <b>${escapeHtml(input.planLabel)}</b> vous est offert pendant
-       <b>${input.trialDays} jours</b>${credits}. <b>Aucune carte bancaire n'est demandée</b>,
-       ni maintenant ni à la fin : au terme, l'accès s'arrête et rien ne vous est prélevé.</p>
+       <b>4 semaines</b>, <b>sans carte bancaire</b>${credits}. Ni maintenant ni à la fin :
+       au terme, l'accès s'arrête et rien ne vous est prélevé.</p>
     <p style="margin:24px 0">
       <a href="${input.url}" style="background:#0e5a54;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600">
         Activer mon accès
@@ -272,15 +272,15 @@ export async function sendBetaWelcome(
   const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
   const credits =
     input.monthlyCredits !== null
-      ? ` Vous disposez de <b>${input.monthlyCredits} crédits</b>, renouvelés chaque mois de l'essai (non reportés d'un mois sur l'autre).`
+      ? ` Vous disposez de <b>${input.monthlyCredits} crédits</b> pour ces 4 semaines (l'allocation du forfait, non reportée).`
       : "";
 
   const html = `
   <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1d23;line-height:1.6">
     <h2 style="color:#0e5a54">Votre accès bêta est ouvert</h2>
     <p>${hello}</p>
-    <p>Le forfait <b>${escapeHtml(input.planLabel)}</b> vous est offert jusqu'au
-       <b>${frDate(input.endsAt)}</b>.${credits}</p>
+    <p>Le forfait <b>${escapeHtml(input.planLabel)}</b> vous est offert pendant 4 semaines,
+       jusqu'au <b>${frDate(input.endsAt)}</b>, sans carte bancaire.${credits}</p>
     <p><b>Aucune carte bancaire n'a été demandée.</b> À la fin de la période, l'accès s'arrête
        et rien ne vous est prélevé — vous n'avez aucune démarche à faire.</p>
 
@@ -316,12 +316,12 @@ export async function sendBetaMidTrial(
   <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1d23;line-height:1.6">
     <h2 style="color:#0e5a54">On est à la moitié — trois questions</h2>
     <p>${hello}</p>
-    <p>Vous avez accès à MELETA depuis environ un mois et demi (l'essai court jusqu'au
+    <p>Vous avez accès à MELETA depuis environ deux semaines (votre accès court jusqu'au
        <b>${frDate(input.endsAt)}</b>). J'aimerais votre avis, même bref.</p>
     <ol style="padding-left:18px">
       <li>Qu'est-ce que vous avez utilisé le plus, et pourquoi ?</li>
       <li>Qu'est-ce qui vous a fait décrocher, ou que vous n'avez jamais ouvert ?</li>
-      <li>Le nombre de crédits mensuels vous a-t-il semblé trop juste, correct, ou large ?</li>
+      <li>Le nombre de crédits de l'essai vous a-t-il semblé trop juste, correct, ou large ?</li>
     </ol>
     <p>La troisième compte particulièrement : c'est exactement ce que cette bêta doit mesurer.</p>
     <p>Répondez directement à cet email — deux lignes suffisent.</p>
@@ -440,7 +440,7 @@ export async function sendBetaBilan(
   const hello = input.firstName ? `Bonjour ${escapeHtml(input.firstName)},` : "Bonjour,";
   const credits =
     input.monthlyCredits !== null
-      ? `, avec ${input.monthlyCredits} crédits renouvelés chaque mois (non reportés)`
+      ? `, avec ${input.monthlyCredits} crédits pour l'essai (non reportés)`
       : "";
   const improvements =
     input.improvements.length > 0

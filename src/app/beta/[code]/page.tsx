@@ -4,7 +4,8 @@ import type { Metadata } from "next";
 import { ArrowRight, CreditCard, Gift, Lock, Sparkles, Timer } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { findBetaInvite, BETA_PLAN_KEY, BETA_TRIAL_DAYS } from "@/lib/beta";
+import { findBetaInvite } from "@/lib/beta";
+import { betaConfig } from "@/lib/beta-config";
 import { isSubscriptionEntitled } from "@/lib/entitlements";
 import ClaimButton from "./claim-button";
 
@@ -42,12 +43,13 @@ export default async function BetaClaimPage({
 
   if (unusable) return <InviteUnusable />;
 
-  const plan = await prisma.subscriptionPlan.findUnique({ where: { key: BETA_PLAN_KEY } });
+  const planKey = await betaConfig.planKey();
+  const plan = await prisma.subscriptionPlan.findUnique({ where: { key: planKey } });
 
   // --- Visiteur non connecté : présentation + CTA qui conservent le code.
   if (!user) {
     const back = `/beta/${encodeURIComponent(invite.code)}`;
-    return <InviteIntro planLabel={plan?.label ?? "Intensif"} back={back} />;
+    return <InviteIntro planLabel={plan?.label ?? "Praticien"} back={back} />;
   }
 
   // --- Connecté mais déjà servi : on le dit franchement plutôt que de le laisser
@@ -62,7 +64,7 @@ export default async function BetaClaimPage({
   return (
     <InviteConfirm
       code={invite.code}
-      planLabel={plan?.label ?? "Intensif"}
+      planLabel={plan?.label ?? "Praticien"}
       monthlyCredits={plan?.monthlyCredits ?? null}
     />
   );
@@ -128,7 +130,7 @@ function KeyFacts({ planLabel }: { planLabel: string }) {
     { icon: <Gift className="h-4 w-4" />, text: `Le forfait ${planLabel} vous est offert.` },
     {
       icon: <Timer className="h-4 w-4" />,
-      text: `Pendant ${BETA_TRIAL_DAYS} jours, avec les crédits mensuels du forfait.`,
+      text: "Pendant 4 semaines, avec les crédits inclus du forfait.",
     },
     {
       icon: <CreditCard className="h-4 w-4" />,
@@ -154,7 +156,7 @@ function InviteIntro({ planLabel, back }: { planLabel: string; back: string }) {
         Invitation bêta
       </span>
       <h1 className="mt-3 text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">
-        Le forfait {planLabel} vous est offert pendant {BETA_TRIAL_DAYS} jours
+        Le forfait {planLabel} vous est offert pendant 4 semaines
       </h1>
       <p className="mt-3 text-base text-[var(--ink-soft)]">
         Vous faites partie d&apos;un petit groupe de praticiens invités à éprouver MELETA en
@@ -208,14 +210,14 @@ function InviteConfirm({
         <KeyFacts planLabel={planLabel} />
         {monthlyCredits !== null && (
           <p className="mt-3 text-sm text-[var(--muted)]">
-            Soit <b>{monthlyCredits} crédits</b> par mois, renouvelés chaque mois de l&apos;essai
-            (non reportés d&apos;un mois sur l&apos;autre).
+            Soit <b>{monthlyCredits} crédits</b> pour ces 4 semaines (l&apos;allocation du forfait,
+            non reportée).
           </p>
         )}
 
         {/* Engagement explicite exigé : durée, absence de carte, absence de prélèvement. */}
         <p className="mt-5 rounded-lg border border-[var(--accent-border)] bg-[var(--accent-soft)] p-4 text-sm">
-          Forfait <b>{planLabel}</b> offert pendant <b>{BETA_TRIAL_DAYS} jours</b>. Aucune carte
+          Forfait <b>{planLabel}</b> offert pendant <b>4 semaines</b>. Aucune carte
           bancaire demandée. À la fin de la période, l&apos;accès s&apos;arrête et{" "}
           <b>rien ne vous est prélevé</b>.
         </p>

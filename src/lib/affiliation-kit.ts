@@ -39,7 +39,7 @@ Bonne découverte,
 
 J'utilise MELETA pour entraîner ces compétences cliniques sur des cas réalistes : feedback immédiat, séances avec un patient simulé par IA, et une carte de progression qui montre où je progresse et où je cale.
 
-Outil formatif, non certifiant. Essai gratuit sans carte bancaire → {LIEN}
+Outil formatif, non certifiant. Gratuit, sans carte bancaire → {LIEN}
 
 #pratiqueclinique #formation #thérapie #coaching`,
   },
@@ -49,7 +49,7 @@ Outil formatif, non certifiant. Essai gratuit sans carte bancaire → {LIEN}
     label: "Post / story Instagram (légende courte)",
     body: `S'entraîner à la relation clinique, pas juste la théoriser.
 Cas réalistes · patient simulé par IA · progression par compétences.
-Essai gratuit → lien en bio / {LIEN}`,
+Gratuit, sans carte → lien en bio / {LIEN}`,
   },
   {
     id: "whatsapp",

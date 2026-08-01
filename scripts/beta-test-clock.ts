@@ -1,25 +1,34 @@
 /**
- * Validation du cycle de 90 jours avec une Test Clock Stripe.
+ * Validation du cycle d'essai bêta (30 jours) avec une Test Clock Stripe.
  *
- * C'est le seul moyen fiable de vérifier ce mécanisme sans attendre trois mois :
- * on crée une horloge, on y rattache un client, on ouvre l'essai, puis on avance
- * le temps pour observer `trial_will_end` (J+87) puis l'annulation (J+91).
+ * DEUX PASSES, car le point sensible dépend du mois d'ancrage :
+ *   - Passe A — ancre en SEPTEMBRE (mois de 30 jours) : ancre+1 mois = J+30, soit
+ *     l'instant EXACT de fin d'essai → course entre l'annulation et un rafraîchissement
+ *     d'allocation. C'est le cas NOMINAL de la bêta de septembre.
+ *   - Passe B — ancre en FÉVRIER (28 jours) : ancre+1 mois = J+28, soit une fenêtre
+ *     FRANCHE de 2 jours où `periodIndex` vaut déjà 1 alors que le statut est encore
+ *     `trialing`.
  *
- *   STRIPE_SECRET_KEY=sk_test_... npx tsx scripts/beta-test-clock.ts
+ * Ce script observe l'état CÔTÉ STRIPE (démarrage `trialing`, `trial_will_end` à J+27,
+ * annulation après J+30, aucun prélèvement) pour les DEUX ancres. La preuve « une seule
+ * allocation `planCredits` » est CÔTÉ APP : elle est faite en vitest (test/beta-exit),
+ * car `src/lib/credits.ts` importe `server-only`, inutilisable depuis un script tsx.
+ * Pour vérifier de bout en bout que l'app réagit, faites pointer le webhook de test vers
+ * l'app pendant l'exécution :
+ *   stripe listen --forward-to localhost:3010/api/stripe/webhook
  *
- * ⚠️ Refuse de s'exécuter avec une clé LIVE : les Test Clocks n'existent qu'en mode
- * test, et créer des abonnements réels sur le compte de production serait une erreur.
+ *   STRIPE_SECRET_KEY=sk_test_... npx tsx scripts/beta-test-clock.ts [price_XXX]
  *
- * Ce script observe l'état CÔTÉ STRIPE. Pour vérifier de bout en bout que l'app
- * réagit (crédits versés, email envoyé, accès révoqué), faites pointer le webhook
- * de test vers l'app — `stripe listen --forward-to localhost:3000/api/stripe/webhook`
- * — pendant l'exécution.
+ * ⚠️ Refuse une clé LIVE : les Test Clocks n'existent qu'en mode test.
  */
 import "dotenv/config";
 import Stripe from "stripe";
+import { BETA_CONFIG } from "../src/lib/beta-constants";
 
 const DAY = 24 * 60 * 60;
-const TRIAL_DAYS = 90;
+const TRIAL_DAYS = BETA_CONFIG.trialDays.default; // 30 — même source que l'app
+const WILL_END_DAY = TRIAL_DAYS - 3; // Stripe émet trial_will_end 3 j avant le terme (J+27)
+const AFTER_END_DAY = TRIAL_DAYS + 1; // au-delà du terme : annulation (J+31)
 
 function requireTestKey(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -35,22 +44,19 @@ function requireTestKey(): Stripe {
 async function priceIdFromArgs(stripe: Stripe): Promise<string> {
   const fromArg = process.argv.find((a) => a.startsWith("price_"));
   if (fromArg) return fromArg;
-  // À défaut, le premier prix récurrent du compte de test.
   const prices = await stripe.prices.list({ active: true, type: "recurring", limit: 1 });
   const price = prices.data[0];
   if (!price) {
     throw new Error(
-      "Aucun prix récurrent en mode test. Créez-en un, ou passez son id en argument : npx tsx scripts/beta-test-clock.ts price_XXX",
+      "Aucun prix récurrent en mode test. Créez-en un, ou passez son id : npx tsx scripts/beta-test-clock.ts price_XXX",
     );
   }
   return price.id;
 }
 
 async function advance(stripe: Stripe, clockId: string, toUnix: number, label: string) {
-  process.stdout.write(`\n→ Avance de l'horloge : ${label}…\n`);
+  process.stdout.write(`   → avance : ${label}…\n`);
   await stripe.testHelpers.testClocks.advance(clockId, { frozen_time: toUnix });
-
-  // L'avance est asynchrone : on attend que l'horloge soit de nouveau prête.
   for (let i = 0; i < 60; i++) {
     const clock = await stripe.testHelpers.testClocks.retrieve(clockId);
     if (clock.status === "ready") return;
@@ -60,70 +66,76 @@ async function advance(stripe: Stripe, clockId: string, toUnix: number, label: s
   throw new Error("délai dépassé en attendant l'horloge");
 }
 
-async function main() {
-  const stripe = requireTestKey();
-  const priceId = await priceIdFromArgs(stripe);
-  const start = Math.floor(Date.now() / 1000);
+/** Une passe complète pour une ancre donnée. Renvoie true si tous les contrôles passent. */
+async function runPass(stripe: Stripe, priceId: string, label: string, startUnix: number): Promise<boolean> {
+  console.log(`\n===== PASSE ${label} — ancre ${new Date(startUnix * 1000).toISOString().slice(0, 10)} =====`);
 
-  console.log(`Prix utilisé : ${priceId}`);
-
-  const clock = await stripe.testHelpers.testClocks.create({ frozen_time: start });
-  console.log(`Test Clock   : ${clock.id}`);
-
+  const clock = await stripe.testHelpers.testClocks.create({ frozen_time: startUnix });
+  console.log(`Test Clock : ${clock.id}`);
   const customer = await stripe.customers.create({
-    email: `beta-clock-${start}@example.invalid`,
+    email: `beta-clock-${label}-${startUnix}@example.invalid`,
     test_clock: clock.id,
-    metadata: { purpose: "validation bêta 90 jours" },
+    metadata: { purpose: `validation bêta 30 jours (${label})` },
   });
 
   // Mêmes paramètres que la réclamation réelle (src/lib/beta.ts) : aucun moyen de
-  // paiement fourni, annulation propre au terme.
+  // paiement, annulation propre au terme.
   const sub = await stripe.subscriptions.create({
     customer: customer.id,
     items: [{ price: priceId }],
     trial_period_days: TRIAL_DAYS,
     trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
-    metadata: { betaTestClock: "true" },
+    metadata: { betaTestClock: "true", pass: label },
   });
+  console.log(`Abonnement : ${sub.id} — statut initial « ${sub.status} » (attendu trialing)`);
 
-  console.log(`Abonnement   : ${sub.id}`);
-  console.log(`Statut initial attendu « trialing » -> obtenu « ${sub.status} »`);
-  if (sub.status !== "trialing") throw new Error("l'abonnement aurait dû démarrer en essai");
+  await advance(stripe, clock.id, startUnix + WILL_END_DAY * DAY, `J+${WILL_END_DAY} (trial_will_end attendu)`);
+  const atWillEnd = await stripe.subscriptions.retrieve(sub.id);
+  const willEndEvents = await stripe.events.list({ type: "customer.subscription.trial_will_end", limit: 50 });
+  const sawWillEnd = willEndEvents.data.some((e) => (e.data.object as Stripe.Subscription).id === sub.id);
+  console.log(`   statut à J+${WILL_END_DAY} : ${atWillEnd.status} · trial_will_end émis : ${sawWillEnd ? "OUI" : "NON"}`);
 
-  // --- J+87 : Stripe émet `customer.subscription.trial_will_end` (3 j avant le terme).
-  await advance(stripe, clock.id, start + 87 * DAY, "J+87 (trial_will_end attendu)");
-  const at87 = await stripe.subscriptions.retrieve(sub.id);
-  console.log(`  statut à J+87 : ${at87.status} (attendu « trialing »)`);
-
-  const events87 = await stripe.events.list({ type: "customer.subscription.trial_will_end", limit: 20 });
-  const sawWillEnd = events87.data.some(
-    (e) => (e.data.object as Stripe.Subscription).id === sub.id,
-  );
-  console.log(`  événement trial_will_end émis : ${sawWillEnd ? "OUI" : "NON"}`);
-
-  // --- J+91 : plus d'essai, aucun moyen de paiement -> annulation, sans facture payée.
-  await advance(stripe, clock.id, start + 91 * DAY, "J+91 (annulation attendue)");
-  const at91 = await stripe.subscriptions.retrieve(sub.id);
-  console.log(`  statut à J+91 : ${at91.status} (attendu « canceled »)`);
-
-  const invoices = await stripe.invoices.list({ customer: customer.id, limit: 10 });
+  await advance(stripe, clock.id, startUnix + AFTER_END_DAY * DAY, `J+${AFTER_END_DAY} (annulation attendue)`);
+  const atEnd = await stripe.subscriptions.retrieve(sub.id);
+  const invoices = await stripe.invoices.list({ customer: customer.id, limit: 20 });
   const paid = invoices.data.filter((i) => i.amount_paid > 0);
-  console.log(`  factures émises : ${invoices.data.length} · dont payées : ${paid.length}`);
+  console.log(`   statut après J+${TRIAL_DAYS} : ${atEnd.status} · factures payées : ${paid.length}`);
 
-  console.log("\n--- Verdict ---");
   const checks: [string, boolean][] = [
     ["démarrage en trialing", sub.status === "trialing"],
-    ["toujours en essai à J+87", at87.status === "trialing"],
+    [`toujours en essai à J+${WILL_END_DAY}`, atWillEnd.status === "trialing"],
     ["trial_will_end émis", sawWillEnd],
-    ["annulé à J+91", at91.status === "canceled"],
+    ["annulé après le terme", atEnd.status === "canceled"],
     ["aucun prélèvement", paid.length === 0],
   ];
-  for (const [label, ok] of checks) console.log(`  ${ok ? "✓" : "❌"} ${label}`);
+  console.log("   — contrôles —");
+  for (const [l, ok] of checks) console.log(`     ${ok ? "✓" : "❌"} ${l}`);
+  console.log(`   Nettoyage : supprimez l'horloge ${clock.id} (Dashboard, mode test).`);
+  return checks.every(([, ok]) => ok);
+}
 
-  const allOk = checks.every(([, ok]) => ok);
-  console.log(`\n→ ${allOk ? "Cycle de 90 jours VALIDÉ" : "ÉCHEC — voir ci-dessus"}`);
-  console.log(`\nNettoyage : supprimez l'horloge ${clock.id} depuis le Dashboard (mode test).`);
-  process.exit(allOk ? 0 : 1);
+async function main() {
+  const stripe = requireTestKey();
+  const priceId = await priceIdFromArgs(stripe);
+  console.log(`Prix utilisé : ${priceId} · essai ${TRIAL_DAYS} jours`);
+
+  // Ancres choisies pour exposer les deux formes de défaillance :
+  //  - septembre 2026 (30 j) : ancre+1 mois = J+30 (coïncidence à la fin) ;
+  //  - février 2027 (28 j)   : ancre+1 mois = J+28 (fenêtre franche).
+  const septA = Math.floor(Date.UTC(2026, 8, 10, 9, 0, 0) / 1000); // 10 sept. 2026
+  const febB = Math.floor(Date.UTC(2027, 1, 10, 9, 0, 0) / 1000); // 10 févr. 2027
+
+  const a = await runPass(stripe, priceId, "A (septembre)", septA);
+  const b = await runPass(stripe, priceId, "B (février)", febB);
+
+  console.log("\n--- Verdict global ---");
+  console.log(`  Passe A (septembre) : ${a ? "VALIDÉE" : "ÉCHEC"}`);
+  console.log(`  Passe B (février)   : ${b ? "VALIDÉE" : "ÉCHEC"}`);
+  console.log(
+    "\nRappel : la preuve « une seule allocation planCredits » est côté app (vitest test/beta-exit),\n" +
+      "et le contrôle des 5 invariants de sortie de bêta y est également couvert.",
+  );
+  process.exit(a && b ? 0 : 1);
 }
 
 main().catch((e: unknown) => {

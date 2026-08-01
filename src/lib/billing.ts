@@ -10,6 +10,7 @@ import { getCreditPack } from "./credits";
 import { isSubscriptionEntitled } from "./entitlements";
 import { periodIndexFor } from "./billing-period";
 import { BETA_PLAN_LABEL } from "./beta-constants";
+import { markBetaEmailDay } from "./beta-email-gate";
 import { sendBetaTrialEnd } from "./email";
 import { ensureStripeCustomer, stripeClient } from "./stripe";
 import { recordFunnelOncePerUser } from "./funnel";
@@ -467,6 +468,14 @@ export async function handleSubscriptionCreated(event: Stripe.Event): Promise<vo
     },
   });
 
+  // Réabonnement : le pool de choix `subscription_choice` est de nouveau couvert par le
+  // quota. On efface les épinglages « post-rétrogradation » pour rendre l'échange unique
+  // de nouveau disponible en cas de future rétrogradation (cf. entitlements.ts).
+  await prisma.userFrameworkAccess.updateMany({
+    where: { userId: user.id, pinnedAt: { not: null } },
+    data: { pinnedAt: null },
+  });
+
   // Alloue les crédits de la période courante (essai `trialing` inclus, où aucune
   // facture n'est émise). Non cumulatif : SET à l'allocation du forfait.
   await syncSubscriptionCredits(user.id);
@@ -568,6 +577,8 @@ export async function handleTrialWillEnd(event: Stripe.Event): Promise<void> {
       endsAt: trialEnd,
       couponCode: process.env.BETA_CONVERSION_COUPON || null,
     });
+    // Déclare l'envoi du jour : un cron bêta le même jour se reporte (anti-collision).
+    await markBetaEmailDay(local.userId);
   } catch (e) {
     console.error("[billing] email de fin d'essai non envoyé", user.email, e);
   }

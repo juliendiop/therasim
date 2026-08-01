@@ -375,7 +375,22 @@ export async function syncSubscriptionCredits(
     }
 
     const anchor = sub.periodAnchorAt ?? sub.createdAt;
-    const currentIndex = periodIndexFor(anchor, at);
+
+    // GARDE « une seule allocation par essai ».
+    // `periodIndexFor` compte en MOIS CALENDAIRES ; un essai exprimé en JOURS peut donc
+    // franchir une frontière de période AVANT la fin de l'essai : ancre+1 mois vaut J+28/29
+    // (février) ou J+30 (avril/juin/septembre/novembre — la bêta de septembre est ce cas
+    // nominal), soit avant ou pile à la fin d'un essai de 30 jours. Sans garde, un
+    // `syncSubscriptionCredits` déclenché par un accès ou un webhook pendant que le statut
+    // est encore `trialing` verrait `periodIndex` = 1 et poserait une SECONDE allocation.
+    // On déduit donc le nombre d'allocations de l'ESSAI, jamais du calendrier : pendant
+    // `trialing`, l'allocation est celle de la période 0, un point c'est tout.
+    //
+    // On ne touche PAS `periodIndexFor` ni l'ancrage : le parcours PAYANT reste calendaire
+    // (et `periodIndex` lui sert aussi de clé de déduplication). ⚠️ Cette garde vaut tant
+    // qu'un essai est PLUS COURT qu'une période de facturation (1 mois). À revoir si un
+    // essai long (> 1 mois, donc couvrant plusieurs périodes) réapparaît.
+    const currentIndex = sub.status === "trialing" ? 0 : periodIndexFor(anchor, at);
 
     await grantPlanPeriod({
       userId,

@@ -12,6 +12,7 @@ import { TYPE_LABEL, planQuotaLabel } from "@/lib/ui";
 import {
   activateFrameworkChoiceAction,
   swapFrameworkChoiceAction,
+  pinDowngradedSpecialtyAction,
   checkoutFrameworkAction,
 } from "@/app/credits/actions";
 
@@ -46,6 +47,11 @@ export default async function FrameworkPaywall({
   const remaining = status.remaining;
   const canUseChoice = status.quota != null && (remaining ?? 0) > 0;
   const quotaReached = status.quota != null && (remaining ?? 0) <= 0;
+
+  // Compte rétrogradé (Découverte) regardant une spécialité qu'il avait DÉJÀ choisie :
+  // il peut la réactiver, une seule fois, parmi ses anciens choix (pas d'achat).
+  const isPoolMember = choiceRows.some((r) => r.frameworkId === frameworkId);
+  const showDowngradePool = status.overQuota && !status.entitledSub && isPoolMember;
 
   // Spécialités déjà choisies (pour l'échange), hors celle qu'on regarde.
   const dropCandidates = choiceRows.filter((r) => r.frameworkId !== frameworkId);
@@ -151,7 +157,33 @@ export default async function FrameworkPaywall({
           </form>
         </div>
       )}
-      {quotaReached && !status.canSwap && (
+      {/* Rétrogradé (Découverte) : réactiver une spécialité déjà choisie, une seule fois */}
+      {showDowngradePool && status.poolSwapAvailable && (
+        <div className="mt-5 rounded-xl border border-[var(--accent-border)] bg-white p-5">
+          <div className="flex items-center gap-2 font-semibold">
+            <Repeat className="h-4 w-4 text-[var(--accent)]" /> Réactiver cette spécialité
+          </div>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">
+            Votre forfait a pris fin : vous avez droit à <b>1 spécialité</b> parmi celles que vous
+            aviez déjà choisies, et vous pouvez la changer <b>une seule fois</b>. Faire de «&nbsp;
+            {framework.nom}&nbsp;» votre spécialité active ? Votre progression est conservée.
+          </p>
+          <form action={pinDowngradedSpecialtyAction} className="mt-3">
+            <input type="hidden" name="frameworkId" value={framework.id} />
+            <button className="rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]">
+              Rendre «&nbsp;{framework.nom}&nbsp;» active
+            </button>
+          </form>
+        </div>
+      )}
+      {showDowngradePool && status.poolSwapUsed && (
+        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Vous avez déjà utilisé votre changement de spécialité. Reprenez un forfait pour rouvrir
+          «&nbsp;{framework.nom}&nbsp;» et vos autres spécialités.
+        </div>
+      )}
+
+      {quotaReached && !status.canSwap && !showDowngradePool && (
         <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           Votre forfait {status.planLabel} inclut {status.quota} spécialité
           {(status.quota ?? 0) > 1 ? "s" : ""} — quota atteint. Passez à un forfait supérieur pour

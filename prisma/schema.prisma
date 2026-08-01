@@ -75,6 +75,10 @@ model User {
   // --- Bêta fermée (invitations) ---
   isBetaTester Boolean @default(false) @map("is_beta_tester") // segmentation stats/emails
   betaCohort   String? @map("beta_cohort") // ex. 'beta-2026-01'
+  // Anti-collision des emails bêta : date du dernier email bêta envoyé à ce compte.
+  // Un seul email bêta par jour et par destinataire (les crons se reportent au
+  // lendemain sans se dupliquer). Voir src/lib/beta-email-gate.ts.
+  lastBetaEmailAt DateTime? @map("last_beta_email_at")
   // Relance témoignage (promoteurs NPS 8-10) : posé à l'envoi de la sollicitation,
   // déclenchée à la soumission du bilan. Empêche un second envoi.
   testimonialInviteAt DateTime? @map("testimonial_invite_at")
@@ -246,6 +250,12 @@ model UserFrameworkAccess {
   frameworkId String   @map("framework_id")
   source      String // 'purchase' | 'admin' | 'subscription_choice'
   createdAt   DateTime @default(now()) @map("created_at")
+  // Choix ÉPINGLÉ (échange unique post-rétrogradation). Quand un compte a plus de choix
+  // 'subscription_choice' que son quota courant (ex. ex-abonné Praticien à 3 choix retombé
+  // à Découverte quota 1), on n'honore que `quota` d'entre eux : le choix épinglé s'il
+  // existe (échange explicite, une seule fois), sinon celui à l'activité la plus récente.
+  // La présence d'un épinglage = l'échange unique a été consommé. Voir src/lib/entitlements.ts.
+  pinnedAt    DateTime? @map("pinned_at")
 
   @@id([userId, frameworkId])
   @@map("user_framework_access")

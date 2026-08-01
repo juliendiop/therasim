@@ -7,6 +7,7 @@ import { appBaseUrlFromRequest } from "@/lib/base-url";
 import {
   activateSubscriptionChoice,
   swapSpecialtyChoice,
+  pinDowngradedSpecialty,
   canBuyIndividualOffers,
 } from "@/lib/entitlements";
 import {
@@ -103,6 +104,18 @@ export async function activateFrameworkChoiceAction(formData: FormData) {
     redirect(`/f/${frameworkId}?error=${encodeURIComponent(result.message)}`);
   }
   redirect(`/f/${frameworkId}`);
+}
+
+/** Réactive (une fois) une spécialité déjà choisie, pour un compte Découverte rétrogradé. */
+export async function pinDowngradedSpecialtyAction(formData: FormData) {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+  const frameworkId = String(formData.get("frameworkId") ?? "");
+
+  const result = await pinDowngradedSpecialty(user, frameworkId);
+  redirect(
+    `/f/${frameworkId}?${result.ok ? "success=specialite" : `error=${encodeURIComponent(result.message)}`}`,
+  );
 }
 
 /** Échange une spécialité déjà choisie contre une autre (1×/période, forfaits éligibles). */

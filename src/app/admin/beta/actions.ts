@@ -5,7 +5,8 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { generateBetaCode } from "@/lib/beta-code";
-import { BETA_PLAN_KEY, BETA_TRIAL_DAYS, BETA_INVITE_EXPIRY_DAYS } from "@/lib/beta-constants";
+import { BETA_INVITE_EXPIRY_DAYS } from "@/lib/beta-constants";
+import { betaConfig } from "@/lib/beta-config";
 import { isEmailConfigured, sendBetaInvitation } from "@/lib/email";
 import { setBetaImprovements } from "@/lib/beta-bilan";
 
@@ -25,8 +26,9 @@ async function deliverInvite(inviteId: string): Promise<InviteResult> {
     return { ok: false, message: "Envoi d'email non configuré (RESEND_API_KEY absente)." };
   }
 
-  const plan = await prisma.subscriptionPlan.findUnique({ where: { key: BETA_PLAN_KEY } });
-  if (!plan) return { ok: false, message: `Forfait "${BETA_PLAN_KEY}" introuvable.` };
+  const planKey = await betaConfig.planKey();
+  const plan = await prisma.subscriptionPlan.findUnique({ where: { key: planKey } });
+  if (!plan) return { ok: false, message: `Forfait "${planKey}" introuvable.` };
 
   const baseUrl = await appBaseUrlFromRequest();
   try {
@@ -35,7 +37,7 @@ async function deliverInvite(inviteId: string): Promise<InviteResult> {
       firstName: invite.note || null,
       planLabel: plan.label,
       monthlyCredits: plan.monthlyCredits,
-      trialDays: BETA_TRIAL_DAYS,
+      trialDays: await betaConfig.trialDays(),
     });
   } catch (e) {
     console.error("[beta] envoi d'invitation échoué", invite.email, e);

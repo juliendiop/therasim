@@ -1,0 +1,34 @@
+Section,Passe,Etape,Action,Detail / Commande,Resultat attendu,Invariant
+Prerequis,,1,Cle Stripe TEST en local,"STRIPE_SECRET_KEY=sk_test_... (le script refuse une cle LIVE)",Script beta:testclock executable,
+Prerequis,,2,Base de test seedee,"TEST_DATABASE_URL=postgresql://...branche-neon-jetable (tenant public + forfaits + referentiels seedes)",Tests vitest DB executables,
+Prerequis,,3,Webhook test vers l'app,"stripe listen --forward-to localhost:3010/api/stripe/webhook (+ STRIPE_WEBHOOK_SECRET du listen)",Les webhooks arrivent a l'app pendant le Test Clock,
+Prerequis,,4,Config beta,"Defauts: beta.plan.key=praticien, beta.trial.days=30 (aucune ecriture app_config requise)",Forfait offert = Praticien (quota 3, 60 credits/mois), essai 30 j,
+Prerequis,,5,Forfait praticien price test,"subscription_plans key=praticien avec stripePriceId = un price recurrent sk_test_",La reclamation cree l'abonnement d'essai,
+Passe A (septembre),A,1,Creer un code d'invitation,"npm run beta:invites -- --count 1  (ou admin /admin/beta)",Invitation PENDING,
+Passe A (septembre),A,2,Reclamer l'invitation,"claim par un user test (page /beta/CODE) ; Test Clock ancree le 10 sept 2026 (mois 30 j : ancre+1 mois = J+30)","UserSubscription status=trialing, planId=praticien",
+Passe A (septembre),A,3,Verifier forfait + credits d'essai,"lire user + subscription","planCredits=60 (allocation Praticien), 1 ligne credit_ledger reason=subscription_renewal periodIndex=0 ; credits (wallet) = welcome/mensuel inchanges",Une seule allocation
+Passe A (septembre),A,4,Avancer a J+27,"Test Clock -> J+27","customer.subscription.trial_will_end emis ; email fin d'essai envoye 1x (trialEndEmailAt pose) ; lastBetaEmailAt pose",
+Passe A (septembre),A,5,Solliciter la synchro a J+30 (course),"charger une page connecte OU rejouer subscription.updated alors statut encore trialing (periodIndex calendaire = 1)","AUCUNE 2e allocation : planCredits inchange, toujours 1 seule ligne subscription_renewal (periodIndex 0 force pendant trialing)",Une seule allocation
+Passe A (septembre),A,6,Avancer au-dela de J+30,"Test Clock -> J+31","customer.subscription.deleted (statut canceled) ; aucune facture payee",
+Passe A (septembre),A,7,Controler la sortie,"lire user + subscription + acces","voir bloc INVARIANTS ci-dessous",I1..I5
+Passe B (fevrier),B,1,Creer un code d'invitation,"npm run beta:invites -- --count 1",Invitation PENDING,
+Passe B (fevrier),B,2,Reclamer l'invitation,"claim ; Test Clock ancree le 10 fev 2027 (mois 28 j : ancre+1 mois = J+28, fenetre franche J+28..J+30)","status=trialing, planCredits=60",Une seule allocation
+Passe B (fevrier),B,3,Fenetre franche - solliciter la synchro entre J+28 et J+30,"Test Clock -> J+29 (statut encore trialing) PUIS appeler syncSubscriptionCredits (acces app OU rejeu webhook)","periodIndex calendaire deja = 1 MAIS force a 0 pendant trialing -> AUCUNE 2e allocation ; planCredits inchange ; toujours 1 ligne subscription_renewal",Une seule allocation
+Passe B (fevrier),B,4,Avancer a J+27 (trial_will_end),"Test Clock -> J+27 (avant l'etape 3 selon l'ordre choisi)","trial_will_end emis ; email fin d'essai 1x",
+Passe B (fevrier),B,5,Avancer au-dela de J+30,"Test Clock -> J+31","canceled ; aucune facture payee",
+Passe B (fevrier),B,6,Controler la sortie,"lire user + subscription + acces","voir bloc INVARIANTS",I1..I5
+Invariants de sortie,,I1,planCredits remis a 0,"apres customer.subscription.deleted (ou updated->canceled)","user.planCredits == 0 (zeroPlanCredits, ledger reason=plan_expired)",I1
+Invariants de sortie,,I2,credits (portefeuille) intact,"comparer avant/apres annulation","user.credits inchange (packs achetes + credits offerts non touches)",I2
+Invariants de sortie,,I3,subscription_choice inoperants sans suppression,"pre-requis: pendant l'essai Praticien (quota 3) le testeur a ouvert 3 specialites (3 lignes subscription_choice) ; puis annulation","count(subscription_choice)=3 (AUCUNE ligne supprimee) MAIS acces = seulement 1 specialite honoree (celle a l'activite la plus recente) ; les 2 autres = verrouillees",I3
+Invariants de sortie,,I4,discoveryInterviewUsedAt inchange,"comparer avant/apres","user.discoveryInterviewUsedAt identique (jamais touche par aucun chemin billing/webhook)",I4
+Invariants de sortie,,I5,progression intacte,"count Attempt + count UserCompetencyState avant/apres","compteurs identiques (aucune suppression de progression, aucun chemin)",I5
+Echange unique (retrograde),,E1,Reactiver une specialite du pool,"ex-testeur Decouverte (over-quota) ouvre /f/SPECIALITE-DU-POOL non active -> bouton 'Reactiver cette specialite'","pinDowngradedSpecialty : la specialite devient l'unique honoree ; l'ancienne active se ferme ; poolSwapUsed=true",I3
+Echange unique (retrograde),,E2,Deuxieme changement refuse,"reessayer un pin sur une autre specialite du pool","refuse: 'Vous avez deja change de specialite' (une seule fois)",I3
+Echange unique (retrograde),,E3,Specialite hors pool,"ouvrir /f/SPECIALITE-JAMAIS-CHOISIE","paywall normal (upgrade/achat), PAS l'option de reactivation",I3
+Echange unique (retrograde),,E4,Reset au reabonnement,"reprendre un abonnement Praticien puis re-resilier","les epinglages sont effaces au reabonnement -> l'echange unique redevient disponible apres la nouvelle retrogradation",I3
+Mur de credits (parcours reel),,M1,Sceance N3 - decouverte disponible,"ex-testeur (canceled) avec discoveryInterviewUsedAt=null lance une seance N3","1 seance decouverte offerte (pas de mur), discoveryInterviewUsedAt se pose ; JAMAIS d'erreur ni page vide",
+Mur de credits (parcours reel),,M2,Sceance N3 - decouverte deja utilisee,"discoveryInterviewUsedAt non null, relance N3","mur credits-wall variante 'level3' (upgrade) ; JAMAIS d'erreur",
+Mur de credits (parcours reel),,M3,Mini-scene ou solde insuffisant,"lancer une mini-scene / N3 avec wallet.total < cout","mur credits-wall variante 'credits' (recharge/upgrade) ; JAMAIS d'erreur",
+Rejeu webhook,,W1,Rejeu subscription.deleted,"renvoyer le meme event id customer.subscription.deleted","idempotent (StripeEvent) : aucun effet, planCredits reste 0",
+Rejeu webhook,,W2,Rejeu subscription.created / invoice,"rejouer un event d'allocation","syncSubscriptionCredits idempotent (reason=subscription_renewal, periodIndex 0) : AUCUNE 2e allocation",Une seule allocation
+Anti-collision emails,,C1,Deux crons le meme jour,"forcer, le meme jour, deux crons bete a envoyer au meme testeur (ex. feedback 3 sims + mi-parcours J+15)","1 seul email part ; le second est reporte (compteur 'deferred'), son marqueur propre non pose -> renvoye le lendemain ; lastBetaEmailAt trace l'envoi du jour",

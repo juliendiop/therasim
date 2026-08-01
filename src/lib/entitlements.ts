@@ -151,6 +151,43 @@ export async function resolveB2CEntitlement(userId: string): Promise<B2CEntitlem
   };
 }
 
+type ChoiceRow = { frameworkId: string; pinnedAt: Date | null; createdAt: Date };
+
+/**
+ * Parmi les choix `subscription_choice`, renvoie les `quota` HONORÉS. Si le nombre de
+ * choix ne dépasse pas le quota, ils sont tous honorés. Au-delà (rétrogradation), on
+ * garde `quota` choix, priorité : choix ÉPINGLÉ (échange explicite) → activité la plus
+ * récente → choix le plus récent. AUCUNE ligne n'est supprimée.
+ */
+async function honoredChoiceIds(
+  userId: string,
+  choiceRows: ChoiceRow[],
+  quota: number,
+): Promise<string[]> {
+  if (choiceRows.length <= quota) return choiceRows.map((r) => r.frameworkId);
+
+  const ids = choiceRows.map((r) => r.frameworkId);
+  const acts = await prisma.attempt.groupBy({
+    by: ["frameworkId"],
+    where: { userId, frameworkId: { in: ids } },
+    _max: { createdAt: true },
+  });
+  const lastActivity = new Map<string, number>(
+    acts.map((a) => [a.frameworkId, a._max.createdAt?.getTime() ?? 0]),
+  );
+
+  const ranked = [...choiceRows].sort((a, b) => {
+    const pa = a.pinnedAt?.getTime() ?? -1;
+    const pb = b.pinnedAt?.getTime() ?? -1;
+    if (pa !== pb) return pb - pa; // épinglé d'abord
+    const aa = lastActivity.get(a.frameworkId) ?? 0;
+    const ab = lastActivity.get(b.frameworkId) ?? 0;
+    if (aa !== ab) return ab - aa; // activité la plus récente
+    return b.createdAt.getTime() - a.createdAt.getTime(); // à défaut, choix le plus récent
+  });
+  return ranked.slice(0, quota).map((r) => r.frameworkId);
+}
+
 /**
  * Référentiels gratuits pour un inscrit B2C. Depuis la refonte « tout inclus »,
  * le défaut couvre l'INTÉGRALITÉ du catalogue publié : plus aucun domaine n'est
@@ -224,16 +261,18 @@ export async function userFrameworkAccess(user: UserLike): Promise<FrameworkAcce
     const owned = new Set(
       accessRows.filter((r) => r.source !== "subscription_choice").map((r) => r.frameworkId),
     );
-    const choices = new Set(
-      accessRows.filter((r) => r.source === "subscription_choice").map((r) => r.frameworkId),
-    );
+    const choiceRows = accessRows.filter((r) => r.source === "subscription_choice");
 
     const open = new Set<string>(socle); // socle : toujours, hors quota
     for (const id of owned) open.add(id); // achats à vie / octrois admin
     if (ent.quota == null) {
       for (const id of allIds) open.add(id); // toutes les spécialités
     } else {
-      for (const id of choices) open.add(id); // spécialités choisies (dans le quota)
+      // N'honorer que `quota` choix. Au-delà (RÉTROGRADATION : ex-abonné Praticien à
+      // 3 choix retombé à Découverte quota 1, ou résiliation), on garde le choix ÉPINGLÉ
+      // s'il existe (échange unique), sinon celui à l'activité la plus récente. Les lignes
+      // ne sont JAMAIS supprimées : le pool reste disponible pour l'échange et un réabonnement.
+      for (const id of await honoredChoiceIds(user.id, choiceRows, ent.quota)) open.add(id);
     }
 
     const unlocked = new Set<string>();
@@ -294,6 +333,11 @@ export async function userFrameworkAccess(user: UserLike): Promise<FrameworkAcce
  * État du quota de SPÉCIALITÉS de l'utilisateur B2C (forfait actif ou Découverte).
  * Le socle n'est jamais compté. `quota` null = toutes les spécialités.
  * `canSwap` : le forfait autorise l'échange 1×/période (Essentiel, Praticien).
+ *
+ * `overQuota` : plus de choix que le quota courant (rétrogradation). `poolSwapUsed` :
+ * l'échange unique post-rétrogradation a déjà été consommé (une ligne épinglée existe).
+ * `poolSwapAvailable` : un compte Découverte rétrogradé peut encore changer sa spécialité
+ * active (une fois), UNIQUEMENT parmi ses choix antérieurs.
  */
 export async function subscriptionChoiceStatus(userId: string): Promise<{
   planKey: string;
@@ -303,11 +347,19 @@ export async function subscriptionChoiceStatus(userId: string): Promise<{
   remaining: number | null;
   entitledSub: boolean;
   canSwap: boolean;
+  overQuota: boolean;
+  poolSwapUsed: boolean;
+  poolSwapAvailable: boolean;
 }> {
   const ent = await resolveB2CEntitlement(userId);
-  const used = await prisma.userFrameworkAccess.count({
-    where: { userId, source: "subscription_choice" },
-  });
+  const [used, pinned] = await Promise.all([
+    prisma.userFrameworkAccess.count({ where: { userId, source: "subscription_choice" } }),
+    prisma.userFrameworkAccess.count({
+      where: { userId, source: "subscription_choice", pinnedAt: { not: null } },
+    }),
+  ]);
+  const overQuota = ent.quota != null && used > ent.quota;
+  const poolSwapUsed = pinned > 0;
   return {
     planKey: ent.planKey,
     planLabel: ent.planLabel,
@@ -316,7 +368,60 @@ export async function subscriptionChoiceStatus(userId: string): Promise<{
     remaining: ent.quota == null ? null : Math.max(0, ent.quota - used),
     entitledSub: ent.entitledSub,
     canSwap: ent.entitledSub && SWAP_PLAN_KEYS.includes(ent.planKey),
+    overQuota,
+    poolSwapUsed,
+    // Échange unique réservé au compte rétrogradé SANS abonnement (Découverte) : un
+    // abonné payant garde son échange de période classique (swapSpecialtyChoice).
+    poolSwapAvailable: overQuota && !ent.entitledSub && !poolSwapUsed,
   };
+}
+
+/**
+ * Change (une seule fois) la spécialité ACTIVE d'un compte Découverte rétrogradé, parmi
+ * ses choix ANTÉRIEURS uniquement (le pool `subscription_choice`). N'ouvre aucune nouvelle
+ * spécialité et ne supprime aucune ligne : elle épingle simplement le choix désigné, qui
+ * devient l'unique honoré. L'échange est à usage unique (la présence d'un épinglage le
+ * verrouille) ; il redevient possible après un réabonnement (les épinglages sont effacés).
+ */
+export async function pinDowngradedSpecialty(
+  user: UserLike,
+  frameworkId: string,
+): Promise<{ ok: boolean; message: string }> {
+  const status = await subscriptionChoiceStatus(user.id);
+  if (status.entitledSub) {
+    return { ok: false, message: "Cette option ne concerne que les comptes sans abonnement." };
+  }
+  if (!status.overQuota) {
+    return { ok: false, message: "Vous n'avez pas de spécialité supplémentaire à réactiver." };
+  }
+  if (status.poolSwapUsed) {
+    return {
+      ok: false,
+      message:
+        "Vous avez déjà changé de spécialité. Un forfait vous permet d'en ouvrir davantage.",
+    };
+  }
+  const target = await prisma.userFrameworkAccess.findUnique({
+    where: { userId_frameworkId: { userId: user.id, frameworkId } },
+  });
+  if (!target || target.source !== "subscription_choice") {
+    return {
+      ok: false,
+      message: "Vous ne pouvez réactiver qu'une spécialité que vous aviez déjà choisie.",
+    };
+  }
+  await prisma.$transaction([
+    // Un seul épinglage : on efface un éventuel épinglage antérieur (sûreté), puis on pose.
+    prisma.userFrameworkAccess.updateMany({
+      where: { userId: user.id, source: "subscription_choice", pinnedAt: { not: null } },
+      data: { pinnedAt: null },
+    }),
+    prisma.userFrameworkAccess.update({
+      where: { userId_frameworkId: { userId: user.id, frameworkId } },
+      data: { pinnedAt: new Date() },
+    }),
+  ]);
+  return { ok: true, message: "Spécialité active mise à jour." };
 }
 
 /**

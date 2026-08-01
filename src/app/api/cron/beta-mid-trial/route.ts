@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isSubscriptionEntitled } from "@/lib/entitlements";
 import { isEmailConfigured, sendBetaMidTrial } from "@/lib/email";
+import { betaConfig } from "@/lib/beta-config";
+import { claimBetaEmailDay } from "@/lib/beta-email-gate";
 
 export const dynamic = "force-dynamic";
-
-/** Jours écoulés depuis l'ancre avant d'envoyer l'email de mi-parcours. */
-const MID_TRIAL_DAY = 45;
 
 /**
  * GET /api/cron/beta-mid-trial — exécution quotidienne (voir `crons` dans vercel.json).
@@ -30,7 +29,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "email non configuré" }, { status: 503 });
   }
 
-  const cutoff = new Date(Date.now() - MID_TRIAL_DAY * 24 * 60 * 60 * 1000);
+  const midTrialDay = await betaConfig.midTrialDay();
+  const cutoff = new Date(Date.now() - midTrialDay * 24 * 60 * 60 * 1000);
   const candidates = await prisma.userSubscription.findMany({
     where: {
       status: "trialing",
@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
 
   let sent = 0;
   let failed = 0;
+  let deferred = 0;
 
   for (const sub of candidates) {
     // Garde de cohérence : le statut a pu changer entre la requête et l'envoi.
@@ -49,6 +50,13 @@ export async function GET(req: NextRequest) {
 
     const user = await prisma.user.findUnique({ where: { id: sub.userId } });
     if (!user) continue;
+
+    // Anti-collision : si un email bêta est déjà parti aujourd'hui à ce compte, on REPORTE
+    // au lendemain — sans poser midTrialEmailAt, pour que le cron du lendemain réessaie.
+    if (!(await claimBetaEmailDay(sub.userId))) {
+      deferred++;
+      continue;
+    }
 
     await prisma.userSubscription.update({
       where: { id: sub.id },
@@ -67,5 +75,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, candidates: candidates.length, sent, failed });
+  return NextResponse.json({ ok: true, candidates: candidates.length, sent, deferred, failed });
 }

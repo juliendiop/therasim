@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { isEmailConfigured, sendBetaNudge } from "@/lib/email";
+import { betaConfig } from "@/lib/beta-config";
+import { claimBetaEmailDay } from "@/lib/beta-email-gate";
 
 export const dynamic = "force-dynamic";
-
-/** Délai après l'ENVOI de l'invitation avant la relance « sans activité ». */
-const NUDGE_AFTER_HOURS = 48;
 
 /**
  * GET /api/cron/beta-nudge — exécution quotidienne (voir `crons` dans vercel.json).
@@ -35,12 +34,13 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date();
-  const cutoff = new Date(now.getTime() - NUDGE_AFTER_HOURS * 60 * 60 * 1000);
+  const nudgeHours = await betaConfig.nudgeHours();
+  const cutoff = new Date(now.getTime() - nudgeHours * 60 * 60 * 1000);
   const baseUrl = await appBaseUrlFromRequest();
 
   const candidates = await prisma.betaInvite.findMany({
     where: {
-      // Invitation réellement envoyée il y a ≥ 48 h, et jamais encore traitée par ce cron.
+      // Invitation réellement envoyée il y a ≥ N h, et jamais encore traitée par ce cron.
       emailSentAt: { not: null, lte: cutoff },
       nudgeEmailAt: null,
       email: { not: null },
@@ -53,15 +53,14 @@ export async function GET(req: NextRequest) {
   let sent = 0;
   let skipped = 0;
   let failed = 0;
+  let deferred = 0;
+
+  // Pose le marqueur « traité » (pas de ré-examen ultérieur), sans envoyer.
+  const markProcessed = (id: string) =>
+    prisma.betaInvite.update({ where: { id }, data: { nudgeEmailAt: new Date() } });
 
   for (const invite of candidates) {
     if (!invite.email) continue;
-
-    // Traitement UNIQUE : on pose le marqueur d'abord, quelle que soit la décision.
-    await prisma.betaInvite.update({
-      where: { id: invite.id },
-      data: { nudgeEmailAt: new Date() },
-    });
 
     const activated = Boolean(invite.claimedByUserId);
     let firstName = invite.note ?? null;
@@ -70,10 +69,18 @@ export async function GET(req: NextRequest) {
 
     if (activated) {
       const userId = invite.claimedByUserId!;
-      // Activité = au moins un exercice enregistré. Si oui, pas de relance.
+      // Activité = au moins un exercice enregistré. Si oui, pas de relance (traité).
       const attempts = await prisma.attempt.count({ where: { userId } });
       if (attempts > 0) {
+        await markProcessed(invite.id);
         skipped++;
+        continue;
+      }
+      // Anti-collision (destinataire activé, donc avec un compte) : si un email bêta est
+      // déjà parti aujourd'hui, on REPORTE au lendemain — sans poser nudgeEmailAt, pour
+      // que le cron du lendemain réessaie (report, jamais suppression).
+      if (!(await claimBetaEmailDay(userId))) {
+        deferred++;
         continue;
       }
       const [user, sub] = await Promise.all([
@@ -84,11 +91,15 @@ export async function GET(req: NextRequest) {
       deadline = sub?.trialEndsAt ?? invite.expiresAt;
       ctaUrl = `${baseUrl}/accueil`;
     } else if (invite.expiresAt.getTime() <= now.getTime()) {
-      // Invitation expirée et jamais activée : inutile de relancer vers l'activation.
+      // Invitation expirée et jamais activée : inutile de relancer (traité).
+      await markProcessed(invite.id);
       skipped++;
       continue;
     }
 
+    // Envoi : on pose le marqueur puis on envoie. (Les invités non activés n'ont pas de
+    // compte et ne reçoivent que ce cron : aucune collision possible, aucune porte.)
+    await markProcessed(invite.id);
     try {
       await sendBetaNudge(invite.email, { firstName, ctaUrl, deadline, activated });
       sent++;
@@ -98,5 +109,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, candidates: candidates.length, sent, skipped, failed });
+  return NextResponse.json({ ok: true, candidates: candidates.length, sent, skipped, deferred, failed });
 }

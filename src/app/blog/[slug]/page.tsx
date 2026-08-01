@@ -179,7 +179,7 @@ function PostCta({ audience }: { audience: Audience }) {
             href="/inscription"
             className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
           >
-            Essai gratuit <ArrowRight className="h-4 w-4" />
+            Commencer gratuitement <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       )}

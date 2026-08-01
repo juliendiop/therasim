@@ -2,13 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { isEmailConfigured, sendBetaFeedbackRequest } from "@/lib/email";
+import { betaConfig } from "@/lib/beta-config";
+import { claimBetaEmailDay } from "@/lib/beta-email-gate";
 
 export const dynamic = "force-dynamic";
-
-/** Mises en situation TERMINÉES qui déclenchent la relance sans attendre J+7. */
-const SIM_THRESHOLD = 3;
-/** Délai maximal (depuis l'activation) avant de solliciter l'impression à chaud. */
-const LATEST_DAY = 7;
 
 /**
  * GET /api/cron/beta-feedback — exécution quotidienne (voir `crons` dans vercel.json).
@@ -33,7 +30,11 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date();
-  const latestCutoff = new Date(now.getTime() - LATEST_DAY * 24 * 60 * 60 * 1000);
+  const [simThreshold, latestDay] = await Promise.all([
+    betaConfig.feedbackSims(),
+    betaConfig.feedbackLatestDay(),
+  ]);
+  const latestCutoff = new Date(now.getTime() - latestDay * 24 * 60 * 60 * 1000);
   const baseUrl = await appBaseUrlFromRequest();
   const ctaUrl = `${baseUrl}/beta/feedback`;
 
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest) {
   let sent = 0;
   let skipped = 0;
   let failed = 0;
+  let deferred = 0;
 
   for (const invite of candidates) {
     if (!invite.email || !invite.claimedByUserId) continue;
@@ -60,7 +62,7 @@ export async function GET(req: NextRequest) {
       where: { userId, statut: "terminee" },
     });
 
-    let trigger = simDone >= SIM_THRESHOLD;
+    let trigger = simDone >= simThreshold;
     if (!trigger && invite.claimedAt && invite.claimedAt.getTime() <= latestCutoff.getTime()) {
       // Fenêtre J+7 atteinte : on sollicite si un minimum d'activité est enregistré
       // (sinon la relance « sans activité » J+2 est la bonne réponse, pas celle-ci).
@@ -73,6 +75,13 @@ export async function GET(req: NextRequest) {
 
     if (!trigger) {
       skipped++;
+      continue;
+    }
+
+    // Anti-collision : si un email bêta est déjà parti aujourd'hui à ce compte, on REPORTE
+    // au lendemain — sans poser feedbackEmailAt, pour que le cron du lendemain réessaie.
+    if (!(await claimBetaEmailDay(userId))) {
+      deferred++;
       continue;
     }
 
@@ -95,5 +104,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, candidates: candidates.length, sent, skipped, failed });
+  return NextResponse.json({ ok: true, candidates: candidates.length, sent, skipped, deferred, failed });
 }

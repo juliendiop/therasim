@@ -17,14 +17,28 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { generateBetaCode } from "../src/lib/beta-code";
 import { isEmailConfigured, sendBetaInvitation } from "../src/lib/email";
-import { BETA_PLAN_KEY, BETA_TRIAL_DAYS } from "../src/lib/beta-constants";
+import { BETA_CONFIG } from "../src/lib/beta-constants";
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
 
+// Réglages bêta : même source de vérité que l'app (app_config), lus ici directement
+// via prisma car ce script ne peut pas importer les modules `server-only`. Clés et
+// défauts viennent de BETA_CONFIG (src/lib/beta-constants.ts).
+async function cfgStr(entry: { key: string; default: string }): Promise<string> {
+  const row = await prisma.appConfig.findUnique({ where: { key: entry.key } });
+  const v = row?.value?.trim();
+  return v ? v : entry.default;
+}
+async function cfgInt(entry: { key: string; default: number }): Promise<number> {
+  const row = await prisma.appConfig.findUnique({ where: { key: entry.key } });
+  const n = row?.value ? parseInt(row.value, 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : entry.default;
+}
+
 const DEFAULT_COHORT = "beta-2026-01";
-const DEFAULT_EXPIRES_DAYS = 30; // expiration du CODE, pas de l'essai de 90 jours
+const DEFAULT_EXPIRES_DAYS = 30; // expiration du CODE, distincte de la durée de l'essai
 
 type Recipient = { email: string; firstName: string | null };
 
@@ -203,11 +217,13 @@ async function main(): Promise<void> {
 
   // Le forfait offert et son allocation sont annoncés dans l'email : on les lit en
   // base, même source de vérité que la réclamation.
+  const planKey = await cfgStr(BETA_CONFIG.planKey);
+  const trialDays = await cfgInt(BETA_CONFIG.trialDays);
   const plan = opts.send
-    ? await prisma.subscriptionPlan.findUnique({ where: { key: BETA_PLAN_KEY } })
+    ? await prisma.subscriptionPlan.findUnique({ where: { key: planKey } })
     : null;
   if (opts.send && !plan) {
-    throw new Error(`forfait "${BETA_PLAN_KEY}" introuvable en base`);
+    throw new Error(`forfait "${planKey}" introuvable en base`);
   }
 
   process.stderr.write(
@@ -287,7 +303,7 @@ async function main(): Promise<void> {
           firstName: recipient?.firstName ?? null,
           planLabel: plan.label,
           monthlyCredits: plan.monthlyCredits,
-          trialDays: BETA_TRIAL_DAYS,
+          trialDays,
         });
         await prisma.betaInvite.update({
           where: { id: created.id },

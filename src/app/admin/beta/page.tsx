@@ -235,7 +235,8 @@ export default async function AdminBetaPage() {
       </div>
       <p className="text-xs text-[var(--muted)]">
         Les codes expirés restent affichés « en attente / expirée » : c&apos;est le code qui
-        expire (30 j par défaut), pas l&apos;essai de 90 jours qui court à partir de la réclamation.
+        expire (30 j par défaut), distinct de la durée de l&apos;essai, qui court à partir de la
+        réclamation (réglable dans la configuration).
       </p>
     </div>
   );

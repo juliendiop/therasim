@@ -4,11 +4,10 @@ import { appBaseUrlFromRequest } from "@/lib/base-url";
 import { isEmailConfigured, sendBetaBilan } from "@/lib/email";
 import { getBetaImprovements } from "@/lib/beta-bilan";
 import { BETA_PLAN_LABEL } from "@/lib/beta-constants";
+import { betaConfig } from "@/lib/beta-config";
+import { claimBetaEmailDay } from "@/lib/beta-email-gate";
 
 export const dynamic = "force-dynamic";
-
-/** Jours après l'activation avant d'envoyer le bilan (fin de la phase active). */
-const BILAN_DAY = 21;
 
 /**
  * GET /api/cron/beta-bilan — exécution quotidienne (voir `crons` dans vercel.json).
@@ -30,7 +29,8 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date();
-  const cutoff = new Date(now.getTime() - BILAN_DAY * 24 * 60 * 60 * 1000);
+  const bilanDay = await betaConfig.bilanDay();
+  const cutoff = new Date(now.getTime() - bilanDay * 24 * 60 * 60 * 1000);
   const baseUrl = await appBaseUrlFromRequest();
   const ctaUrl = `${baseUrl}/beta/bilan`;
   const improvements = await getBetaImprovements();
@@ -48,10 +48,18 @@ export async function GET(req: NextRequest) {
 
   let sent = 0;
   let failed = 0;
+  let deferred = 0;
 
   for (const invite of candidates) {
     if (!invite.email || !invite.claimedByUserId) continue;
     const userId = invite.claimedByUserId;
+
+    // Anti-collision : si un email bêta est déjà parti aujourd'hui à ce compte, on REPORTE
+    // au lendemain — sans poser bilanEmailAt, pour que le cron du lendemain réessaie.
+    if (!(await claimBetaEmailDay(userId))) {
+      deferred++;
+      continue;
+    }
 
     // Marqueur AVANT envoi : un rejeu du cron ne renverra pas l'email.
     await prisma.betaInvite.update({
@@ -83,5 +91,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, candidates: candidates.length, sent, failed });
+  return NextResponse.json({ ok: true, candidates: candidates.length, sent, deferred, failed });
 }
