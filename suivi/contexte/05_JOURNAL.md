@@ -1346,6 +1346,56 @@ Dette identifiée le matin même (cf. modules 39 et 04_RESTE_A_FAIRE) : les fich
 
 ---
 
+## Session — 1er→4 août 2026 : recalibrage de la bêta (30 j + Praticien) et correctif rétrogradation
+
+Commit `b8b90ce`. La bêta passe de 90 à 30 jours, le forfait offert devient **Praticien**
+(au lieu d'Intensif), et toute la séquence de relances/feedback/bilan est recalée sur 30 j.
+
+### Ce qui a été fait
+- **Phase 0 (inventaire, sans modif)** validée : confirmé que les crédits d'essai vont déjà
+  dans `planCredits` (refactor du module 44) → aucune correction de ce côté, seulement une
+  preuve à apporter.
+- **Config à source unique** : 7 valeurs jusque-là en dur (clé de forfait, durée d'essai,
+  jours de relance…) externalisées dans `BETA_CONFIG` (registre pur) + getters *server-only*
+  `betaConfig.*()` lisant `app_config` — **le même mécanisme que les réglages admin
+  existants**, pas un second système.
+- **Garde « une seule allocation par essai »** : `periodIndex` forcé à 0 pendant `trialing`,
+  sans toucher `periodIndexFor` ni le parcours payant.
+- **Anti-collision emails** (`lastBetaEmailAt` + `claimBetaEmailDay`), emails réécrits
+  (« Praticien offert pendant 4 semaines, sans carte bancaire », fin de « essai gratuit »).
+- **Réécriture** du script Test Clock (30 j, 2 ancres sept/février) + **livrable CSV** de
+  scénarios de test (`suivi/beta-recalibrage-scenarios.csv`).
+
+### Décisions / pièges
+- **Invariant de sortie n°3 trouvé FAUX en écrivant les tests** — arrêt et signalement au
+  porteur avant toute correction (comme demandé). La branche `isPublic` de
+  `userFrameworkAccess` honorait **toutes** les lignes `subscription_choice` dès que le quota
+  n'était pas nul : un ex-testeur rétrogradé aurait gardé toutes ses spécialités. Le bug était
+  **masqué** jusque-là car Intensif avait un quota nul (jamais de ligne de choix créée).
+- **Correction validée par le porteur** : n'honorer que `quota` spécialités (classées par
+  **activité la plus récente**, sans rien supprimer) + **échange unique** post-rétrogradation
+  par épinglage (`pinnedAt`), réservé aux choix antérieurs, réinitialisé au réabonnement.
+  S'applique aussi aux **résiliations payantes**.
+- **Migration** : première vraie migration après le baseline réconcilié
+  (`20260801080522…`, 2 `ADD COLUMN` additifs), SQL montré et déployé en prod.
+- **Environnement local sans clés Stripe/DB de test** → Test Clock et tests vitest DB non
+  exécutables ici. Le porteur teste lui-même via le CSV (a demandé « livre-moi juste les
+  scénarios sous format excel »). Pas de librairie xlsx dispo → livré en **CSV** (ouvrable Excel).
+
+### État en fin de session
+- `tsc --noEmit` + `next build` verts, commit `b8b90ce` poussé, migration en prod.
+- ⚠️ À faire par le porteur : 2 passes Test Clock + tests DB (cf. CSV) ; vérifier que le
+  forfait `praticien` pointe le bon Price ID **LIVE** ; noter que la config par défaut suffit
+  (aucune écriture `app_config` requise). Changement de comportement live : un abonné qui
+  résilie ne garde qu'1 spécialité.
+
+### Session (2 août) : docs de suivi à jour + spec DOCX complète
+- Mise à jour des docs de suivi (module 48, ce journal, backlog) et rédaction d'une
+  **spécification complète de l'application** au format DOCX dans `Conception/`
+  (`MELETA-specification-complete.docx`), synthèse de l'état réel des 48 modules.
+
+---
+
 <!-- Modèle pour la prochaine session :
 
 ## Session N — JJ mois AAAA

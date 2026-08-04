@@ -606,3 +606,52 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   Analytics via `funnel_events` (`demo_started` / `demo_turn_played` / `demo_finished`).
 - Fichiers : `src/lib/demo-sim.ts`, `src/app/api/demo/turn/route.ts`,
   `src/app/_components/demo-live.tsx`, branchements `src/app/page.tsx` + `/admin/modeles`.
+
+## 48. Recalibrage bêta 30 jours + forfait Praticien + correctif rétrogradation (1er-4 août)
+**État : ✅ Fait (code + migration en prod)** — commit `b8b90ce` — ⚠️ validation Test Clock + tests DB à la main du porteur
+- **La bêta passe de 90 à 30 jours et le forfait offert devient « Praticien »** (quota 3
+  spécialités, 60 crédits/mois), au lieu d'« Intensif » (sans compter). Toute la séquence de
+  relances est recalée : mi-parcours **J+15** (était J+45), bilan **J+21** (inchangé), fin
+  d'essai **J+27**.
+- **Source de configuration unique** (7 valeurs, plus rien en dur) : registre pur
+  `BETA_CONFIG` (clés + défauts) dans `src/lib/beta-constants.ts`, getters *server-only*
+  `betaConfig.*()` dans `src/lib/beta-config.ts` (via `getConfig`/`app_config`, **même
+  système que les autres réglages admin**), et le script d'invitations lit `app_config`
+  directement. Défauts = cibles : `praticien`, 30 j, mi-parcours 15, bilan 21, nudge 48 h,
+  3 sims, J+7.
+- **Une seule allocation de crédits pendant l'essai** : `syncSubscriptionCredits` force
+  `periodIndex = 0` tant que le statut est `trialing` (garde commentée). Sans ça, un essai de
+  30 jours qui chevauche une bascule de mois calendaire (février, mois de 30 j) déclenchait
+  une 2ᵉ allocation. **`periodIndexFor` et le parcours payant sont inchangés** (seule la
+  branche `trialing` est bornée).
+- **Correctif de l'invariant de sortie n°3** (bug préexistant découvert en écrivant les
+  tests, signalé au porteur avant correction) : la branche `isPublic` de
+  `userFrameworkAccess` honorait **toutes** les lignes `subscription_choice` dès que le quota
+  n'était pas nul — un ex-testeur rétrogradé aurait gardé **toutes** ses spécialités. Corrigé :
+  on n'honore plus que **`quota` spécialités**, classées par **activité la plus récente**,
+  **sans supprimer de ligne**. S'applique aussi aux **résiliations payantes**.
+- **Échange unique post-rétrogradation** (demande porteur) : un compte Découverte
+  over-quota peut **changer une fois** sa spécialité active, **uniquement parmi ses choix
+  antérieurs**, par épinglage (`UserFrameworkAccess.pinnedAt`). UX sur le paywall `/f/[id]`
+  (« Réactiver cette spécialité » / « déjà changé »). Les épinglages sont **effacés au
+  réabonnement** → l'échange redevient disponible après une future rétrogradation.
+- **Anti-collision des emails bêta** : un seul email bêta par jour et par destinataire
+  (`User.lastBetaEmailAt` + `claimBetaEmailDay` atomique). Les 4 crons **reportent au
+  lendemain** (compteur `deferred`) au lieu de superposer deux envois le même jour.
+- **Emails réécrits** : formulation « le forfait Praticien offert pendant 4 semaines, sans
+  carte bancaire » ; « essai gratuit » banni (landing, kit d'affiliation) ; mi-parcours
+  « deux semaines » ; admin bêta généralisé (plus de « 90 jours »).
+- **Migration** `20260801080522_beta_recalibrage_last_email_et_pin_specialite` (2 `ADD
+  COLUMN` additifs : `last_beta_email_at`, `pinned_at`) — **première vraie migration après le
+  baseline réconcilié**, déployée en prod (SQL montré et validé avant).
+- **Livrables de test** : `suivi/beta-recalibrage-scenarios.csv` (2 passes Test Clock
+  septembre/février, 5 invariants de sortie, échange unique, mur de crédits, rejeu webhook,
+  anti-collision) ; script `scripts/beta-test-clock.ts` recalé sur 30 j / 2 ancres.
+- Fichiers : `src/lib/{beta-constants,beta-config,beta-email-gate,beta,credits,entitlements,
+  billing}.ts`, `src/app/api/cron/beta-{nudge,feedback,mid-trial,bilan}/route.ts`,
+  `src/app/credits/actions.ts`, `src/app/f/[framework_id]/paywall.tsx`,
+  `src/app/beta/[code]/page.tsx`, `src/app/admin/beta/{actions,page}.tsx`, `src/lib/email.ts`,
+  `scripts/{generate-beta-invites,beta-test-clock}.ts`, `prisma/schema.prisma` + migration.
+- ⚠️ Reste (porteur) : lancer les 2 passes Test Clock + tests vitest DB (clé `sk_test_` +
+  `TEST_DATABASE_URL`, cf. CSV) ; **changement de comportement live** : un abonné payant qui
+  résilie ne conserve désormais qu'**1 spécialité** (activité récente) au lieu de toutes.

@@ -25,6 +25,29 @@ dans `prisma/migrations/0_init/`, flux et pièges dans `03_DECISIONS.md` et `00_
   changement a déjà été poussé en `db:push`, ce diff est **vide** → l'outil ne peut pas générer
   la migration correspondante. **Toujours passer par `db:migrate:new` (jamais `db:push`) pour un
   changement de schéma destiné à la prod**, sinon la dérive recommence.
+- ✅ **Flux validé de bout en bout (1er août)** : la **première vraie migration après le
+  baseline réconcilié** (`20260801080522_beta_recalibrage_last_email_et_pin_specialite`,
+  2 `ADD COLUMN` additifs `last_beta_email_at` / `pinned_at`) a été **créée, relue et déployée
+  en prod** proprement — la dette est close et le circuit `db:migrate:new` → relecture SQL →
+  `db:migrate:deploy` fonctionne.
+
+## ⭐ Recalibrage bêta 30 j + Praticien — ✅ CODE FAIT (4 août), 🔴 tests à la main du porteur
+
+Bêta 90→30 j, forfait offert Intensif→**Praticien**, séquence de relances recalée, correctif de
+la rétrogradation. Détail dans `02_MODULES_FAITS.md` §48. Commit `b8b90ce`, migration en prod.
+- 🔴 **À faire par le porteur** : lancer les **2 passes Test Clock** (`beta:testclock`, clé
+  `sk_test_`) + les **tests vitest DB** (`TEST_DATABASE_URL`) en suivant
+  `suivi/beta-recalibrage-scenarios.csv`. Environnement local sans ces clés → non exécutable
+  par Claude.
+- 🔴 **Vérifier côté Stripe LIVE** que le forfait `praticien` pointe le bon Price ID récurrent.
+- ℹ️ Config par défaut = cibles (praticien, 30 j, mi-parcours 15…) → **aucune écriture
+  `app_config` requise** ; réglable dans la configuration si besoin.
+- ⚠️ **Changement de comportement live** : un abonné payant qui **résilie** ne conserve
+  désormais qu'**1 spécialité** (activité la plus récente) au lieu de toutes ses spécialités
+  choisies — correctif de l'invariant de sortie. Un **échange unique** de spécialité (parmi les
+  choix antérieurs) est possible côté Découverte.
+- ⚠️ « 4 semaines » est une **copie fixe** dans les emails (découplée de `beta.trial.days`) :
+  si la durée d'essai change matériellement en config, revoir cette formulation.
 
 ## 🔴 Suppression de compte incomplète — À TRAITER
 
