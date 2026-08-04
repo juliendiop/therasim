@@ -25,20 +25,20 @@ model AppConfig {
 // Une plateforme cliente. Le tenant "public" (type=public) = site B2C ouvert.
 // Les tenants de type whitelabel = plateformes clientes brandées (B2B).
 model Tenant {
-  id           String   @id @default(uuid()) @db.Uuid
-  slug         String   @unique // 'public', 'institut-x'… (sert au routage / sous-domaine)
-  nom          String
-  type         String   @default("whitelabel") // 'public' | 'whitelabel'
-  statut       String   @default("actif") // 'actif' | 'suspendu'
+  id                    String   @id @default(uuid()) @db.Uuid
+  slug                  String   @unique // 'public', 'institut-x'… (sert au routage / sous-domaine)
+  nom                   String
+  type                  String   @default("whitelabel") // 'public' | 'whitelabel'
+  statut                String   @default("actif") // 'actif' | 'suspendu'
   // Branding (marque blanche)
-  brandName    String?  @map("brand_name")
-  logoUrl      String?  @map("logo_url")
-  colorPrimary String?  @map("color_primary")
+  brandName             String?  @map("brand_name")
+  logoUrl               String?  @map("logo_url")
+  colorPrimary          String?  @map("color_primary")
   // Opt-in (plateformes B2B) : autorise les MEMBRES à acheter individuellement
   // (référentiels à l'unité + abonnements) au-delà du catalogue de la plateforme.
   // Le catalogue de la plateforme reste débloqué d'office pour eux.
-  allowIndividualOffers Boolean @default(false) @map("allow_individual_offers")
-  createdAt    DateTime @default(now()) @map("created_at")
+  allowIndividualOffers Boolean  @default(false) @map("allow_individual_offers")
+  createdAt             DateTime @default(now()) @map("created_at")
 
   @@map("tenants")
 }
@@ -46,47 +46,53 @@ model Tenant {
 // --- Identité (spec §3) ---------------------------------------------------
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  tenantId     String   @map("tenant_id") @db.Uuid
-  email        String   @unique
-  firstName    String?  @map("first_name") // prénom (inscription B2C) : accueil personnalisé
-  role         String   @default("learner") // 'super_admin' | 'tenant_admin' | 'learner'
-  passwordHash String?  @map("password_hash") // mot de passe optionnel (sinon lien magique)
-  consentAt    DateTime? @map("consent_at") // horodatage du consentement RGPD à l'inscription
+  id                       String    @id @default(uuid()) @db.Uuid
+  tenantId                 String    @map("tenant_id") @db.Uuid
+  email                    String    @unique
+  firstName                String?   @map("first_name") // prénom (inscription B2C) : accueil personnalisé
+  role                     String    @default("learner") // 'super_admin' | 'tenant_admin' | 'learner'
+  passwordHash             String?   @map("password_hash") // mot de passe optionnel (sinon lien magique)
+  consentAt                DateTime? @map("consent_at") // horodatage du consentement RGPD (CGU) à l'inscription
+  // Consentement à recevoir des communications commerciales — DISTINCT de `consentAt`
+  // (qui n'est que l'acceptation des CGU). null = jamais demandé (valeur actuelle pour
+  // TOUS les comptes existants : la collecte à l'inscription est un lot séparé, non
+  // couvert ici). true/false = a répondu explicitement. Ne jamais déduire un true
+  // implicite depuis l'absence de valeur.
+  marketingConsent         Boolean?  @map("marketing_consent")
   // Portefeuille de crédits IA (mini-scènes / entretiens). Drills QCM = gratuits.
   // `credits` = portefeuille PERSISTANT : crédits achetés en packs (vrai argent) +
   // crédits gratuits (bienvenue / plancher mensuel). Jamais remis à zéro.
-  credits            Int       @default(0)
+  credits                  Int       @default(0)
   // `planCredits` = allocation de l'abonnement/essai pour la période EN COURS.
   // Non cumulatif : remis à la valeur du forfait à chaque nouvelle période (le
   // reliquat non consommé est perdu), et remis à 0 à la fin de l'accès. Séparé de
   // `credits` pour ne JAMAIS confisquer un crédit acheté. Débit : planCredits d'abord.
-  planCredits        Int       @default(0) @map("plan_credits")
+  planCredits              Int       @default(0) @map("plan_credits")
   // null = jamais initialisé (déclenche le pack de bienvenue au 1er accès) ;
   // sinon = date du dernier rafraîchissement (sert à la recharge mensuelle).
-  creditsRefreshedAt DateTime? @map("credits_refreshed_at")
+  creditsRefreshedAt       DateTime? @map("credits_refreshed_at")
   // Client Stripe (créé au premier achat/abonnement). Un seul par utilisateur.
-  stripeCustomerId   String?   @map("stripe_customer_id")
+  stripeCustomerId         String?   @map("stripe_customer_id")
   // --- Programme d'affiliation (Ambassadeurs) ---
-  referralCode      String?   @unique @map("referral_code") // code public de l'ambassadeur (généré à l'activation)
-  referredByUserId  String?   @map("referred_by_user_id") @db.Uuid // parrain DIRECT (niveau 1), figé à l'inscription
-  ambassadorAt      DateTime? @map("ambassador_at") // date d'activation du statut ambassadeur (null = pas activé)
-  ambassadorTermsAt DateTime? @map("ambassador_terms_at") // consentement CGU affiliation
+  referralCode             String?   @unique @map("referral_code") // code public de l'ambassadeur (généré à l'activation)
+  referredByUserId         String?   @map("referred_by_user_id") @db.Uuid // parrain DIRECT (niveau 1), figé à l'inscription
+  ambassadorAt             DateTime? @map("ambassador_at") // date d'activation du statut ambassadeur (null = pas activé)
+  ambassadorTermsAt        DateTime? @map("ambassador_terms_at") // consentement CGU affiliation
   // --- Bêta fermée (invitations) ---
-  isBetaTester Boolean @default(false) @map("is_beta_tester") // segmentation stats/emails
-  betaCohort   String? @map("beta_cohort") // ex. 'beta-2026-01'
+  isBetaTester             Boolean   @default(false) @map("is_beta_tester") // segmentation stats/emails
+  betaCohort               String?   @map("beta_cohort") // ex. 'beta-2026-01'
   // Anti-collision des emails bêta : date du dernier email bêta envoyé à ce compte.
   // Un seul email bêta par jour et par destinataire (les crons se reportent au
   // lendemain sans se dupliquer). Voir src/lib/beta-email-gate.ts.
-  lastBetaEmailAt DateTime? @map("last_beta_email_at")
+  lastBetaEmailAt          DateTime? @map("last_beta_email_at")
   // Relance témoignage (promoteurs NPS 8-10) : posé à l'envoi de la sollicitation,
   // déclenchée à la soumission du bilan. Empêche un second envoi.
-  testimonialInviteAt DateTime? @map("testimonial_invite_at")
+  testimonialInviteAt      DateTime? @map("testimonial_invite_at")
   // Entretien simulé (N3) « découverte » : le compte gratuit y a droit UNE fois dans
   // sa vie, gratuitement en crédits. Ce marqueur est À VIE — jamais réinitialisé par la
   // recharge mensuelle. null = pas encore utilisé.
   discoveryInterviewUsedAt DateTime? @map("discovery_interview_used_at")
-  createdAt    DateTime @default(now()) @map("created_at")
+  createdAt                DateTime  @default(now()) @map("created_at")
 
   @@index([tenantId])
   @@index([referredByUserId])
@@ -163,53 +169,53 @@ model CreditLedger {
 // `monthlyCredits` à chaque renouvellement, EN PLUS de la recharge mensuelle
 // gratuite (deux mécanismes indépendants, voir credits.ts).
 model SubscriptionPlan {
-  id             String   @id @default(uuid()) @db.Uuid
-  key            String   @unique
-  label          String
+  id                  String   @id @default(uuid()) @db.Uuid
+  key                 String   @unique
+  label               String
   // Allocation mensuelle de crédits de mise en situation. null = « sans compter »
   // (aucun décompte, aucun plafond de crédits — l'anti-abus est un garde-fou séparé).
   // Ne JAMAIS coder l'illimité par un grand nombre.
-  monthlyCredits Int?     @map("monthly_credits")
+  monthlyCredits      Int?     @map("monthly_credits")
   // Nombre de SPÉCIALITÉS que l'abonné peut choisir. Le socle ne compte jamais dans ce
   // quota. null = toutes les spécialités. Les choix sont conservés ; un échange (swap)
   // est possible une fois par période sur les forfaits intermédiaires.
-  frameworkQuota Int?     @map("framework_quota")
-  priceEurCents  Int      @map("price_eur_cents") // affichage seul — Stripe fait foi pour la facturation
-  stripePriceId  String?  @map("stripe_price_id") // Price ID récurrent MENSUEL (Dashboard Stripe)
+  frameworkQuota      Int?     @map("framework_quota")
+  priceEurCents       Int      @map("price_eur_cents") // affichage seul — Stripe fait foi pour la facturation
+  stripePriceId       String?  @map("stripe_price_id") // Price ID récurrent MENSUEL (Dashboard Stripe)
   // Price ID récurrent ANNUEL (facturation annuelle, 2 mois offerts = mensuel×10).
   // null = annuel non proposé. L'affichage du prix annuel est dérivé du mensuel.
-  stripePriceIdYearly String? @map("stripe_price_id_yearly")
-  active         Boolean  @default(true)
-  ordre          Int      @default(0)
-  createdAt      DateTime @default(now()) @map("created_at")
+  stripePriceIdYearly String?  @map("stripe_price_id_yearly")
+  active              Boolean  @default(true)
+  ordre               Int      @default(0)
+  createdAt           DateTime @default(now()) @map("created_at")
 
   @@map("subscription_plans")
 }
 
 // Abonnement actif d'un utilisateur (au plus un par utilisateur).
 model UserSubscription {
-  id                   String    @id @default(uuid()) @db.Uuid
-  userId               String    @unique @map("user_id") @db.Uuid
-  tenantId             String    @map("tenant_id") @db.Uuid
-  planId               String    @map("plan_id") @db.Uuid
-  stripeSubscriptionId String    @unique @map("stripe_subscription_id")
-  status               String // 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete'
-  currentPeriodEnd     DateTime? @map("current_period_end")
-  cancelAtPeriodEnd    Boolean   @default(false) @map("cancel_at_period_end")
+  id                       String    @id @default(uuid()) @db.Uuid
+  userId                   String    @unique @map("user_id") @db.Uuid
+  tenantId                 String    @map("tenant_id") @db.Uuid
+  planId                   String    @map("plan_id") @db.Uuid
+  stripeSubscriptionId     String    @unique @map("stripe_subscription_id")
+  status                   String // 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete'
+  currentPeriodEnd         DateTime? @map("current_period_end")
+  cancelAtPeriodEnd        Boolean   @default(false) @map("cancel_at_period_end")
   // Ancre de facturation (Stripe `subscription.start_date`) : sert à calculer un
   // periodIndex DÉTERMINISTE et relatif à l'abonnement (jamais le mois calendaire),
   // partagé par le chemin paresseux et le chemin webhook. Voir src/lib/credits.ts.
-  periodAnchorAt       DateTime? @map("period_anchor_at")
+  periodAnchorAt           DateTime? @map("period_anchor_at")
   // Fin de période d'essai (null hors essai). Alimenté depuis Stripe `trial_end`.
-  trialEndsAt          DateTime? @map("trial_ends_at")
+  trialEndsAt              DateTime? @map("trial_ends_at")
   // Dernier `periodIndex` où un ÉCHANGE de spécialité a été effectué. Sert à limiter le
   // swap à une fois par période de facturation (même clé que la recharge). null = jamais.
-  specialtySwapPeriodIndex Int? @map("specialty_swap_period_index")
+  specialtySwapPeriodIndex Int?      @map("specialty_swap_period_index")
   // Suivi d'envoi des emails de cycle d'essai (anti-doublon sur rejeu/cron).
-  midTrialEmailAt      DateTime? @map("mid_trial_email_at")
-  trialEndEmailAt      DateTime? @map("trial_end_email_at")
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @updatedAt @map("updated_at")
+  midTrialEmailAt          DateTime? @map("mid_trial_email_at")
+  trialEndEmailAt          DateTime? @map("trial_end_email_at")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
 
   @@map("user_subscriptions")
 }
@@ -246,10 +252,10 @@ model FrameworkOffer {
 // le quota du forfait, valide uniquement tant que l'abonnement est actif
 // (conservé en base : se réactive si l'abonné revient).
 model UserFrameworkAccess {
-  userId      String   @map("user_id") @db.Uuid
-  frameworkId String   @map("framework_id")
+  userId      String    @map("user_id") @db.Uuid
+  frameworkId String    @map("framework_id")
   source      String // 'purchase' | 'admin' | 'subscription_choice'
-  createdAt   DateTime @default(now()) @map("created_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
   // Choix ÉPINGLÉ (échange unique post-rétrogradation). Quand un compte a plus de choix
   // 'subscription_choice' que son quota courant (ex. ex-abonné Praticien à 3 choix retombé
   // à Découverte quota 1), on n'honore que `quota` d'entre eux : le choix épinglé s'il
@@ -291,10 +297,10 @@ model CommissionLedger {
   meta            Json?
   createdAt       DateTime @default(now()) @map("created_at")
 
-  @@index([beneficiaryId, createdAt])
   // Idempotence : une même facture ne peut pas créer deux fois la même commission
   // pour le même bénéficiaire au même palier.
   @@unique([beneficiaryId, stripeInvoiceId, tier])
+  @@index([beneficiaryId, createdAt])
   @@map("commission_ledger")
 }
 
@@ -370,30 +376,30 @@ model TenantFrameworkOverride {
 // --- Socle référentiels (spec §2.5) --------------------------------------
 
 model Framework {
-  id          String  @id // 'em', 'act', 'anamnese', 'burnout'
+  id             String   @id // 'em', 'act', 'anamnese', 'burnout'
   // Slug PUBLIC, distinct de l'id technique : porte le SEO (/domaines/[slug]).
-  slug        String  @unique
-  nom         String
-  type        String // 'approche' | 'transversale' | 'situation'
-  gridId      String  @map("grid_id")
+  slug           String   @unique
+  nom            String
+  type           String // 'approche' | 'transversale' | 'situation'
+  gridId         String   @map("grid_id")
   // `description` reste INTERNE. `introPublique` = texte d'accroche public (200-300 mots),
   // affiché sur la page domaine (repli sur description si absent).
-  description   String?
-  introPublique String? @map("intro_publique")
+  description    String?
+  introPublique  String?  @map("intro_publique")
   // Métadonnées publiques optionnelles (texte libre, affichées seulement si renseignées).
-  auteurs         String?
-  cadreReference  String? @map("cadre_reference")
-  statut      String  @default("brouillon") // 'brouillon' | 'calibre' | 'publie'
+  auteurs        String?
+  cadreReference String?  @map("cadre_reference")
+  statut         String   @default("brouillon") // 'brouillon' | 'calibre' | 'publie'
   // Suivi de fraîcheur (SEO : lastmod). @default(now()) pour peupler les lignes existantes
   // au `db push` ; @updatedAt le rafraîchit à chaque enrichissement.
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
   // Nature commerciale : 'socle' = accessible à TOUT compte (gratuit compris), hors
   // quota ; 'specialite' = compté dans le quota du forfait. String + union TS + Zod
   // (convention du dépôt, pas d'enum natif). Défaut prudent : 'specialite'.
-  nature      String  @default("specialite") // 'socle' | 'specialite'
+  nature         String   @default("specialite") // 'socle' | 'specialite'
   // Palier requis (réservé usage FUTUR, inexploité au lancement) : permettra un jour
   // de réserver un référentiel au palier haut sans refonte. 'standard' | 'premium'.
-  tier        String  @default("standard")
+  tier           String   @default("standard")
 
   @@map("frameworks")
 }
@@ -419,16 +425,16 @@ model Category {
 
 // Compétence + ancrages 1/3/5 (utilisés par l'évaluateur mono-compétence).
 model Competency {
-  id           String  @id @default(uuid()) @db.Uuid
-  gridId       String  @map("grid_id")
-  categoryCode String  @map("category_code")
+  id           String   @id @default(uuid()) @db.Uuid
+  gridId       String   @map("grid_id")
+  categoryCode String   @map("category_code")
   code         String // 'reflets', 'questions_ouvertes', 'empathie'
   nom          String
   description  String?
-  ancrage1     String? @map("ancrage_1")
-  ancrage3     String? @map("ancrage_3")
-  ancrage5     String? @map("ancrage_5")
-  ordre        Int     @default(0)
+  ancrage1     String?  @map("ancrage_1")
+  ancrage3     String?  @map("ancrage_3")
+  ancrage5     String?  @map("ancrage_5")
+  ordre        Int      @default(0)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@unique([gridId, code])
@@ -437,8 +443,8 @@ model Competency {
 
 // Cas / persona dont les drills sont tirés (hérité du MVP, + framework_id).
 model Scenario {
-  id          String  @id // 'EM-ALC-01'
-  frameworkId String  @map("framework_id")
+  id          String   @id // 'EM-ALC-01'
+  frameworkId String   @map("framework_id")
   titre       String
   contexte    String?
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
@@ -486,19 +492,19 @@ model Attempt {
 
 // Une session d'entretien simulé (patient incarné par un LLM, débrief sommatif).
 model SimSession {
-  id          String    @id @default(uuid()) @db.Uuid
-  userId      String    @map("user_id") @db.Uuid
-  tenantId    String    @map("tenant_id") @db.Uuid
-  frameworkId String    @map("framework_id")
-  scenarioId  String    @map("scenario_id")
-  kind        String    @default("simulation") // 'simulation' (N3) | 'miniscene' (N2)
-  maxTurns    Int?      @map("max_turns") // borne de tours pour les mini-scènes (N2)
-  focus       Json? // mini-scène : codes des 2 compétences ciblées
-  statut      String    @default("en_cours") // 'en_cours' | 'terminee'
-  debrief     Json? // { scores:[{competency_id,note,justification,evidence}], narrative, moments:[{quote,comment}] }
-  selfAssessment Json? @map("self_assessment") // { [competency_code]: note 1..5 } — auto-évaluation avant débrief
-  createdAt   DateTime  @default(now()) @map("created_at")
-  endedAt     DateTime? @map("ended_at")
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  frameworkId    String    @map("framework_id")
+  scenarioId     String    @map("scenario_id")
+  kind           String    @default("simulation") // 'simulation' (N3) | 'miniscene' (N2)
+  maxTurns       Int?      @map("max_turns") // borne de tours pour les mini-scènes (N2)
+  focus          Json? // mini-scène : codes des 2 compétences ciblées
+  statut         String    @default("en_cours") // 'en_cours' | 'terminee'
+  debrief        Json? // { scores:[{competency_id,note,justification,evidence}], narrative, moments:[{quote,comment}] }
+  selfAssessment Json?     @map("self_assessment") // { [competency_code]: note 1..5 } — auto-évaluation avant débrief
+  createdAt      DateTime  @default(now()) @map("created_at")
+  endedAt        DateTime? @map("ended_at")
 
   @@index([userId, frameworkId])
   @@map("sim_sessions")
@@ -703,7 +709,7 @@ model BetaInvite {
   claimedAt       DateTime? @map("claimed_at")
   // Expiration du CODE d'invitation (défaut : +30 j), à ne pas confondre avec la
   // fin de l'essai de 90 jours qui, elle, court à partir de la réclamation.
-  expiresAt       DateTime         @map("expires_at")
+  expiresAt       DateTime  @map("expires_at")
 
   stripeSubscriptionId String? @map("stripe_subscription_id")
 
@@ -776,21 +782,21 @@ model BetaBilan {
 // Témoignage recueilli auprès d'un promoteur (NPS 8-10). Publié sur le site UNIQUEMENT
 // après validation admin, selon le mode d'affichage choisi par l'auteur.
 model Testimonial {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @map("user_id") @db.Uuid
-  tenantId    String   @map("tenant_id") @db.Uuid
-  beforeText  String   @map("before_text") // « Avant MELETA, je… »
-  duringText  String   @map("during_text") // « En utilisant MELETA, j'ai… »
-  afterText   String   @map("after_text") //  « Aujourd'hui, je… »
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  beforeText  String    @map("before_text") // « Avant MELETA, je… »
+  duringText  String    @map("during_text") // « En utilisant MELETA, j'ai… »
+  afterText   String    @map("after_text") //  « Aujourd'hui, je… »
   // 'name_profession' | 'first_name' | 'anonymous' — choix d'affichage de l'auteur.
-  displayMode String   @map("display_mode")
-  firstName   String?  @map("first_name") // instantané, pour l'affichage public
+  displayMode String    @map("display_mode")
+  firstName   String?   @map("first_name") // instantané, pour l'affichage public
   profession  String? // saisie facultative (mode 'name_profession')
   // 'pending' | 'published' | 'rejected' — publication après validation admin.
-  status      String   @default("pending")
+  status      String    @default("pending")
   // 'beta' (promoteur sollicité) | 'spontaneous' (avis laissé librement depuis le site).
-  source      String   @default("beta")
-  createdAt   DateTime @default(now()) @map("created_at")
+  source      String    @default("beta")
+  createdAt   DateTime  @default(now()) @map("created_at")
   publishedAt DateTime? @map("published_at")
 
   @@index([status, createdAt])
@@ -803,27 +809,27 @@ model Testimonial {
 // Le coût est FIGÉ au tarif en vigueur à l'instant de l'appel (les tarifs vivent en
 // configuration, app_config clé "llm.pricing"). Statuts en String (convention : pas d'enum).
 model LlmCall {
-  id       String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(uuid()) @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
 
   usage    String // 'patient' | 'evaluateur' | 'generation' | 'support'
   provider String // 'mistral' | 'anthropic'
   model    String
 
-  inputTokens         Int @default(0) @map("input_tokens")
-  outputTokens        Int @default(0) @map("output_tokens")
-  cacheCreationTokens Int @default(0) @map("cache_creation_tokens") // écriture de cache (Anthropic)
-  cacheReadTokens     Int @default(0) @map("cache_read_tokens") // lecture de cache (Anthropic)
+  inputTokens         Int   @default(0) @map("input_tokens")
+  outputTokens        Int   @default(0) @map("output_tokens")
+  cacheCreationTokens Int   @default(0) @map("cache_creation_tokens") // écriture de cache (Anthropic)
+  cacheReadTokens     Int   @default(0) @map("cache_read_tokens") // lecture de cache (Anthropic)
   costEur             Float @default(0) @map("cost_eur") // coût figé, en euros
 
-  userId       String? @map("user_id") @db.Uuid // nul = démo publique (coût d'acquisition)
-  tenantId     String? @map("tenant_id") @db.Uuid
-  frameworkId  String? @map("framework_id")
-  simSessionId String? @map("sim_session_id") @db.Uuid // rattache l'appel à une séance N2/N3
-  niveau       String? // '1' | '2' | '3' | 'autre'
-  creditsDebites Int?  @map("credits_debites") // crédits débités pour l'action (porté par l'opener)
+  userId         String? @map("user_id") @db.Uuid // nul = démo publique (coût d'acquisition)
+  tenantId       String? @map("tenant_id") @db.Uuid
+  frameworkId    String? @map("framework_id")
+  simSessionId   String? @map("sim_session_id") @db.Uuid // rattache l'appel à une séance N2/N3
+  niveau         String? // '1' | '2' | '3' | 'autre'
+  creditsDebites Int?    @map("credits_debites") // crédits débités pour l'action (porté par l'opener)
 
-  dureeMs Int    @map("duree_ms")
+  dureeMs Int     @map("duree_ms")
   statut  String // 'ok' | 'error' | 'estimated'
   erreur  String? // message d'erreur tronqué (jamais de contenu métier)
 
@@ -838,14 +844,14 @@ model LlmCall {
 // un envoi périodique pourra s'y brancher plus tard sans réinstrumenter. Unicité par
 // (kind, subjectKey, windowKey) → un seul enregistrement par fenêtre.
 model CostAlert {
-  id         String   @id @default(uuid()) @db.Uuid
-  kind       String // 'user_monthly' | 'daily_global'
-  subjectKey String   @map("subject_key") // userId (user_monthly) ou 'global' (daily_global)
-  windowKey  String   @map("window_key") // 'YYYY-MM' ou 'YYYY-MM-DD'
-  amountEur  Float    @map("amount_eur")
-  thresholdEur Float  @map("threshold_eur")
-  notifiedAt DateTime? @map("notified_at") // pour un futur envoi périodique
-  createdAt  DateTime @default(now()) @map("created_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  kind         String // 'user_monthly' | 'daily_global'
+  subjectKey   String    @map("subject_key") // userId (user_monthly) ou 'global' (daily_global)
+  windowKey    String    @map("window_key") // 'YYYY-MM' ou 'YYYY-MM-DD'
+  amountEur    Float     @map("amount_eur")
+  thresholdEur Float     @map("threshold_eur")
+  notifiedAt   DateTime? @map("notified_at") // pour un futur envoi périodique
+  createdAt    DateTime  @default(now()) @map("created_at")
 
   @@unique([kind, subjectKey, windowKey])
   @@index([createdAt])

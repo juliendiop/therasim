@@ -2,13 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { getLiveResults, roleCanManageLive } from "@/lib/live";
+import { csvResponse } from "@/lib/csv";
 
 export const dynamic = "force-dynamic";
-
-function csvCell(v: string | number): string {
-  const s = String(v);
-  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
 
 // GET /api/live/{id}/export — export CSV des résultats individuels (réservé au formateur).
 export async function GET(
@@ -37,13 +33,6 @@ export async function GET(
       p.finished ? "oui" : "non",
     ]),
   ];
-  const csv = "﻿" + rows.map((r) => r.map(csvCell).join(";")).join("\r\n");
-
   const filename = `resultats-${(session.titre || "session").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.csv`;
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-    },
-  });
+  return csvResponse(rows, filename);
 }

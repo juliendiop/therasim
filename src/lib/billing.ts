@@ -15,6 +15,7 @@ import { sendBetaTrialEnd } from "./email";
 import { ensureStripeCustomer, stripeClient } from "./stripe";
 import { recordFunnelOncePerUser } from "./funnel";
 import { recordCommissionsForInvoice, creditCommission } from "./affiliation";
+import { logAudit } from "./audit";
 
 // --- Création des sessions (checkout / portail) ----------------------------
 
@@ -228,6 +229,17 @@ export async function handleCheckoutCompleted(event: Stripe.Event): Promise<void
     await upsertUserSubscription(userId, user.tenantId, planId, sub);
     // Mesure d'entonnoir : 1er paiement de ce visiteur (abonnement).
     await recordFunnelOncePerUser("purchase", userId, { meta: { kind: "plan", planId } });
+    // Journal d'audit : achat d'abonnement (non dérivable — UserSubscription n'est
+    // qu'un état courant). Idempotent de fait : un rejeu Stripe du même event.id est
+    // arrêté en amont par la garde StripeEvent (src/app/api/stripe/webhook/route.ts),
+    // ce handler n'est alors jamais réinvoqué.
+    await logAudit({
+      action: "subscription_purchase",
+      email: user.email,
+      tenantId: user.tenantId,
+      userId,
+      meta: { planId, stripeSubscriptionId: subscriptionId },
+    });
   }
 }
 
@@ -479,6 +491,17 @@ export async function handleSubscriptionCreated(event: Stripe.Event): Promise<vo
   // Alloue les crédits de la période courante (essai `trialing` inclus, où aucune
   // facture n'est émise). Non cumulatif : SET à l'allocation du forfait.
   await syncSubscriptionCredits(user.id);
+
+  // Journal d'audit : couvre aussi bien un abonnement créé par Checkout (qui aura
+  // en plus une ligne subscription_purchase) qu'un abonnement créé par API sans
+  // Checkout (réclamation bêta, src/lib/beta.ts) — seul évènement dans ce cas.
+  await logAudit({
+    action: "subscription_created",
+    email: user.email,
+    tenantId: user.tenantId,
+    userId: user.id,
+    meta: { planId: plan.id, planKey: plan.key, status: sub.status },
+  });
 }
 
 /**
@@ -513,6 +536,28 @@ export async function handleSubscriptionUpdated(event: Stripe.Event): Promise<vo
       ...(newPlan ? { planId: newPlan.id } : {}),
     },
   });
+
+  // Journal d'audit : uniquement un changement SIGNIFICATIF (statut ou forfait),
+  // jamais une simple resynchronisation de période — sinon le journal serait noyé
+  // sous des lignes sans intérêt à chaque cycle de facturation.
+  const statusChanged = sub.status !== local.status;
+  const planChanged = Boolean(newPlan && newPlan.id !== local.planId);
+  if (statusChanged || planChanged) {
+    const user = await prisma.user.findUnique({ where: { id: local.userId } });
+    if (user) {
+      await logAudit({
+        action: "subscription_updated",
+        email: user.email,
+        tenantId: user.tenantId,
+        userId: user.id,
+        meta: {
+          statusFrom: local.status,
+          statusTo: sub.status,
+          ...(planChanged ? { planFrom: local.planId, planTo: newPlan?.id } : {}),
+        },
+      });
+    }
+  }
 
   if (!isSubscriptionEntitled(sub.status)) {
     // Statut devenu non entitled (canceled/incomplete_expired…) : fin d'accès,
@@ -606,6 +651,15 @@ export async function handleSubscriptionDeleted(event: Stripe.Event): Promise<vo
   const user = await prisma.user.findUnique({ where: { id: local.userId } });
   if (user?.isBetaTester) {
     console.log(`[beta] fin d'accès bêta · ${user.email} · cohorte ${user.betaCohort ?? "?"}`);
+  }
+  if (user) {
+    await logAudit({
+      action: "subscription_canceled",
+      email: user.email,
+      tenantId: user.tenantId,
+      userId: user.id,
+      meta: { stripeSubscriptionId: sub.id },
+    });
   }
 }
 

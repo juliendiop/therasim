@@ -1413,6 +1413,30 @@ Commit `b8b90ce`. La bêta passe de 90 à 30 jours, le forfait offert devient **
 - État : `tsc` + build + 33 tests verts. Reste porteur : renseigner les tarifs des modèles
   (panneau « Tarifs manquants »).
 
+### Session (4 août, suite) : segmentation des comptes + exports CSV contacts/journal (module 50)
+- **Phase 0 (inventaire) validée** avant tout code : le journal existant (`activity.ts`) est
+  une vue calculée, pas une table ; `AuditEvent` couvre login/invite/rôle mais pas les
+  abonnements ; aucune fiche utilisateur n'existait déjà (hypothèse de départ invalidée) ;
+  aucun consentement marketing distinct des CGU ; deux conventions CSV coexistaient dans le
+  dépôt (export live vs script bêta) ; aucun précédent de 404-pour-rôle-insuffisant (l'export
+  live utilise déjà 403).
+- **Phase 1** : segmentation pure en 7 valeurs (`segments.ts`), chaîne if/return du plus
+  spécifique au plus général, exclusivité prouvée par test sur toute la matrice de signaux +
+  les 3 cas frontières demandés. Toujours aucune table d'évènements : le déblocage de
+  spécialité devient une 6ᵉ source dérivée ; achat/changement de forfait/résiliation sont
+  journalisés dans le webhook Stripe (non dérivables), en ne loguant `subscription_updated`
+  que sur un changement réel (pas à chaque resync de période).
+- Deux exports CSV (`/api/admin/export/{contacts,journal}`), super-admin + 403, tracés dans
+  l'audit, B2B exclus par défaut, `marketingConsent` ajouté (nullable, vide sur l'existant).
+  CSV factorisé (`csv.ts`) sur la convention de l'export live (BOM + `;` + CRLF) ; l'export
+  live y a été migré.
+- **Gap découvert en cours de route** (pas dans la demande initiale) : `User` n'a pas de
+  champ « nom de famille » — la colonne existe dans le CSV mais reste vide, signalé au
+  porteur plutôt que d'ajouter un champ à la volée.
+- État : `tsc` + build verts, 49 tests verts (13 nouveaux sur la segmentation, 3 sur
+  l'autorisation des exports). Migration `20260804150515_ajout_consentement_marketing`
+  déployée en prod (simple ajout de colonne nullable).
+
 ---
 
 <!-- Modèle pour la prochaine session :

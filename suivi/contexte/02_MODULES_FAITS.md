@@ -700,3 +700,71 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
   le coût est compté à 0.
 - ⚠️ Écart assumé : `tenantId` de `LlmCall` est **nullable** (la démo publique n'a pas de
   tenant ; forcer une valeur factice polluerait l'analyse par tenant).
+
+## 50. Segmentation des comptes + exports CSV contacts/journal (4 août)
+**État : ✅ Fait (code + migration en prod)**
+- **Segmentation en 7 valeurs** (`src/lib/segments.ts`, pur, testé) : `jamais_actif` ·
+  `actif_gratuit` · `essai_beta` · `abonne_actif` · `abonne_dormant` · `beta_non_converti` ·
+  `resilie`. Chaîne if/return stricte (le plus spécifique → le plus général) : exclusivité
+  prouvée par test sur toute la matrice de signaux (`test/segments.test.ts`, 13 tests), y
+  compris les 3 cas frontières demandés (bêta qui convertit, résiliation puis réabonnement,
+  compte jamais utilisé). Seuil de dormance en `app_config` (`segments.dormant.days`, défaut
+  21 — aligné sur `JOURS_OUBLI` de `mastery.ts` mais **non couplé**).
+- **Aucune nouvelle table d'évènements.** Le journal (`src/lib/activity.ts`) reste une vue
+  calculée : règle « on dérive ce qui est dérivable, on n'écrit que ce qui ne l'est pas ».
+  - Déblocage de spécialité : nouvelle 6ᵉ source, dérivée de `UserFrameworkAccess.createdAt`
+    (aucune écriture nouvelle).
+  - Achat/changement de forfait/résiliation : **non dérivables** (`UserSubscription` est un
+    état courant, pas un historique) → `logAudit()` ajouté dans le webhook Stripe
+    (`checkout.session.completed` mode=subscription, `customer.subscription.
+    created/updated/deleted`, `src/lib/billing.ts`). `subscription_updated` ne se déclenche
+    QUE sur un changement réel de statut ou de forfait (pas à chaque resynchronisation de
+    période, sinon le journal serait noyé). Idempotent de fait : un rejeu Stripe du même
+    `event.id` est arrêté en amont par la garde `StripeEvent` (le handler n'est jamais
+    réinvoqué) — c'est le mécanisme déjà en place, pas un ajout.
+- **Fiche utilisateur** : pas de nouvelle page (aucune n'existait déjà, contrairement à
+  l'hypothèse de départ) — `/admin/activity` affiche un en-tête (segment, N3/N2/drills,
+  dernière activité, forfait, crédits) dès que le filtre email cible un compte exact ; la
+  timeline filtrée en dessous EST la fiche.
+- **Export contacts** (`/api/admin/export/contacts`, `src/lib/user-stats.ts` pour les
+  agrégats par utilisateur) : une ligne par compte, segment + 21 colonnes (voir code),
+  filtres segment/date d'inscription/activité. **Apprenants B2B exclus par défaut** (case à
+  cocher, décochée). **Consentement marketing** : booléen nullable ajouté sur `User`
+  (`marketingConsent`, migration `20260804150515_ajout_consentement_marketing`), exporté vide
+  pour tous les comptes existants — **la collecte à l'inscription reste un lot séparé, non
+  couvert ici.**
+- **Export journal** (`/api/admin/export/journal`) : une ligne par action, filtrable
+  période + utilisateur, plafond 20 000 lignes avec message clair (413) au dépassement plutôt
+  qu'une troncature silencieuse — a nécessité de rendre le plafond par SOURCE de
+  `buildActivity` (`sourceTake`) au moins égal au plafond demandé, sinon `totalMatched`
+  aurait pu être déjà faussé en amont pour un gros volume.
+- **Les deux exports sont tracés dans `AuditEvent`** (`export_contacts`/`export_journal` :
+  qui, quand, combien de lignes, quels filtres) — c'est lui-même une extraction de données
+  personnelles.
+- **CSV factorisé** (`src/lib/csv.ts`, BOM UTF-8 + `;` + CRLF) : convention unique reprise de
+  l'export live d'origine (`/api/live/[id]/export`, migré dessus). Ne s'applique **pas** au
+  script `scripts/generate-beta-invites.ts` (sortie machine, comma/sans BOM, usage différent,
+  volontairement laissé tel quel).
+- **Autorisation** : routes réservées au super-admin, **403** pour un rôle insuffisant
+  (`src/lib/admin-api.ts`), testé (`test/admin-export-auth.test.ts`). ⚠️ Écart avec la demande
+  initiale (404 attendu « conformément à l'existant ») : il n'existait **aucun précédent** de
+  404-pour-rôle-insuffisant dans le code — l'export live et maintenant ces deux routes
+  utilisent tous 403, les pages `/admin/*` un redirect. Le 403 a été confirmé et gardé.
+- ⚠️ **Contenu clinique** : `SimMessage.content`, `SimSession.debrief`/`selfAssessment` et
+  `Attempt.raw` restent absents de tout chemin (journal, exports) — commentaires
+  d'avertissement explicites posés dans `activity.ts` et `user-stats.ts`, à l'endroit précis
+  où la tentation serait la plus naturelle.
+- ⚠️ **Gap découvert en cours de route, non anticipé par la demande** : `User` n'a **aucun
+  champ « nom de famille »** (seulement `firstName`). La colonne « nom » de l'export contacts
+  existe mais est **toujours vide** — pas de champ ajouté spéculativement, à trancher par le
+  porteur (ajouter le champ ? le collecter où ?).
+- ⚠️ **Le journal ne capte toujours pas** : rien de nouveau après ce lot pour les connexions
+  LDAP/SSO (hors périmètre, l'app n'en a pas), ni un historique des CHANGEMENTS de segment
+  dans le temps (le segment est recalculé à la volée, jamais persisté — un compte qui bascule
+  `abonne_actif` → `abonne_dormant` ne laisse aucune trace de la bascule elle-même, seulement
+  de l'absence d'activité qui la cause).
+- Fichiers : `src/lib/{segments,segment-config,user-stats,csv,admin-api}.ts`,
+  `src/lib/activity.ts` (enrichi), `src/lib/{audit,billing}.ts` (étendus),
+  `src/app/api/admin/export/{contacts,journal}/route.ts`, `src/app/admin/activity/page.tsx`
+  (enrichie), `src/app/api/live/[id]/export/route.ts` (migré sur `csv.ts`),
+  `prisma/schema.prisma` (+`marketingConsent`), `test/{segments,admin-export-auth}.test.ts`.
