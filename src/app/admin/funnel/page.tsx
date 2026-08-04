@@ -8,9 +8,11 @@ export const dynamic = "force-dynamic";
 const LOW_VOLUME_THRESHOLD = 100;
 
 const PERIODS = [
-  { key: "7", days: 7, label: "7 jours" },
-  { key: "30", days: 30, label: "30 jours" },
-  { key: "90", days: 90, label: "90 jours" },
+  { key: "today", label: "Aujourd'hui" },
+  { key: "yesterday", label: "Hier" },
+  { key: "7", label: "7 jours" },
+  { key: "30", label: "30 jours" },
+  { key: "90", label: "90 jours" },
 ] as const;
 
 function pct(x: number | null): string {
@@ -18,15 +20,91 @@ function pct(x: number | null): string {
   return `${Math.round(x * 100)}%`;
 }
 
+/** Décalage Europe/Paris (minutes) applicable à cet instant — gère CET/CEST. */
+function parisOffsetMinutes(date: Date): number {
+  const part = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Paris",
+    timeZoneName: "shortOffset",
+  })
+    .formatToParts(date)
+    .find((p) => p.type === "timeZoneName")?.value;
+  const m = /GMT([+-]\d+)/.exec(part ?? "");
+  return m ? parseInt(m[1], 10) * 60 : 60;
+}
+
+/** Instant UTC correspondant à minuit Europe/Paris pour l'année/mois/jour donné. */
+function parisMidnightUTC(y: number, m: number, d: number): Date {
+  const guess = Date.UTC(y, m - 1, d, 0, 0, 0);
+  return new Date(guess - parisOffsetMinutes(new Date(guess)) * 60_000);
+}
+
+/** Date -> {y,m,d} du jour calendaire Europe/Paris auquel appartient cet instant. */
+function parisYMD(date: Date): { y: number; m: number; d: number } {
+  const [y, m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" })
+    .format(date)
+    .split("-")
+    .map(Number);
+  return { y, m, d };
+}
+
+/** Parse "YYYY-MM-DD" -> minuit Europe/Paris ce jour-là, ou null si invalide. */
+function parseParisDate(s: string | undefined): Date | null {
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const [y, m, d] = s.split("-").map(Number);
+  const date = parisMidnightUTC(y, m, d);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** Résout la période demandée : plage personnalisée > préréglage > défaut (30 j). */
+function resolveRange(sp: { p?: string; from?: string; to?: string }): {
+  from: Date;
+  to: Date;
+  activeKey: string | null;
+} {
+  const customFrom = parseParisDate(sp.from);
+  const customTo = parseParisDate(sp.to);
+  if (customFrom && customTo) {
+    // Plage inclusive : la borne haute va jusqu'à la fin du jour de fin.
+    const endExclusive = new Date(customTo.getTime() + 24 * 60 * 60 * 1000);
+    return { from: customFrom, to: endExclusive, activeKey: null };
+  }
+
+  const now = new Date();
+  if (sp.p === "today") {
+    const t = parisYMD(now);
+    return { from: parisMidnightUTC(t.y, t.m, t.d), to: now, activeKey: "today" };
+  }
+  if (sp.p === "yesterday") {
+    const t = parisYMD(now);
+    const startToday = parisMidnightUTC(t.y, t.m, t.d);
+    const startYesterday = new Date(startToday.getTime() - 24 * 60 * 60 * 1000);
+    return { from: startYesterday, to: startToday, activeKey: "yesterday" };
+  }
+  const days = sp.p === "7" ? 7 : sp.p === "90" ? 90 : sp.p === "30" ? 30 : null;
+  if (days) {
+    return {
+      from: new Date(now.getTime() - days * 24 * 60 * 60 * 1000),
+      to: now,
+      activeKey: String(days),
+    };
+  }
+  return { from: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), to: now, activeKey: "30" };
+}
+
+/** "YYYY-MM-DD" en Europe/Paris, pour préremplir les champs date du formulaire. */
+function toDateInputValue(date: Date): string {
+  const { y, m, d } = parisYMD(date);
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
 export default async function AdminFunnelPage({
   searchParams,
 }: {
-  searchParams: Promise<{ p?: string }>;
+  searchParams: Promise<{ p?: string; from?: string; to?: string }>;
 }) {
   const sp = await searchParams;
-  const period = PERIODS.find((p) => p.key === sp.p) ?? PERIODS[1];
-  const to = new Date();
-  const from = new Date(to.getTime() - period.days * 24 * 60 * 60 * 1000);
+  const { from, to, activeKey } = resolveRange(sp);
+  const isCustom = activeKey === null;
 
   const { steps, total } = await funnelSummary({ from, to });
   const lowVolume = total < LOW_VOLUME_THRESHOLD;
@@ -51,13 +129,13 @@ export default async function AdminFunnelPage({
       </div>
 
       {/* Sélecteur de période */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {PERIODS.map((p) => (
           <a
             key={p.key}
             href={`/admin/funnel?p=${p.key}`}
             className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-              p.key === period.key
+              p.key === activeKey
                 ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                 : "border-[var(--border)] text-[var(--muted)] hover:border-[var(--accent)]"
             }`}
@@ -65,6 +143,36 @@ export default async function AdminFunnelPage({
             {p.label}
           </a>
         ))}
+
+        <form
+          method="get"
+          action="/admin/funnel"
+          className={`flex items-center gap-1.5 rounded-full border px-2 py-1 text-sm ${
+            isCustom
+              ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+              : "border-[var(--border)]"
+          }`}
+        >
+          <input
+            type="date"
+            name="from"
+            defaultValue={isCustom ? toDateInputValue(from) : undefined}
+            className="rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-sm text-[var(--foreground)]"
+          />
+          <span className="text-[var(--muted)]">→</span>
+          <input
+            type="date"
+            name="to"
+            defaultValue={isCustom ? toDateInputValue(new Date(to.getTime() - 1)) : undefined}
+            className="rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-sm text-[var(--foreground)]"
+          />
+          <button
+            type="submit"
+            className="rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-white hover:bg-[var(--accent-hover)]"
+          >
+            Appliquer
+          </button>
+        </form>
       </div>
 
       {lowVolume && (
