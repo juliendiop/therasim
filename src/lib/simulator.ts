@@ -5,8 +5,15 @@
 
 import { prisma } from "./prisma";
 import { llmChat, llmChatStream, type ChatMsg } from "./llm";
+import { withLlmContext } from "./llm-context";
+import type { LlmLevel } from "./llm-usage";
 import { normalizeNote, PALIER_LABEL } from "./mastery";
 import { recordAttempt } from "./attempts";
+
+/** Niveau pédagogique d'une séance selon son type (N3 simulation, N2 mini-scène). */
+function levelOf(kind: string): LlmLevel {
+  return kind === "miniscene" ? "2" : "3";
+}
 
 const FALLBACK_OPENER = "Bonjour… je ne sais pas trop par où commencer, en fait.";
 
@@ -43,6 +50,7 @@ export async function startSimulation(input: {
   kind?: "simulation" | "miniscene";
   focus?: string[]; // mini-scène : codes des compétences ciblées
   maxTurns?: number; // mini-scène : borne de tours
+  creditsDebited?: number; // crédits RÉELLEMENT débités pour lancer la séance (journalisation coût)
 }) {
   const scenario = await prisma.scenario.findUnique({ where: { id: input.scenarioId } });
   const framework = await prisma.framework.findUnique({ where: { id: input.frameworkId } });
@@ -50,45 +58,60 @@ export async function startSimulation(input: {
     throw new Error("cas/référentiel invalide");
   }
 
+  const kind = input.kind ?? "simulation";
   const session = await prisma.simSession.create({
     data: {
       userId: input.userId,
       tenantId: input.tenantId,
       frameworkId: input.frameworkId,
       scenarioId: input.scenarioId,
-      kind: input.kind ?? "simulation",
+      kind,
       focus: input.focus ?? undefined,
       maxTurns: input.maxTurns ?? null,
     },
   });
 
-  // Première réplique du patient (LLM si dispo, sinon ouverture neutre).
-  let opener = FALLBACK_OPENER;
-  try {
-    const sys = patientSystemPrompt(framework.nom, scenario.titre, scenario.contexte ?? "");
-    opener = (
-      await llmChat(
-        "patient",
-        [
-          { role: "system", content: sys },
-          {
-            role: "user",
-            content:
-              "(Le praticien vous accueille et vous invite à parler. Dites votre première phrase, avec vos mots.)",
-          },
-        ],
-        { temperature: 0.8, maxTokens: 1024 },
-      )
-    ).trim();
-  } catch {
-    // Pas de clé Mistral : on démarre quand même avec l'ouverture neutre.
-  }
+  // Contexte de journalisation : la 1re réplique (opener) porte le débit de la séance,
+  // pour que la somme des `creditsDebites` = crédits débités par séance (sans double compte).
+  return withLlmContext(
+    {
+      userId: input.userId,
+      tenantId: input.tenantId,
+      frameworkId: input.frameworkId,
+      simSessionId: session.id,
+      niveau: levelOf(kind),
+      creditsDebites: input.creditsDebited ?? null,
+    },
+    async () => {
+      // Première réplique du patient (LLM si dispo, sinon ouverture neutre).
+      let opener = FALLBACK_OPENER;
+      try {
+        const sys = patientSystemPrompt(framework.nom, scenario.titre, scenario.contexte ?? "");
+        opener = (
+          await llmChat(
+            "patient",
+            [
+              { role: "system", content: sys },
+              {
+                role: "user",
+                content:
+                  "(Le praticien vous accueille et vous invite à parler. Dites votre première phrase, avec vos mots.)",
+              },
+            ],
+            { temperature: 0.8, maxTokens: 1024 },
+          )
+        ).trim();
+      } catch {
+        // Pas de clé Mistral : on démarre quand même avec l'ouverture neutre.
+      }
 
-  await prisma.simMessage.create({
-    data: { sessionId: session.id, role: "patient", content: opener, turn: 0 },
-  });
+      await prisma.simMessage.create({
+        data: { sessionId: session.id, role: "patient", content: opener, turn: 0 },
+      });
 
-  return { sessionId: session.id, opener };
+      return { sessionId: session.id, opener };
+    },
+  );
 }
 
 /**
@@ -111,10 +134,22 @@ export async function patientReplyStream(sessionId: string, learnerText: string)
   }));
   // Le flux LLM est ouvert AVANT d'écrire le tour en base : une erreur de
   // configuration (clé absente…) remonte proprement, sans tour fantôme.
-  const upstream = await llmChatStream(
-    "patient",
-    [{ role: "system", content: sys }, ...history, { role: "user", content: learnerText }],
-    { temperature: 0.8, maxTokens: 1024 },
+  // Contexte de journalisation capté ici (portée AsyncLocalStorage) ; la ligne de coût
+  // est écrite à la fin du flux, avec ce contexte figé.
+  const upstream = await withLlmContext(
+    {
+      userId: session.userId,
+      tenantId: session.tenantId,
+      frameworkId: session.frameworkId,
+      simSessionId: session.id,
+      niveau: levelOf(session.kind),
+    },
+    () =>
+      llmChatStream(
+        "patient",
+        [{ role: "system", content: sys }, ...history, { role: "user", content: learnerText }],
+        { temperature: 0.8, maxTokens: 1024 },
+      ),
   );
 
   await prisma.simMessage.create({
@@ -162,13 +197,23 @@ export async function generateHint(sessionId: string): Promise<string> {
     : "Quel indice pour bien démarrer ?";
 
   return (
-    await llmChat(
-      "evaluateur",
-      [
-        { role: "system", content: sys },
-        { role: "user", content: user },
-      ],
-      { temperature: 0.5, maxTokens: 512 },
+    await withLlmContext(
+      {
+        userId: session.userId,
+        tenantId: session.tenantId,
+        frameworkId: session.frameworkId,
+        simSessionId: session.id,
+        niveau: levelOf(session.kind),
+      },
+      () =>
+        llmChat(
+          "evaluateur",
+          [
+            { role: "system", content: sys },
+            { role: "user", content: user },
+          ],
+          { temperature: 0.5, maxTokens: 512 },
+        ),
     )
   ).trim();
 }
@@ -236,13 +281,23 @@ export async function endSimulation(
 
   const user = `GRILLE DE COMPÉTENCES :\n${grille}\n\nVERBATIM DE L'ENTRETIEN :\n${transcript}`;
 
-  const raw = await llmChat(
-    "evaluateur",
-    [
-      { role: "system", content: sys },
-      { role: "user", content: user },
-    ],
-    { temperature: 0.2, json: true, maxTokens: 8192 },
+  const raw = await withLlmContext(
+    {
+      userId: session.userId,
+      tenantId: session.tenantId,
+      frameworkId: session.frameworkId,
+      simSessionId: session.id,
+      niveau: levelOf(session.kind),
+    },
+    () =>
+      llmChat(
+        "evaluateur",
+        [
+          { role: "system", content: sys },
+          { role: "user", content: user },
+        ],
+        { temperature: 0.2, json: true, maxTokens: 8192 },
+      ),
   );
   const parsed = JSON.parse(raw) as Partial<Debrief>;
 

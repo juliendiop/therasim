@@ -11,6 +11,7 @@ import {
   EvaluatorNotConfiguredError,
   evaluateMonoCompetence,
 } from "@/lib/evaluator";
+import { withLlmContext } from "@/lib/llm-context";
 
 export const dynamic = "force-dynamic";
 
@@ -91,15 +92,27 @@ export async function POST(
   });
 
   try {
-    const evaluation = await evaluateMonoCompetence({
-      competenceNom: competency?.nom ?? drill.competencyId,
-      ancrage1: competency?.ancrage1,
-      ancrage3: competency?.ancrage3,
-      ancrage5: competency?.ancrage5,
-      stimulus: drill.stimulus,
-      modeleReponse: drill.modeleReponse,
-      reponseApprenant: answer,
-    });
+    // Drill de production GRATUIT (niveau 1) : appel évaluateur journalisé, aucun crédit débité.
+    // C'est la principale dépense IA sans crédit → isolée dans /admin/couts.
+    const evaluation = await withLlmContext(
+      {
+        userId: user.id,
+        tenantId: user.tenantId,
+        frameworkId: drill.frameworkId,
+        niveau: "1",
+        creditsDebites: null,
+      },
+      () =>
+        evaluateMonoCompetence({
+          competenceNom: competency?.nom ?? drill.competencyId,
+          ancrage1: competency?.ancrage1,
+          ancrage3: competency?.ancrage3,
+          ancrage5: competency?.ancrage5,
+          stimulus: drill.stimulus,
+          modeleReponse: drill.modeleReponse,
+          reponseApprenant: answer,
+        }),
+    );
 
     // Un item "non évalué" n'écrit PAS d'attempt (spec §5.1).
     if (evaluation.non_evalue) {

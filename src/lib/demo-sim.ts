@@ -13,8 +13,10 @@
 import "server-only";
 import { prisma } from "./prisma";
 import { llmChat, llmChatStream, type ChatMsg } from "./llm";
+import { withLlmContext } from "./llm-context";
 import { getConfig } from "./config";
 import { rateLimit } from "./rate-limit";
+import { demoCostTodayCents } from "./cost-analytics";
 
 // Sélection FIXE de 3 cas, un par référentiel de nature différente (une transversale
 // « socle », deux spécialités d'approche/situation) pour montrer que MELETA ne se
@@ -50,10 +52,6 @@ export const DEMO_MAX_TURNS = 4;
 const MAX_INPUT_CHARS = 800;
 const MAX_HISTORY = 12; // 4 tours ⇒ ~9 messages ; marge sans laisser gonfler le prompt
 
-// Coût estimé d'une démo, en centimes d'euro : patient (Mistral small : ouverture + 4
-// tours ≈ 0,05 c) + micro-débrief (usage « evaluateur », Claude Haiku par défaut ≈ 0,2 c).
-// Estimation volontairement prudente ; sert au compteur de coût de l'admin.
-export const DEMO_COST_CENTS_EST = 0.25;
 const DEFAULT_DAILY_BUDGET = 250;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -149,17 +147,22 @@ export async function demoOpener(caseId: string): Promise<string> {
   const def = findDemoCase(caseId);
   if (!def) throw new Error("cas inconnu");
   const ctx = await loadCaseCtx(def);
-  const text = await llmChat(
-    "patient",
-    [
-      { role: "system", content: patientPrompt(ctx.domaine, ctx.titre, ctx.contexte) },
-      {
-        role: "user",
-        content:
-          "(Le praticien vous accueille et vous invite à parler. Dites votre première phrase, avec vos mots.)",
-      },
-    ],
-    { temperature: 0.8, maxTokens: 160 },
+  // Journalisation : coût d'ACQUISITION (userId nul), niveau mini-scène.
+  const text = await withLlmContext(
+    { userId: null, tenantId: null, frameworkId: def.frameworkId, niveau: "2" },
+    () =>
+      llmChat(
+        "patient",
+        [
+          { role: "system", content: patientPrompt(ctx.domaine, ctx.titre, ctx.contexte) },
+          {
+            role: "user",
+            content:
+              "(Le praticien vous accueille et vous invite à parler. Dites votre première phrase, avec vos mots.)",
+          },
+        ],
+        { temperature: 0.8, maxTokens: 160 },
+      ),
   );
   return text.trim();
 }
@@ -178,7 +181,10 @@ export async function demoReplyStream(
     ...toChatHistory(history),
     { role: "user", content: sanitize(learnerText) },
   ];
-  return llmChatStream("patient", messages, { temperature: 0.8, maxTokens: 200 });
+  return withLlmContext(
+    { userId: null, tenantId: null, frameworkId: def.frameworkId, niveau: "2" },
+    () => llmChatStream("patient", messages, { temperature: 0.8, maxTokens: 200 }),
+  );
 }
 
 export type DemoDebrief = { verdict: string; forces: string[]; pistes: string[] };
@@ -200,13 +206,20 @@ export async function demoDebrief(caseId: string, history: DemoMsg[]): Promise<D
     'Réponds STRICTEMENT en JSON : {"verdict": string (1 phrase globale, chaleureuse), "forces": [1-2 points forts très courts], "pistes": [1-2 pistes concrètes et actionnables, très courtes]}',
   ].join("\n");
 
-  const raw = await llmChat(
-    "evaluateur",
-    [
-      { role: "system", content: sys },
-      { role: "user", content: `Compétences visées : ${focusNoms}\n\nÉCHANGE :\n${transcript}` },
-    ],
-    { temperature: 0.3, json: true, maxTokens: 500 },
+  const raw = await withLlmContext(
+    { userId: null, tenantId: null, frameworkId: def.frameworkId, niveau: "2" },
+    () =>
+      llmChat(
+        "evaluateur",
+        [
+          { role: "system", content: sys },
+          {
+            role: "user",
+            content: `Compétences visées : ${focusNoms}\n\nÉCHANGE :\n${transcript}`,
+          },
+        ],
+        { temperature: 0.3, json: true, maxTokens: 500 },
+      ),
   );
   const p = JSON.parse(raw) as Partial<DemoDebrief>;
   const arr = (v: unknown): string[] =>
@@ -278,20 +291,21 @@ export type DemoUsage = {
   enabled: boolean;
 };
 
-/** Usage du jour + coût estimé, pour le tableau de bord admin. */
+/** Usage du jour + coût RÉEL mesuré (journalisation LlmCall), pour le tableau de bord admin. */
 export async function demoUsageToday(): Promise<DemoUsage> {
-  const [budget, alertPct, enabled, demos] = await Promise.all([
+  const [budget, alertPct, enabled, demos, costCents] = await Promise.all([
     dailyBudget(),
     alertThresholdPct(),
     demoEnabled(),
     prisma.rateLimitHit.count({ where: { key: `demo:g:${today()}` } }),
+    demoCostTodayCents(),
   ]);
   const pctUsed = budget > 0 ? Math.round((demos / budget) * 100) : 0;
   return {
     demos,
     budget,
     pctUsed,
-    estCents: Math.round(demos * DEMO_COST_CENTS_EST * 10) / 10,
+    estCents: Math.round(costCents * 10) / 10,
     alertPct,
     overAlert: pctUsed >= alertPct,
     enabled,

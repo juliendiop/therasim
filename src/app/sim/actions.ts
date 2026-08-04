@@ -46,6 +46,7 @@ export async function startSimulationAction(formData: FormData) {
         tenantId: user.tenantId,
         frameworkId,
         scenarioId,
+        creditsDebited: 0, // séance découverte offerte : aucun crédit débité
       }));
     } catch (e) {
       // Échec technique : on rend sa séance découverte (ne pas pénaliser).
@@ -74,6 +75,9 @@ export async function startSimulationAction(formData: FormData) {
     throw e;
   }
 
+  // Crédits RÉELLEMENT débités (0 pour un abonné « sans compter », dont le débit est
+  // court-circuité) : sert à la journalisation du coût de la séance.
+  const debitedSim = (await isUnlimited(user.id)) ? 0 : s.costSimulation;
   let sessionId: string;
   try {
     ({ sessionId } = await startSimulation({
@@ -81,6 +85,7 @@ export async function startSimulationAction(formData: FormData) {
       tenantId: user.tenantId,
       frameworkId,
       scenarioId,
+      creditsDebited: debitedSim,
     }));
   } catch (e) {
     // La création a échoué : on rembourse le crédit débité (sauf « sans compter »,
@@ -121,6 +126,7 @@ export async function startMiniSceneAction(formData: FormData) {
 
   const focus = await topPriorityCodes(user.id, frameworkId, 2);
 
+  const debitedMini = (await isUnlimited(user.id)) ? 0 : s.costMiniscene;
   let sessionId: string;
   try {
     ({ sessionId } = await startSimulation({
@@ -131,6 +137,7 @@ export async function startMiniSceneAction(formData: FormData) {
       kind: "miniscene",
       focus,
       maxTurns: 4,
+      creditsDebited: debitedMini,
     }));
   } catch (e) {
     if (!(await isUnlimited(user.id)))

@@ -1394,6 +1394,25 @@ Commit `b8b90ce`. La bêta passe de 90 à 30 jours, le forfait offert devient **
   **spécification complète de l'application** au format DOCX dans `Conception/`
   (`MELETA-specification-complete.docx`), synthèse de l'état réel des 48 modules.
 
+### Session (4 août) : journalisation du coût réel des appels LLM (module 49)
+- **Phase 0 (inventaire) validée** : 11 points d'appel, tous via `llm.ts` (aucun
+  contournement) ; l'usage des tokens était **jeté**, aucun tarif nulle part, débit de crédits
+  découplé des appels (au lancement de séance, pas par appel).
+- **Phase 1** : clients bas niveau `{ text, usage }` ; instrumentation **unique** dans
+  `llm.ts` avec contexte **ambiant** (`AsyncLocalStorage`) → signatures publiques et 11
+  appelants inchangés. `stream_options.include_usage` (Mistral) + events (Anthropic), repli
+  estimé. Table `LlmCall` (compteurs seuls, RGPD) + `CostAlert`, tarifs en config
+  (`/admin/modeles`), vue `/admin/couts` (coût/crédit, N3/N2, marge/forfait, drills gratuits,
+  démo, « sans compter », taux de cache), alertes écrites en base. Migration additive déployée.
+- **Décisions/écarts** : `tenantId` de `LlmCall` **nullable** (démo sans tenant) ;
+  `creditsDebites` porté par l'opener de chaque séance (somme = crédits sans double compte),
+  mais le ratio coût/crédit s'appuie sur le grand livre (autoritaire).
+- **Articulation** avec `/admin/usage` : ce dernier **bloque** l'usage abusif en temps réel ;
+  l'alerte de coût **observe** la dépense en euros (dont « sans compter »). Complémentaires,
+  pas de logique dupliquée.
+- État : `tsc` + build + 33 tests verts. Reste porteur : renseigner les tarifs des modèles
+  (panneau « Tarifs manquants »).
+
 ---
 
 <!-- Modèle pour la prochaine session :

@@ -797,3 +797,57 @@ model Testimonial {
   @@index([userId])
   @@map("testimonials")
 }
+
+// Journalisation des appels LLM et de leur COÛT réel (lot « journalisation des coûts »).
+// AUCUN contenu de prompt ni de réponse : seulement des compteurs (contrainte RGPD).
+// Le coût est FIGÉ au tarif en vigueur à l'instant de l'appel (les tarifs vivent en
+// configuration, app_config clé "llm.pricing"). Statuts en String (convention : pas d'enum).
+model LlmCall {
+  id       String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  usage    String // 'patient' | 'evaluateur' | 'generation' | 'support'
+  provider String // 'mistral' | 'anthropic'
+  model    String
+
+  inputTokens         Int @default(0) @map("input_tokens")
+  outputTokens        Int @default(0) @map("output_tokens")
+  cacheCreationTokens Int @default(0) @map("cache_creation_tokens") // écriture de cache (Anthropic)
+  cacheReadTokens     Int @default(0) @map("cache_read_tokens") // lecture de cache (Anthropic)
+  costEur             Float @default(0) @map("cost_eur") // coût figé, en euros
+
+  userId       String? @map("user_id") @db.Uuid // nul = démo publique (coût d'acquisition)
+  tenantId     String? @map("tenant_id") @db.Uuid
+  frameworkId  String? @map("framework_id")
+  simSessionId String? @map("sim_session_id") @db.Uuid // rattache l'appel à une séance N2/N3
+  niveau       String? // '1' | '2' | '3' | 'autre'
+  creditsDebites Int?  @map("credits_debites") // crédits débités pour l'action (porté par l'opener)
+
+  dureeMs Int    @map("duree_ms")
+  statut  String // 'ok' | 'error' | 'estimated'
+  erreur  String? // message d'erreur tronqué (jamais de contenu métier)
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([usage, createdAt])
+  @@index([simSessionId])
+  @@map("llm_calls")
+}
+
+// Franchissements de seuil de coût, ÉCRITS en base (pas seulement calculés à l'affichage) :
+// un envoi périodique pourra s'y brancher plus tard sans réinstrumenter. Unicité par
+// (kind, subjectKey, windowKey) → un seul enregistrement par fenêtre.
+model CostAlert {
+  id         String   @id @default(uuid()) @db.Uuid
+  kind       String // 'user_monthly' | 'daily_global'
+  subjectKey String   @map("subject_key") // userId (user_monthly) ou 'global' (daily_global)
+  windowKey  String   @map("window_key") // 'YYYY-MM' ou 'YYYY-MM-DD'
+  amountEur  Float    @map("amount_eur")
+  thresholdEur Float  @map("threshold_eur")
+  notifiedAt DateTime? @map("notified_at") // pour un futur envoi périodique
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([kind, subjectKey, windowKey])
+  @@index([createdAt])
+  @@map("cost_alerts")
+}

@@ -7,11 +7,16 @@
 //   se pilote par le prompt) ; thinking désactivé (latence maîtrisée) ;
 // - pas de mode JSON natif : les prompts exigent déjà du JSON strict, on
 //   extrait l'objet de la réponse (clôtures de code éventuelles retirées).
+//
+// Les fonctions renvoient { text, usage } / { stream, usage } pour la journalisation
+// des coûts (cf. mistral.ts). Cache : `cache_creation_input_tokens` (écriture) et
+// `cache_read_input_tokens` (lecture) sont deux compteurs distincts, tarifés différemment.
 
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { EvaluatorNotConfiguredError } from "./llm-errors";
 import type { ChatMsg } from "./mistral";
+import type { LlmTokenUsage } from "./llm-usage";
 
 function client(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -21,6 +26,20 @@ function client(): Anthropic {
     );
   }
   return new Anthropic({ apiKey });
+}
+
+function mapUsage(u: {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_creation_input_tokens?: number | null;
+  cache_read_input_tokens?: number | null;
+}): LlmTokenUsage {
+  return {
+    inputTokens: Number(u.input_tokens ?? 0),
+    outputTokens: Number(u.output_tokens ?? 0),
+    cacheCreationTokens: Number(u.cache_creation_input_tokens ?? 0),
+    cacheReadTokens: Number(u.cache_read_input_tokens ?? 0),
+  };
 }
 
 function splitMessages(messages: ChatMsg[]): {
@@ -52,7 +71,7 @@ export function extractJson(text: string): string {
 export async function anthropicChat(
   messages: ChatMsg[],
   opts: { model: string; maxTokens?: number; json?: boolean },
-): Promise<string> {
+): Promise<{ text: string; usage: LlmTokenUsage }> {
   const { system, turns } = splitMessages(messages);
   const res = await client().messages.create({
     model: opts.model,
@@ -65,14 +84,14 @@ export async function anthropicChat(
     .filter((b) => b.type === "text")
     .map((b) => b.text)
     .join("");
-  return opts.json ? extractJson(text) : text;
+  return { text: opts.json ? extractJson(text) : text, usage: mapUsage(res.usage) };
 }
 
-/** Variante en flux : générateur de fragments de texte (même contrat que mistralChatStream). */
+/** Variante en flux : générateur de fragments + usage capté sur les events de fin de flux. */
 export async function anthropicChatStream(
   messages: ChatMsg[],
   opts: { model: string; maxTokens?: number },
-): Promise<AsyncGenerator<string, void, unknown>> {
+): Promise<{ stream: AsyncGenerator<string, void, unknown>; usage: () => LlmTokenUsage | null }> {
   const { system, turns } = splitMessages(messages);
   const stream = client().messages.stream({
     model: opts.model,
@@ -82,12 +101,19 @@ export async function anthropicChatStream(
     messages: turns,
   });
 
+  let captured: LlmTokenUsage | null = null;
+
   async function* gen(): AsyncGenerator<string, void, unknown> {
     for await (const event of stream) {
-      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+      if (event.type === "message_start") {
+        // input + cache connus dès le départ ; output = cumulatif (message_delta).
+        captured = mapUsage(event.message.usage);
+      } else if (event.type === "message_delta") {
+        if (captured) captured.outputTokens = Number(event.usage.output_tokens ?? captured.outputTokens);
+      } else if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
         yield event.delta.text;
       }
     }
   }
-  return gen();
+  return { stream: gen(), usage: () => captured };
 }

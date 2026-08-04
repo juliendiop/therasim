@@ -1,4 +1,4 @@
-import { Cpu, Lock, PlayCircle } from "lucide-react";
+import { Cpu, Lock, PlayCircle, Coins } from "lucide-react";
 import {
   LLM_USAGES,
   MODELES_SUGGESTS,
@@ -7,15 +7,42 @@ import {
   getAllLlm,
   isEuOnlyUsage,
 } from "@/lib/config";
-import { demoUsageToday, DEMO_COST_CENTS_EST } from "@/lib/demo-sim";
-import { setModelsAction, setDemoConfigAction } from "./actions";
+import { demoUsageToday } from "@/lib/demo-sim";
+import { getPricingEntries } from "@/lib/llm-log";
+import { pickEffectivePrice, type PricingEntry } from "@/lib/llm-pricing";
+import { setModelsAction, setDemoConfigAction, setPricingAction } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+// Modèles pour lesquels un tarif peut être renseigné (fournisseur + suggestions).
+function pricingRows(entries: PricingEntry[]) {
+  const known = new Set<string>();
+  const rows: { provider: "mistral" | "anthropic"; model: string }[] = [];
+  const add = (provider: "mistral" | "anthropic", model: string) => {
+    const k = `${provider}::${model}`;
+    if (known.has(k)) return;
+    known.add(k);
+    rows.push({ provider, model });
+  };
+  MODELES_SUGGESTS_ANTHROPIC.forEach((m) => add("anthropic", m));
+  MODELES_SUGGESTS.forEach((m) => add("mistral", m));
+  // Modèles déjà tarifés mais hors listes (saisie libre passée).
+  for (const e of entries) {
+    if (e.provider === "mistral" || e.provider === "anthropic") add(e.provider, e.model);
+  }
+  return rows;
+}
 
 // Choix du FOURNISSEUR (Mistral ou Claude/Anthropic) + du modèle, par usage.
 // Les clés API restent en variables d'environnement (jamais en base).
 export default async function ModelesPage() {
-  const [llm, demo] = await Promise.all([getAllLlm(), demoUsageToday()]);
+  const [llm, demo, pricing] = await Promise.all([
+    getAllLlm(),
+    demoUsageToday(),
+    getPricingEntries(),
+  ]);
+  const now = new Date();
+  const rows = pricingRows(pricing);
   const keys: Record<string, boolean> = {
     mistral: Boolean(process.env.MISTRAL_API_KEY),
     anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
@@ -134,6 +161,82 @@ export default async function ModelesPage() {
         Mistral avec le fournisseur Claude), le modèle par défaut du fournisseur est utilisé.
       </p>
 
+      {/* --- Tarifs par modèle (€/million de tokens) : servent au calcul du coût réel --- */}
+      <div className="mt-10 border-t border-[var(--border)] pt-6">
+        <div className="flex items-center gap-2">
+          <Coins className="h-5 w-5 text-[var(--accent)]" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+            Tarifs par modèle (€ / million de tokens)
+          </h2>
+        </div>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Le coût de chaque appel est calculé et <b>figé</b> au tarif du moment (aucun tarif en
+          dur). Renseigne les prix des modèles que tu utilises réellement — les autres peuvent
+          rester vides. L&apos;écriture et la lecture de cache ont des prix distincts (Anthropic).
+          Le détail des coûts est dans{" "}
+          <a href="/admin/couts" className="text-[var(--accent)] hover:underline">
+            Coûts IA
+          </a>
+          .
+        </p>
+
+        <form action={setPricingAction} className="mt-4 overflow-x-auto rounded-xl border border-[var(--border)] bg-white">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className="bg-[var(--surface-tint)] text-left text-xs text-[var(--muted)]">
+              <tr>
+                <th className="px-3 py-2">Fournisseur / modèle</th>
+                <th className="px-3 py-2">Entrée</th>
+                <th className="px-3 py-2">Sortie</th>
+                <th className="px-3 py-2">Écriture cache</th>
+                <th className="px-3 py-2">Lecture cache</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {rows.map((r, i) => {
+                const p = pickEffectivePrice(pricing, r.provider, r.model, now);
+                const val = (v: number | undefined) => (v != null ? String(v) : "");
+                return (
+                  <tr key={`${r.provider}-${r.model}`}>
+                    <td className="px-3 py-2">
+                      <input type="hidden" name={`row.${i}.provider`} value={r.provider} />
+                      <input type="hidden" name={`row.${i}.model`} value={r.model} />
+                      <div className="font-mono text-xs">{r.model}</div>
+                      <div className="text-[11px] text-[var(--muted)]">{r.provider}</div>
+                    </td>
+                    {(["input", "output", "cachewrite", "cacheread"] as const).map((f) => (
+                      <td key={f} className="px-3 py-2">
+                        <input
+                          name={`row.${i}.${f}`}
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          defaultValue={
+                            f === "input"
+                              ? val(p?.inputPerM)
+                              : f === "output"
+                                ? val(p?.outputPerM)
+                                : f === "cachewrite"
+                                  ? val(p?.cacheWritePerM)
+                                  : val(p?.cacheReadPerM)
+                          }
+                          placeholder="—"
+                          className="w-24 rounded-lg border border-[var(--border)] p-1.5 text-sm tabular"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <div className="p-3">
+            <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">
+              Enregistrer les tarifs
+            </button>
+          </div>
+        </form>
+      </div>
+
       {/* --- Démo publique jouable (page d'accueil) : usage, coût, garde-fous --- */}
       <div className="mt-10 border-t border-[var(--border)] pt-6">
         <div className="flex items-center gap-2">
@@ -164,11 +267,13 @@ export default async function ModelesPage() {
             </div>
           </div>
           <div className="rounded-xl border border-[var(--border)] bg-white p-4">
-            <div className="text-xs uppercase tracking-wide text-[var(--muted)]">Coût estimé (jour)</div>
+            <div className="text-xs uppercase tracking-wide text-[var(--muted)]">Coût réel (jour)</div>
             <div className="mt-1 text-2xl font-semibold tabular">
-              ~{(demo.estCents / 100).toFixed(2)} €
+              {(demo.estCents / 100).toFixed(2)} €
             </div>
-            <div className="text-[11px] text-[var(--muted)]">≈ {DEMO_COST_CENTS_EST} c / démo</div>
+            <div className="text-[11px] text-[var(--muted)]">
+              {demo.demos > 0 ? `${(demo.estCents / demo.demos).toFixed(2)} c / démo` : "mesuré (journalisation)"}
+            </div>
           </div>
         </div>
 

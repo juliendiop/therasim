@@ -655,3 +655,48 @@ Référence spec : `Conception/spec-v2-entrainement-progression (1).md`.
 - ⚠️ Reste (porteur) : lancer les 2 passes Test Clock + tests vitest DB (clé `sk_test_` +
   `TEST_DATABASE_URL`, cf. CSV) ; **changement de comportement live** : un abonné payant qui
   résilie ne conserve désormais qu'**1 spécialité** (activité récente) au lieu de toutes.
+
+## 49. Journalisation du coût réel des appels LLM + tableau de bord des coûts (4 août)
+**État : ✅ Fait (code + migration en prod)** — ⚠️ tarifs à renseigner par le porteur
+- **Chaque appel LLM est journalisé avec son coût réel** (table `LlmCall`) : usage,
+  fournisseur, modèle, tokens (entrée / sortie / **écriture cache** / **lecture cache**,
+  distincts), coût **figé au tarif du moment**, `userId`/`tenantId`/`frameworkId`/
+  `simSessionId`/niveau, crédits débités, durée, statut (`ok`/`error`/`estimated`). **Aucun
+  contenu** de prompt ni de réponse (RGPD, seulement des compteurs).
+- **Passage obligé unique** : `src/lib/llm.ts` (`llmChat`/`llmChatStream`). Les clients bas
+  niveau renvoient désormais `{ text, usage }` ; les **signatures publiques ne changent pas**,
+  les 11 appelants sont intacts. Le contexte (userId, séance, niveau…) est propagé de façon
+  **ambiante** (`AsyncLocalStorage`, `src/lib/llm-context.ts`), posé aux frontières
+  (simulator, demo-sim, route attempt) — jamais par un paramètre.
+- **Flux** : `stream_options: { include_usage: true }` côté Mistral (chunk d'usage sans
+  contenu, neutralisé par un parseur pur testé) ; `message_start`/`message_delta` côté
+  Anthropic. Repli **estimé** si l'usage manque (une ligne approximative plutôt qu'un trou).
+- **Non bloquant** : `logLlmCall` est en aval et **ne lève jamais** (une panne part dans les
+  logs, la requête réussit). Une erreur d'appel est journalisée (`error`) : elle a coûté des
+  tokens.
+- **Tarifs 100 % en configuration** (`app_config` clé `llm.pricing`, €/million de tokens par
+  couple fournisseur/modèle, avec date d'effet) — éditables dans `/admin/modeles`. Rien en dur.
+- **Vue `/admin/couts`** : dépense par usage + **taux de lecture de cache** (levier de marge),
+  **coût par crédit débité** vs objectif (défaut 0,10 €), **coût moyen N3/N2** (par
+  `simSessionId`), distribution mensuelle par utilisateur actif (médiane/p90/max), top 10 +
+  forfait, **marge brute par forfait**, et 3 lignes isolées : **drills gratuits** (fuite de
+  marge), **démo publique** (acquisition, userId nul), **abonnés « sans compter »** (coût en
+  clair). La constante d'estimation démo (`0,25 c`) est remplacée par le coût **réel mesuré**.
+- **Alerte de coût** (flag visuel, pas d'email) : seuils réglables (mensuel/utilisateur,
+  plafond quotidien global). Les franchissements sont **écrits en base** (`CostAlert`,
+  idempotents par fenêtre) pour un futur envoi périodique. Complémentaire de `/admin/usage` :
+  celui-ci **bloque** l'usage abusif en temps réel, l'alerte de coût **observe et signale**.
+- **Migration** `20260804090756_journalisation_cout_llm_llm_calls_cost_alerts` (2 `CREATE
+  TABLE` additifs : `llm_calls`, `cost_alerts`) — SQL montré, déployée en prod.
+- **Tests** : calcul du coût avec cache écriture/lecture distincts + chunk d'usage Mistral
+  hors texte (`test/llm-cost.test.ts`, 8 tests).
+- Fichiers : `src/lib/{llm,mistral,anthropic,llm-context,llm-usage,llm-pricing,llm-log,
+  cost-analytics}.ts`, instrumentation dans `src/lib/{simulator,demo-sim}.ts` +
+  `src/app/api/drills/[id]/attempt/route.ts` + `src/app/sim/actions.ts`,
+  `src/app/admin/{modeles,couts}/**`, `src/app/admin/layout.tsx`, `prisma/schema.prisma`.
+- ⚠️ Reste (porteur) : **renseigner les tarifs** des modèles utilisés dans `/admin/modeles`
+  (Anthropic pour l'évaluateur, Mistral pour patient/génération/support) — le panneau
+  « Tarifs manquants » de `/admin/couts` liste exactement lesquels ; tant qu'ils sont vides,
+  le coût est compté à 0.
+- ⚠️ Écart assumé : `tenantId` de `LlmCall` est **nullable** (la démo publique n'a pas de
+  tenant ; forcer une valeur factice polluerait l'analyse par tenant).
