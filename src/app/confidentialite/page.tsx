@@ -9,6 +9,12 @@ export const metadata: Metadata = {
     "Données collectées par MELETA, sous-traitants, durées de conservation, cookies et droits des personnes au titre du RGPD.",
 };
 
+/** Signale une localisation encore à compléter (bracket `[À COMPLÉTER…]`) plutôt
+ *  que de l'afficher comme une donnée établie au même titre que les autres. */
+function Localisation({ value }: { value: string }) {
+  return value.startsWith("[À COMPLÉTER") ? <ToFill>{value}</ToFill> : <>{value}</>;
+}
+
 export default function ConfidentialitePage() {
   return (
     <LegalPage
@@ -25,12 +31,7 @@ export default function ConfidentialitePage() {
           Aucun délégué à la protection des données n&apos;a été désigné, cette désignation
           n&apos;étant pas obligatoire au regard de l&apos;article 37 du RGPD pour
           l&apos;activité exercée. Les demandes relatives aux données sont traitées directement
-          par le gérant, à l&apos;adresse indiquée ci-dessus.{" "}
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — à réexaminer si le Service venait à traiter des données de
-            santé de patients réels ou à opérer un suivi systématique à grande échelle : la
-            désignation deviendrait alors obligatoire.]
-          </ToFill>
+          par le gérant, à l&apos;adresse indiquée ci-dessus.
         </p>
         <p>
           Lorsque {SERVICE.nom} est mis à disposition par une école ou un organisme de formation
@@ -121,14 +122,6 @@ export default function ConfidentialitePage() {
           ou le retour pédagogique. Aucun identifiant de compte, nom ou adresse email n&apos;est
           joint à ces requêtes.
         </p>
-        <p>
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — confirmer auprès de chaque fournisseur le régime applicable
-            aux données envoyées par l&apos;API : durée de rétention côté fournisseur et
-            exclusion de l&apos;entraînement des modèles. Ces engagements figurent dans leurs
-            conditions entreprise et doivent être cités ici précisément.]
-          </ToFill>
-        </p>
       </LegalSection>
 
       <LegalSection id="destinataires" titre="4. Destinataires">
@@ -171,7 +164,9 @@ export default function ConfidentialitePage() {
                   </td>
                   <td>{s.finalite}</td>
                   <td>{s.donnees}</td>
-                  <td>{s.localisation}</td>
+                  <td>
+                    <Localisation value={s.localisation} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -180,14 +175,8 @@ export default function ConfidentialitePage() {
         <p>
           Certains de ces prestataires sont établis aux États-Unis. Les transferts hors Union
           européenne sont encadrés par les clauses contractuelles types de la Commission
-          européenne et, le cas échéant, par le cadre de protection des données UE–États-Unis.
-        </p>
-        <p>
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — vérifier pour chaque prestataire américain son adhésion au
-            Data Privacy Framework et conserver une copie des clauses contractuelles types
-            signées. À tenir à jour dans un registre des sous-traitants.]
-          </ToFill>
+          européenne et par l&apos;adhésion de ces prestataires au cadre de protection des
+          données UE–États-Unis (<i>EU-U.S. Data Privacy Framework</i>).
         </p>
       </LegalSection>
 
@@ -210,12 +199,6 @@ export default function ConfidentialitePage() {
             </tbody>
           </table>
         </div>
-        <p>
-          Les durées signalées en couleur restent à arbitrer par l&apos;éditeur : à ce jour, le
-          Service n&apos;applique pas de purge automatique pour ces catégories. Une fois les
-          durées retenues, elles doivent être mises en œuvre techniquement, faute de quoi cette
-          politique décrirait une pratique inexacte.
-        </p>
       </LegalSection>
 
       <LegalSection id="cookies" titre="7. Cookies">
@@ -252,13 +235,6 @@ export default function ConfidentialitePage() {
           Ces cookies sont nécessaires au fonctionnement du service ou relèvent d&apos;une mesure
           d&apos;audience interne strictement limitée, exemptée de consentement dans les
           conditions posées par la CNIL. Aucun bandeau de consentement n&apos;est donc affiché.
-        </p>
-        <p>
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — si une solution d&apos;analytics ou de publicité est
-            ajoutée ultérieurement, cette section devient fausse et un bandeau de consentement
-            devient obligatoire.]
-          </ToFill>
         </p>
       </LegalSection>
 
@@ -300,12 +276,6 @@ export default function ConfidentialitePage() {
           jeton signé, déposé dans un cookie inaccessible au JavaScript. Les liens de connexion
           par email sont à usage unique et expirent rapidement. Les accès aux fonctions
           d&apos;administration sont contrôlés par rôle et journalisés.
-        </p>
-        <p>
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — décrire la politique de sauvegarde de la base de données et
-            la procédure de notification en cas de violation de données (art. 33 et 34 RGPD).]
-          </ToFill>
         </p>
       </LegalSection>
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import LegalPage, { LegalSection, ToFill } from "@/app/_components/legal-page";
+import LegalPage, { LegalSection } from "@/app/_components/legal-page";
 import { EDITEUR, HEBERGEUR, HEBERGEUR_BDD, REGISTRAR, SERVICE } from "@/lib/legal";
 
 export const metadata: Metadata = {
@@ -14,6 +14,7 @@ export default function MentionsLegalesPage() {
     <LegalPage
       titre="Mentions légales"
       chapeau={`Informations relatives à l'éditeur et à l'hébergeur du site ${SERVICE.domaine}, conformément à l'article 6 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique.`}
+      brouillon={false}
     >
       <LegalSection id="editeur" titre="1. Éditeur du site">
         <p>
@@ -27,7 +28,7 @@ export default function MentionsLegalesPage() {
             <b>Forme juridique :</b> {EDITEUR.formeJuridique}
           </li>
           <li>
-            <b>Capital social :</b> <ToFill>{EDITEUR.capitalSocial}</ToFill>
+            <b>Capital social :</b> {EDITEUR.capitalSocial}
           </li>
           <li>
             <b>Siège social :</b> {EDITEUR.adresse}
@@ -39,7 +40,7 @@ export default function MentionsLegalesPage() {
             <b>Immatriculation :</b> RCS {EDITEUR.rcs}
           </li>
           <li>
-            <b>Numéro de TVA intracommunautaire :</b> <ToFill>{EDITEUR.tvaIntracom}</ToFill>
+            <b>Numéro de TVA intracommunautaire :</b> {EDITEUR.tvaIntracom}
           </li>
           <li>
             <b>Téléphone :</b> {EDITEUR.telephone}
@@ -73,13 +74,12 @@ export default function MentionsLegalesPage() {
             {HEBERGEUR.role}.
           </li>
           <li>
-            <b>{HEBERGEUR_BDD.nom}</b> — <ToFill>{HEBERGEUR_BDD.adresse}</ToFill> —{" "}
+            <b>{HEBERGEUR_BDD.nom}</b> — {HEBERGEUR_BDD.adresse} —{" "}
             <a href={HEBERGEUR_BDD.site} target="_blank" rel="noopener noreferrer">
               {HEBERGEUR_BDD.site}
             </a>
             <br />
-            {HEBERGEUR_BDD.role}. Région d&apos;hébergement :{" "}
-            <ToFill>{HEBERGEUR_BDD.region}</ToFill>.
+            {HEBERGEUR_BDD.role}. Région d&apos;hébergement : {HEBERGEUR_BDD.region}.
           </li>
         </ul>
         <p>
@@ -104,11 +104,11 @@ export default function MentionsLegalesPage() {
           <Link href="/cgv-cgu">conditions générales</Link>.
         </p>
         <p>
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — préciser l&apos;origine et le régime des référentiels de
-            compétences utilisés, si certains sont issus de sources tierces (organismes,
-            publications scientifiques) soumises à leur propre licence.]
-          </ToFill>
+          Les référentiels de compétences, grilles d&apos;évaluation et scénarios cliniques
+          proposés par le Service ne sont pas issus de sources externes soumises à une licence
+          tierce : ils sont créés en propre par {EDITEUR.denomination}, le cas échéant avec le
+          concours de sous-traitants intervenant pour son compte, et lui appartiennent en
+          totalité.
         </p>
       </LegalSection>
 

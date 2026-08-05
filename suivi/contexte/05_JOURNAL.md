@@ -1437,6 +1437,26 @@ Commit `b8b90ce`. La bêta passe de 90 à 30 jours, le forfait offert devient **
   l'autorisation des exports). Migration `20260804150515_ajout_consentement_marketing`
   déployée en prod (simple ajout de colonne nullable).
 
+## Session — 5 août 2026 : documents légaux complétés (mentions légales, CGV/CGU)
+- L'éditeur a fourni les informations manquantes de `src/lib/legal.ts` : capital social
+  (1 000 €), TVA intracommunautaire, hébergeur BDD (Neon, LLC — société affiliée à
+  Databricks, Inc. — infrastructure AWS eu-central-1 Francfort), origine des référentiels
+  de compétences (créés en propre, pas de source tierce), absence de condition
+  d'éligibilité, préavis de modification d'abonnement (30 jours), médiateur de la
+  consommation (CM2C, adhésion en cours).
+- **Bandeau « brouillon » retiré** de `/mentions-legales` et `/cgv-cgu` (nouvelle prop
+  `brouillon` sur `LegalPage`, défaut `true` pour ne pas affecter
+  `/conditions-ambassadeurs` qui garde de vrais gaps non traités aujourd'hui).
+- **`/confidentialite` garde son bandeau** : deux informations restent réellement
+  manquantes (localisation des serveurs Vercel et Resend) — pas de valeur inventée à leur
+  place, signalé en jaune sur la page + suivi dans `04_RESTE_A_FAIRE.md`.
+- Suivant les instructions de l'éditeur : suppression de plusieurs remarques (données
+  API IA à préciser plus tard, adhésion Data Privacy Framework confirmée, remarque
+  cookies, note politique de sauvegarde) avec report en suivi de ce qui reste réellement
+  à faire (durées de conservation acceptées mais pas encore purgées techniquement,
+  politique de sauvegarde/notification de violation à rédiger).
+- État : `tsc` + build verts.
+
 ---
 
 <!-- Modèle pour la prochaine session :

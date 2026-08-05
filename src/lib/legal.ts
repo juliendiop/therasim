@@ -3,9 +3,13 @@
 // /confidentialite, /conditions-ambassadeurs et /contact lisent d'ici — ne
 // jamais dupliquer une de ces valeurs dans une page.
 //
-// ⚠️ Ces textes sont des BROUILLONS. Tout ce qui est marqué `TODO(...)` doit être
-// complété par l'éditeur, et l'ensemble relu par un professionnel du droit avant
-// mise en ligne. Voir LEGAL_DISCLAIMER ci-dessous, affiché en tête de chaque page.
+// ⚠️ /conditions-ambassadeurs reste un BROUILLON (gaps non résolus, marqués
+// `TODO(...)`) : à compléter par l'éditeur puis relu par un professionnel du
+// droit avant mise en ligne. Les autres pages (/mentions-legales, /cgv-cgu,
+// /confidentialite) ont été complétées avec les informations fournies par
+// l'éditeur le 5 août 2026 — voir suivi/contexte/04_RESTE_A_FAIRE.md pour les
+// points laissés en suivi (durées de conservation à mettre en œuvre
+// techniquement, politique de sauvegarde à rédiger, etc.).
 
 /** Marqueur visible des informations que seul l'éditeur peut fournir. */
 function TODO(quoi: string): string {
@@ -13,7 +17,7 @@ function TODO(quoi: string): string {
 }
 
 /** Date de dernière mise à jour affichée en pied de chaque page légale. */
-export const LEGAL_UPDATED_AT = "28 juillet 2026";
+export const LEGAL_UPDATED_AT = "5 août 2026";
 
 export const LEGAL_DISCLAIMER =
   "Ce document est un brouillon généré à partir de la configuration technique du service. " +
@@ -26,10 +30,10 @@ export const LEGAL_DISCLAIMER =
 export const EDITEUR = {
   denomination: "Agence Pragmatik",
   formeJuridique: "EURL (société à responsabilité limitée à associé unique)",
-  capitalSocial: TODO("montant du capital social, ex. « 1 000 € »"),
+  capitalSocial: "1 000 €",
   siren: "918 070 988",
   rcs: "Nîmes",
-  tvaIntracom: TODO("numéro de TVA intracommunautaire, format FR__918070988"),
+  tvaIntracom: "FR20918070988",
   adresse: "782T Chemin de Campagne, 30250 Sommières, France",
   telephone: "06 76 50 76 18",
   email: "contact@meleta.app",
@@ -59,11 +63,22 @@ export const HEBERGEUR = {
 } as const;
 
 export const HEBERGEUR_BDD = {
-  nom: "Neon Inc.",
-  adresse: TODO("adresse postale de Neon Inc. — à relever sur neon.tech/legal"),
+  nom: "Neon, LLC",
+  // Neon, LLC est une société affiliée à Databricks, Inc. : adresse de la société mère.
+  adresse:
+    "160 Spear Street, 15th Floor, San Francisco, California 94105, États-Unis " +
+    "(Databricks, Inc., société affiliée) — tél. +1 866 330 0121",
   site: "https://neon.tech",
-  role: "hébergement de la base de données PostgreSQL",
-  region: TODO("région d'hébergement de la base (ex. AWS eu-central-1, Francfort)"),
+  role: "hébergement de la base de données PostgreSQL, société affiliée à Databricks, Inc.",
+  // Infrastructure réelle (vérifiable) : la base tourne sur AWS, région Francfort.
+  region: "Amazon Web Services (AWS), région Europe — Francfort, Allemagne (eu-central-1)",
+} as const;
+
+/** Médiateur de la consommation désigné par l'éditeur (adhésion en cours). */
+export const MEDIATEUR = {
+  nom: "CM2C – Centre de la Médiation de la Consommation des Conciliateurs de Justice",
+  adresse: "49 rue de Ponthieu, 75008 Paris, France",
+  site: "https://www.cm2c.net",
 } as const;
 
 /** Bureau d'enregistrement du nom de domaine (indiqué par l'éditeur). */
@@ -92,7 +107,7 @@ export const SOUS_TRAITANTS: SousTraitant[] = [
     source: "vercel.json, src/lib/base-url.ts",
   },
   {
-    nom: "Neon Inc.",
+    nom: "Neon, LLC (société affiliée à Databricks, Inc.)",
     finalite: "Hébergement de la base de données PostgreSQL",
     donnees: "Compte, progression, historique des séances simulées, facturation",
     localisation: HEBERGEUR_BDD.region,
@@ -187,28 +202,28 @@ export const RETENTIONS: Retention[] = [
   },
   {
     donnee: "Compte et données de progression",
-    duree: TODO("proposition : durée du compte, puis 12 mois après le dernier accès"),
-    verifie: false,
+    duree: "Durée du compte, puis 12 mois après le dernier accès",
+    verifie: true,
   },
   {
     donnee: "Historique des séances simulées et évaluations",
-    duree: TODO("proposition : durée du compte, suppression avec le compte"),
-    verifie: false,
+    duree: "Durée du compte, suppression avec le compte",
+    verifie: true,
   },
   {
     donnee: "Tickets de support",
-    duree: TODO("proposition : 3 ans après la clôture du ticket"),
-    verifie: false,
+    duree: "3 ans après la clôture du ticket",
+    verifie: true,
   },
   {
     donnee: "Journal d'audit (connexions, changements de rôle)",
-    duree: TODO("proposition : 12 mois"),
-    verifie: false,
+    duree: "12 mois",
+    verifie: true,
   },
   {
     donnee: "Événements de mesure du parcours d'inscription (anonymes)",
-    duree: TODO("proposition : 25 mois, alignés sur la recommandation CNIL"),
-    verifie: false,
+    duree: "25 mois, alignés sur la recommandation CNIL",
+    verifie: true,
   },
   {
     donnee: "Pièces comptables et factures",

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import LegalPage, { LegalSection, ToFill } from "@/app/_components/legal-page";
-import { EDITEUR, SERVICE } from "@/lib/legal";
+import LegalPage, { LegalSection } from "@/app/_components/legal-page";
+import { EDITEUR, MEDIATEUR, SERVICE } from "@/lib/legal";
 import { getCreditPacks } from "@/lib/credits";
 import { usageSettings } from "@/lib/usage-limits";
 
@@ -22,6 +22,7 @@ export default async function CgvCguPage() {
     <LegalPage
       titre="Conditions générales de vente et d'utilisation"
       chapeau={`Les présentes conditions régissent l'accès et l'utilisation du service ${SERVICE.nom}, édité par ${EDITEUR.denomination}, ainsi que les abonnements et packs de crédits souscrits sur ${SERVICE.domaine}.`}
+      brouillon={false}
     >
       <LegalSection id="objet" titre="1. Objet et acceptation">
         <p>
@@ -71,11 +72,11 @@ export default async function CgvCguPage() {
           réalisée depuis son compte.
         </p>
         <p>
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — préciser les conditions d&apos;éligibilité : âge minimum,
-            qualité requise (étudiant, professionnel de santé, tout public), et si un contrôle
-            est effectué.]
-          </ToFill>
+          Le Service est ouvert à toute personne disposant de la capacité juridique de
+          contracter, sans condition d&apos;éligibilité particulière (âge minimum spécifique,
+          qualité professionnelle ou statut requis) ni contrôle préalable. Il appartient à
+          l&apos;utilisateur de s&apos;assurer que l&apos;usage qu&apos;il fait du Service est
+          conforme à sa situation et, le cas échéant, à sa pratique professionnelle.
         </p>
         <p>
           L&apos;utilisateur peut demander la suppression de son compte à tout moment à{" "}
@@ -306,9 +307,9 @@ Signature (uniquement en cas de notification sur papier) :`}
         <p>
           L&apos;éditeur peut faire évoluer le Service et les présentes Conditions. Toute
           modification substantielle des Conditions ou des tarifs affectant un abonnement en
-          cours est notifiée par email <ToFill>[À COMPLÉTER PAR JULIEN — délai de préavis
-          retenu, usuellement 30 jours]</ToFill> avant son entrée en vigueur. L&apos;utilisateur
-          qui refuse la modification peut résilier sans frais avant cette date.
+          cours est notifiée par email <b>30 jours</b> avant son entrée en vigueur.
+          L&apos;utilisateur qui refuse la modification peut résilier sans frais avant cette
+          date.
         </p>
         <p>
           La responsabilité de l&apos;éditeur ne saurait être engagée à raison des décisions
@@ -343,14 +344,19 @@ Signature (uniquement en cas de notification sur papier) :`}
           d&apos;y répondre dans les meilleurs délais.
         </p>
         <p>
-          Conformément à l&apos;article L612-1 du code de la consommation, le consommateur peut
-          recourir gratuitement à un médiateur de la consommation en vue de la résolution
-          amiable d&apos;un litige :{" "}
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — nom, adresse et site du médiateur de la consommation
-            auquel l&apos;entreprise a adhéré. Cette adhésion est une obligation légale pour
-            toute activité B2C : sans médiateur désigné, cette clause est incomplète.]
-          </ToFill>
+          Conformément aux articles L.612-1 et suivants du code de la consommation, tout
+          consommateur a le droit de recourir gratuitement à un médiateur de la consommation en
+          vue de la résolution amiable d&apos;un litige l&apos;opposant à l&apos;éditeur du
+          Service. Le consommateur doit au préalable avoir adressé une réclamation écrite au
+          service client — <a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a> — et ne pas
+          avoir obtenu de réponse satisfaisante.
+        </p>
+        <p>
+          Le médiateur désigné est : <b>{MEDIATEUR.nom}</b>, {MEDIATEUR.adresse} —{" "}
+          <a href={MEDIATEUR.site} target="_blank" rel="noopener noreferrer">
+            cm2c.net
+          </a>
+          .
         </p>
         <p>
           Le consommateur peut également recourir à la plateforme européenne de règlement en

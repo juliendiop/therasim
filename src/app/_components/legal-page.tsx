@@ -4,16 +4,20 @@ import { LEGAL_DISCLAIMER, LEGAL_UPDATED_AT } from "@/lib/legal";
 
 /**
  * Gabarit commun aux pages légales : titre, bandeau « brouillon à faire relire »
- * (à retirer une fois la relecture juridique faite — voir src/lib/legal.ts), et
- * mise en forme typographique lisible pour du texte long.
+ * (retiré page par page une fois ses informations complétées — voir
+ * src/lib/legal.ts — via `brouillon={false}`), et mise en forme typographique
+ * lisible pour du texte long.
  */
 export default function LegalPage({
   titre,
   chapeau,
+  brouillon = true,
   children,
 }: {
   titre: string;
   chapeau?: string;
+  /** false une fois la page complétée (plus de `ToFill` ni de gap connu). */
+  brouillon?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -23,12 +27,14 @@ export default function LegalPage({
       </h1>
       {chapeau && <p className="mt-3 text-base text-[var(--ink-soft)]">{chapeau}</p>}
 
-      <div className="mt-6 flex gap-3 rounded-xl border border-[var(--ochre)] bg-[var(--ochre-soft)] p-4">
-        <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--ochre)]" />
-        <p className="text-sm text-[var(--ink-soft)]">
-          <b>Brouillon — relecture juridique nécessaire.</b> {LEGAL_DISCLAIMER}
-        </p>
-      </div>
+      {brouillon && (
+        <div className="mt-6 flex gap-3 rounded-xl border border-[var(--ochre)] bg-[var(--ochre-soft)] p-4">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--ochre)]" />
+          <p className="text-sm text-[var(--ink-soft)]">
+            <b>Brouillon — relecture juridique nécessaire.</b> {LEGAL_DISCLAIMER}
+          </p>
+        </div>
+      )}
 
       <div className="legal-prose mt-8">{children}</div>
 

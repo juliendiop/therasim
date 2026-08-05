@@ -497,6 +497,30 @@ Chantier 5 de l'analyse du 2 juillet.
 - **RGPD** : page de consentement, export/suppression des données.
 - **Visualisations** : possible radar/jauges en plus des barres (cf. maquette).
 
+## ⭐ Documents légaux — complétés (5 août), points laissés en suivi
+
+`/mentions-legales` et `/cgv-cgu` sont désormais complets (bandeau « brouillon » retiré) avec
+les informations fournies par l'éditeur (capital social, TVA intracom, hébergeur BDD Neon/
+Databricks, origine des référentiels, éligibilité, préavis 30 j, médiateur CM2C). Détail dans
+`src/lib/legal.ts`. `/confidentialite` garde son bandeau : deux informations manquent encore
+(voir ci-dessous), pas de fabrication faite à leur place.
+- ⚠️ **`/confidentialite` — 2 gaps réels non résolus** (visibles en jaune sur la page, table des
+  sous-traitants) : localisation des serveurs **Vercel** (déploiement) et de **Resend**
+  (email transactionnel). À vérifier sur leurs pages légales respectives, puis retirer le
+  bandeau brouillon de cette page une fois fait (`src/app/confidentialite/page.tsx`,
+  prop `brouillon` sur `LegalPage`).
+- ⚠️ **Durées de conservation** : les propositions ont été acceptées telles quelles
+  (`src/lib/legal.ts`, `RETENTIONS`), mais **aucune purge automatique n'est implémentée** — la
+  politique affichée décrit désormais une intention, pas (encore) un comportement réel du
+  système. À vérifier/implémenter avant que l'écart devienne un vrai problème de conformité.
+- ⚠️ **Politique de sauvegarde de la base + procédure de notification de violation** (art. 33-34
+  RGPD) : retirée de la page (§9 Sécurité), reste à rédiger et à publier plus tard.
+- ℹ️ **Médiateur CM2C** : le nom/adresse figurent désormais dans les CGV (§14) ; l'éditeur a
+  indiqué que l'adhésion est en cours au moment de la rédaction — à confirmer une fois
+  finalisée (rien à changer côté code si l'organisme reste le même).
+- ℹ️ Ces trois pages restent, comme le reste du site, un texte **non relu par un professionnel
+  du droit** — seule l'exactitude technique/factuelle a été vérifiée ici.
+
 ## ⚠️ Garde-fous à ne pas oublier (spec §7)
 - Cas **réalistes mais fictifs** (jamais de patient réel ; RGPD / secret pro).
 - **Reconnaissance avant production** pour les débutants (déjà câblé dans le routage).
