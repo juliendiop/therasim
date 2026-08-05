@@ -3,18 +3,11 @@
 // /confidentialite, /conditions-ambassadeurs et /contact lisent d'ici — ne
 // jamais dupliquer une de ces valeurs dans une page.
 //
-// ⚠️ /conditions-ambassadeurs reste un BROUILLON (gaps non résolus, marqués
-// `TODO(...)`) : à compléter par l'éditeur puis relu par un professionnel du
-// droit avant mise en ligne. Les autres pages (/mentions-legales, /cgv-cgu,
-// /confidentialite) ont été complétées avec les informations fournies par
-// l'éditeur le 5 août 2026 — voir suivi/contexte/04_RESTE_A_FAIRE.md pour les
-// points laissés en suivi (durées de conservation à mettre en œuvre
-// techniquement, politique de sauvegarde à rédiger, etc.).
-
-/** Marqueur visible des informations que seul l'éditeur peut fournir. */
-function TODO(quoi: string): string {
-  return `[À COMPLÉTER PAR JULIEN — ${quoi}]`;
-}
+// Toutes les informations connues de l'éditeur ont été renseignées le 5 août
+// 2026 (bandeau « brouillon » retiré des 4 pages légales). Reste malgré tout un
+// texte non relu par un professionnel du droit — voir les points laissés en
+// suivi dans suivi/contexte/04_RESTE_A_FAIRE.md (durées de conservation à mettre
+// en œuvre techniquement, politique de sauvegarde à rédiger, etc.).
 
 /** Date de dernière mise à jour affichée en pied de chaque page légale. */
 export const LEGAL_UPDATED_AT = "5 août 2026";
@@ -103,7 +96,9 @@ export const SOUS_TRAITANTS: SousTraitant[] = [
     nom: "Vercel Inc.",
     finalite: "Hébergement de l'application et exécution du code serveur",
     donnees: "Ensemble des données transitant par le service, journaux techniques",
-    localisation: `États-Unis / Union européenne — ${TODO("région de déploiement Vercel")}`,
+    localisation:
+      "Vercel Inc. (États-Unis) — traitement via Vercel Functions, région Europe – " +
+      "Francfort, Allemagne (Union européenne)",
     source: "vercel.json, src/lib/base-url.ts",
   },
   {
@@ -124,7 +119,7 @@ export const SOUS_TRAITANTS: SousTraitant[] = [
     nom: "Resend",
     finalite: "Envoi des emails transactionnels (lien de connexion, réinitialisation, relances)",
     donnees: "Adresse email, prénom, contenu du message",
-    localisation: TODO("localisation des serveurs Resend — à vérifier sur resend.com/legal"),
+    localisation: "Irlande (Union européenne), région AWS eu-west-1",
     source: "src/lib/email.ts",
   },
   {

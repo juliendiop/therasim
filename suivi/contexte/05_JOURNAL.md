@@ -1457,6 +1457,27 @@ Commit `b8b90ce`. La bêta passe de 90 à 30 jours, le forfait offert devient **
   politique de sauvegarde/notification de violation à rédiger).
 - État : `tsc` + build verts.
 
+### Session — 5 août 2026 (suite) : les 4 pages légales complétées
+- L'éditeur a fourni les 2 dernières localisations manquantes (`SOUS_TRAITANTS`) : **Vercel
+  Functions** → Francfort, Allemagne (traitement en UE malgré une société mère américaine,
+  même schéma que Neon/Databricks) ; **Resend** → Irlande, région AWS eu-west-1. Bandeau
+  brouillon retiré de `/confidentialite`.
+- L'éditeur a aussi complété les 4 derniers gaps de `/conditions-ambassadeurs` : assiette de
+  commission = montant **HT** ; commission « école » à deux volets (**10 %** de l'abonnement
+  école pendant les 12 premiers mois, puis les **taux normaux du programme** — niveau 1 — pour
+  tout achat individuel additionnel des élèves de cet établissement) ; délai de règlement des
+  commissions = **30 jours** réception facture ; préavis de modification du programme = **30
+  jours**. Bandeau brouillon retiré (dernière des 4 pages légales à l'être).
+- Le helper `TODO()` de `src/lib/legal.ts`, devenu sans appelant restant, a été retiré avec le
+  commentaire d'en-tête associé.
+- Les 4 pages légales (`/mentions-legales`, `/cgv-cgu`, `/confidentialite`,
+  `/conditions-ambassadeurs`) sont maintenant toutes sans bandeau brouillon ni remarque
+  jaune. Ce qui reste en suivi (durées de conservation non purgées techniquement, politique
+  de sauvegarde à rédiger, adhésion CM2C à confirmer une fois finalisée) est documenté dans
+  `04_RESTE_A_FAIRE.md` — ces textes restent malgré tout non relus par un professionnel du
+  droit.
+- État : `tsc` + build + 49 tests verts.
+
 ---
 
 <!-- Modèle pour la prochaine session :

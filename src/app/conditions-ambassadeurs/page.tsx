@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import LegalPage, { LegalSection, ToFill } from "@/app/_components/legal-page";
+import LegalPage, { LegalSection } from "@/app/_components/legal-page";
 import { AMBASSADEUR_REGLES, EDITEUR, SERVICE } from "@/lib/legal";
 import { resolveCommissionRate } from "@/lib/affiliation";
 
@@ -22,6 +22,7 @@ export default async function ConditionsAmbassadeursPage() {
     <LegalPage
       titre="Conditions du programme ambassadeur"
       chapeau={`Règles applicables aux participants du programme de recommandation de ${SERVICE.nom}. Elles complètent les conditions générales du service.`}
+      brouillon={false}
     >
       {!rates.enabled && (
         <p className="rounded-xl border border-[var(--border-strong)] bg-[var(--paper-2)] p-4">
@@ -103,13 +104,8 @@ export default async function ConditionsAmbassadeursPage() {
         </p>
         <p>
           Les commissions sont calculées sur les paiements d&apos;<b>abonnement</b> réellement
-          encaissés. Les achats de packs de crédits, les périodes gratuites et les périodes
-          d&apos;essai ne génèrent pas de commission.{" "}
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — préciser si l&apos;assiette de commission est le montant
-            HT ou TTC encaissé. Le code enregistre le montant issu de la facture Stripe : la
-            règle retenue doit être écrite ici sans ambiguïté.]
-          </ToFill>
+          encaissés, <b>hors taxes (HT)</b>. Les achats de packs de crédits, les périodes
+          gratuites et les périodes d&apos;essai ne génèrent pas de commission.
         </p>
         <p>
           En cas de remboursement, d&apos;impayé ou de rétractation d&apos;un filleul, la
@@ -128,13 +124,21 @@ export default async function ConditionsAmbassadeursPage() {
           l&apos;ambassadeur et signe un contrat, une commission est créditée manuellement.
         </p>
         <p>
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — définir le montant ou le pourcentage de la commission
-            « école », son assiette et sa périodicité. En l&apos;absence de règle écrite, cette
-            commission reste à la discrétion de l&apos;éditeur, ce qui doit être assumé
-            explicitement ici.]
-          </ToFill>
+          Cette commission « école » comporte deux volets :
         </p>
+        <ul>
+          <li>
+            <b>10 %</b> du montant HT de l&apos;abonnement souscrit par l&apos;établissement,
+            versé à chaque échéance <b>pendant les douze mois</b> suivant la signature du
+            contrat ;
+          </li>
+          <li>
+            au-delà de cette première année, ainsi que pour <b>tout achat additionnel</b>{" "}
+            effectué individuellement par un élève de cet établissement (pack de crédits,
+            abonnement personnel, référentiel à l&apos;unité…), les taux normaux du programme
+            décrits à l&apos;article 3 s&apos;appliquent (niveau 1 — {rates.rateTier1} %).
+          </li>
+        </ul>
       </LegalSection>
 
       <LegalSection id="paiement" titre="5. Seuil, facturation et paiement">
@@ -162,13 +166,9 @@ export default async function ConditionsAmbassadeursPage() {
           l&apos;adhésion au programme n&apos;a pas pris fin.
         </p>
         <p>
-          Le règlement intervient par virement{" "}
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — délai de paiement à compter de la réception de la facture
-            conforme, plafonné à 60 jours entre professionnels]
-          </ToFill>
-          . Le solde est remis à zéro une fois la facture réglée. Une seule demande de paiement
-          peut être en cours à la fois.
+          Le règlement intervient par virement dans un délai de <b>30 jours</b> à compter de la
+          réception de la facture conforme. Le solde est remis à zéro une fois la facture
+          réglée. Une seule demande de paiement peut être en cours à la fois.
         </p>
         <p>
           L&apos;ambassadeur est seul responsable de ses obligations déclaratives, fiscales et
@@ -220,10 +220,8 @@ export default async function ConditionsAmbassadeursPage() {
         </p>
         <p>
           Toute modification défavorable et la clôture du programme sont notifiées par email{" "}
-          <ToFill>
-            [À COMPLÉTER PAR JULIEN — délai de préavis retenu, usuellement 30 jours]
-          </ToFill>{" "}
-          avant leur entrée en vigueur. Les modifications ne sont pas rétroactives : les
+          <b>30 jours</b> avant leur entrée en vigueur. Les modifications ne sont pas
+          rétroactives : les
           commissions déjà acquises restent dues et payables selon les modalités de
           l&apos;article 5, y compris après la fin du programme.
         </p>

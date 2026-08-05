@@ -497,29 +497,29 @@ Chantier 5 de l'analyse du 2 juillet.
 - **RGPD** : page de consentement, export/suppression des données.
 - **Visualisations** : possible radar/jauges en plus des barres (cf. maquette).
 
-## ⭐ Documents légaux — complétés (5 août), points laissés en suivi
+## ⭐ Documents légaux — les 4 pages complétées (5 août), points laissés en suivi
 
-`/mentions-legales` et `/cgv-cgu` sont désormais complets (bandeau « brouillon » retiré) avec
-les informations fournies par l'éditeur (capital social, TVA intracom, hébergeur BDD Neon/
-Databricks, origine des référentiels, éligibilité, préavis 30 j, médiateur CM2C). Détail dans
-`src/lib/legal.ts`. `/confidentialite` garde son bandeau : deux informations manquent encore
-(voir ci-dessous), pas de fabrication faite à leur place.
-- ⚠️ **`/confidentialite` — 2 gaps réels non résolus** (visibles en jaune sur la page, table des
-  sous-traitants) : localisation des serveurs **Vercel** (déploiement) et de **Resend**
-  (email transactionnel). À vérifier sur leurs pages légales respectives, puis retirer le
-  bandeau brouillon de cette page une fois fait (`src/app/confidentialite/page.tsx`,
-  prop `brouillon` sur `LegalPage`).
-- ⚠️ **Durées de conservation** : les propositions ont été acceptées telles quelles
-  (`src/lib/legal.ts`, `RETENTIONS`), mais **aucune purge automatique n'est implémentée** — la
-  politique affichée décrit désormais une intention, pas (encore) un comportement réel du
-  système. À vérifier/implémenter avant que l'écart devienne un vrai problème de conformité.
+`/mentions-legales`, `/cgv-cgu`, `/confidentialite` et `/conditions-ambassadeurs` sont
+désormais **toutes complètes** (bandeau « brouillon » retiré partout, plus aucun `ToFill`
+affiché) avec les informations fournies par l'éditeur en deux temps le 5 août : capital
+social, TVA intracom, hébergeur BDD Neon/Databricks (+ région AWS Francfort), localisation
+Vercel Functions (Francfort) et Resend (Irlande, eu-west-1), origine des référentiels,
+éligibilité, préavis 30 j (CGV et programme ambassadeur), médiateur CM2C, assiette de
+commission HT, commission « école » (10 % l'abonnement école pendant 1 an puis taux normaux
+sur les achats individuels des élèves), délai de règlement des commissions (30 j). Détail
+dans `src/lib/legal.ts` et les 4 pages `src/app/{mentions-legales,cgv-cgu,confidentialite,
+conditions-ambassadeurs}/page.tsx`.
+- ⚠️ **Durées de conservation** (`src/lib/legal.ts`, `RETENTIONS`) : les propositions ont été
+  acceptées telles quelles, mais **aucune purge automatique n'est implémentée** — la politique
+  affichée décrit une intention, pas (encore) un comportement réel du système. À
+  vérifier/implémenter avant que l'écart devienne un vrai problème de conformité.
 - ⚠️ **Politique de sauvegarde de la base + procédure de notification de violation** (art. 33-34
-  RGPD) : retirée de la page (§9 Sécurité), reste à rédiger et à publier plus tard.
-- ℹ️ **Médiateur CM2C** : le nom/adresse figurent désormais dans les CGV (§14) ; l'éditeur a
-  indiqué que l'adhésion est en cours au moment de la rédaction — à confirmer une fois
-  finalisée (rien à changer côté code si l'organisme reste le même).
-- ℹ️ Ces trois pages restent, comme le reste du site, un texte **non relu par un professionnel
-  du droit** — seule l'exactitude technique/factuelle a été vérifiée ici.
+  RGPD) : retirée de `/confidentialite` (§9 Sécurité), reste à rédiger et à publier plus tard.
+- ℹ️ **Médiateur CM2C** : nom/adresse dans les CGV (§14) ; l'éditeur a indiqué que
+  l'adhésion est en cours au moment de la rédaction — à confirmer une fois finalisée (rien à
+  changer côté code si l'organisme reste le même).
+- ℹ️ Ces 4 pages restent, comme le reste du site, un texte **non relu par un professionnel du
+  droit** — seule l'exactitude technique/factuelle a été vérifiée ici.
 
 ## ⚠️ Garde-fous à ne pas oublier (spec §7)
 - Cas **réalistes mais fictifs** (jamais de patient réel ; RGPD / secret pro).

@@ -9,17 +9,12 @@ export const metadata: Metadata = {
     "Données collectées par MELETA, sous-traitants, durées de conservation, cookies et droits des personnes au titre du RGPD.",
 };
 
-/** Signale une localisation encore à compléter (bracket `[À COMPLÉTER…]`) plutôt
- *  que de l'afficher comme une donnée établie au même titre que les autres. */
-function Localisation({ value }: { value: string }) {
-  return value.startsWith("[À COMPLÉTER") ? <ToFill>{value}</ToFill> : <>{value}</>;
-}
-
 export default function ConfidentialitePage() {
   return (
     <LegalPage
       titre="Politique de confidentialité"
       chapeau={`Comment ${EDITEUR.denomination} collecte, utilise et protège vos données personnelles dans le cadre du service ${SERVICE.nom}, conformément au règlement (UE) 2016/679 (RGPD) et à la loi Informatique et Libertés.`}
+      brouillon={false}
     >
       <LegalSection id="responsable" titre="1. Responsable du traitement">
         <p>
@@ -164,9 +159,7 @@ export default function ConfidentialitePage() {
                   </td>
                   <td>{s.finalite}</td>
                   <td>{s.donnees}</td>
-                  <td>
-                    <Localisation value={s.localisation} />
-                  </td>
+                  <td>{s.localisation}</td>
                 </tr>
               ))}
             </tbody>
